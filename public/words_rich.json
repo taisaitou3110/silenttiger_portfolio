@@ -1,0 +1,143 @@
+[
+  {
+    "word": "indeed",
+    "definitions": ["なるほどね", "たしかにー"],
+    "comments": [
+      {"source": "日常メモ", "example": "Indeed, it's getting cold."},
+      {"source": "FF10", "example": "Indeed, it is a tragic tale."}
+    ]
+  },
+  {
+    "word": "That’s not what I mean.",
+    "definitions": ["そういうことじゃないんだよなー"],
+    "comments": [
+      {"source": "日常メモ", "example": "No, that’s not what I mean. Let me rephrase."}
+    ]
+  },
+  {
+    "word": "precisely",
+    "definitions": ["正確に", "まさにその通り"],
+    "comments": [
+      {"source": "AI対話", "example": "Precisely! That is the core of the issue."}
+    ]
+  },
+  {
+    "word": "deity",
+    "definitions": ["神", "女神", "神性"],
+    "comments": [
+      {"source": "FF10", "example": "The deities of Spira."}
+    ]
+  },
+  {
+    "word": "On the contrary",
+    "definitions": ["てか", "というか", "それどころか"],
+    "comments": [
+      {"source": "日常メモ", "example": "On the contrary, I think it's a great idea."}
+    ]
+  },
+  {
+    "word": "imperative",
+    "definitions": ["緊急の", "必須の", "肝要な"],
+    "comments": [
+      {"source": "学習メモ", "example": "It is imperative that we act now."}
+    ]
+  },
+  {
+    "word": "pitch in",
+    "definitions": ["協力する", "加勢する"],
+    "comments": [
+      {"source": "FF10", "example": "Everyone needs to pitch in to defeat Sin."}
+    ]
+  },
+  {
+    "word": "stay on one's toes",
+    "definitions": ["気を抜かない", "注意を怠らない"],
+    "comments": [
+      {"source": "SAO", "example": "You have to stay on your toes in this dungeon."}
+    ]
+  },
+  {
+    "word": "itinerary",
+    "definitions": ["旅行日程表", "旅行計画"],
+    "comments": [
+      {"source": "ゆるキャン△", "example": "Check the itinerary for the campsite."}
+    ]
+  },
+  {
+    "word": "exquisite",
+    "definitions": ["非常に美しい", "精巧な"],
+    "comments": [
+      {"source": "FF10", "example": "The exquisite patterns on the robe."}
+    ]
+  },
+  {
+    "word": "tuckered out",
+    "definitions": ["疲れ切った"],
+    "comments": [
+      {"source": "ゆるキャン△", "example": "I'm completely tuckered out after the hike."}
+    ]
+  },
+  {
+    "word": "at your service",
+    "definitions": ["どうぞ何なりとお申し付けください"],
+    "comments": [
+      {"source": "FF10", "example": "The Maester is at your service."}
+    ]
+  },
+  {
+    "word": "full-fledged",
+    "definitions": ["一人前の", "独立した"],
+    "comments": [
+      {"source": "日常メモ", "example": "He is now a full-fledged engineer."}
+    ]
+  },
+  {
+    "word": "stick to",
+    "definitions": ["〜にこだわる", "〜をやり通す"],
+    "comments": [
+      {"source": "SAO", "example": "Stick to the plan no matter what."}
+    ]
+  },
+  {
+    "word": "annoying",
+    "definitions": ["めんどくさい", "うっとうしい"],
+    "comments": [
+      {"source": "日常メモ", "example": "Stop making that annoying noise."}
+    ]
+  },
+  {
+    "word": "capital",
+    "definitions": ["資本金", "主要な"],
+    "comments": [
+      {"source": "経営管理", "example": "How much capital do we need for the startup?"}
+    ]
+  },
+  {
+    "word": "commemorative",
+    "definitions": ["記念の", "祝賀の"],
+    "comments": [
+      {"source": "日常メモ", "example": "A commemorative coin for the anniversary."}
+    ]
+  },
+  {
+    "word": "worth doing",
+    "definitions": ["する価値がある"],
+    "comments": [
+      {"source": "学習メモ", "example": "It is a difficult task, but worth doing."}
+    ]
+  },
+  {
+    "word": "discretion is the better part of valor",
+    "definitions": ["慎重さが勇気の大部分（逃げるが勝ち）"],
+    "comments": [
+      {"source": "SAO", "example": "Remember, discretion is the better part of valor in a boss fight."}
+    ]
+  },
+  {
+    "word": "pilgrimage",
+    "definitions": ["聖地巡礼", "巡礼"],
+    "comments": [
+      {"source": "FF10", "example": "The summoner's pilgrimage."}
+    ]
+  }
+]

@@ -12,7 +12,7 @@ const generateItems = (total: number, itemNames: string[]): DetailItem[] => {
   const count = itemNames.length;
   if (count === 0) return [];
   let remaining = total;
-  const amounts = [];
+  const amounts: number[] = [];
   for (let i = 0; i < count - 1; i++) {
     const amount = Math.floor(Math.random() * (remaining / 2));
     amounts.push(amount);

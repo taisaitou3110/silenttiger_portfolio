@@ -1,27 +1,17 @@
 import { PrismaClient } from '@prisma/client'
 
 const prismaClientSingleton = () => {
-  const url = process.env.DATABASE_URL;
-  
-      if (!url) {
-        // Throw an error to explicitly stop execution if DATABASE_URL is missing
-        throw new Error("CRITICAL ERROR: DATABASE_URL is not defined in environment variables. Please set it in your Vercel project settings.");
-      }
-  return new PrismaClient({
-    datasources: {
-      db: {
-        url: url, // ここで明示的にURLを流し込む
-      },
-    },
-  })
+  return new PrismaClient()
 }
 
-declare global {
-  var prisma: undefined | ReturnType<typeof prismaClientSingleton>
+type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClientSingleton | undefined
 }
 
-const prisma = globalThis.prisma ?? prismaClientSingleton()
+const prisma = globalForPrisma.prisma ?? prismaClientSingleton()
 
 export default prisma
 
-if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma

@@ -1,10 +1,10 @@
 // prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client" // これを追記または確認
 }
 
 datasource db {
-//  provider = "sqlite"
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }

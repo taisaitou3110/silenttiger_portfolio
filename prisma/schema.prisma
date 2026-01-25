@@ -1,9 +1,6 @@
 // prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
-  // 以下の2行を追加して、Vercel上での動作を安定させます
-  engineType    = "library"
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {

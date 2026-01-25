@@ -1,10 +1,19 @@
 import { PrismaClient } from '@prisma/client'
 
 const prismaClientSingleton = () => {
-  if (!process.env.DATABASE_URL) {
-    console.error("CRITICAL ERROR: DATABASE_URL is not defined in process.env");
+  const url = process.env.DATABASE_URL;
+  
+  if (!url) {
+    console.error("CRITICAL ERROR: DATABASE_URL is not defined");
   }
-  return new PrismaClient()
+
+  return new PrismaClient({
+    datasources: {
+      db: {
+        url: url, // ここで明示的にURLを流し込む
+      },
+    },
+  })
 }
 
 declare global {

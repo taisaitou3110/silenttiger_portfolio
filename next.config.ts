@@ -1,16 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // eslint と typescript の無視設定を 16 の形式に合わせます
   eslint: {
-    // ビルド時のESLintチェックを無視する
     ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Turbopack の設定（16 ではこちらが推奨）
   experimental: {
-    // serverExternalPackages: ['better-sqlite3'], // Removed as it's no longer needed
+    turbo: {
+      // 警告を減らすための設定（空でもOK）
+    },
   },
 };
 

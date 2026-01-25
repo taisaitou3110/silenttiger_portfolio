@@ -1,0 +1,41 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+//  provider = "sqlite"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Word {
+  id          String   @id @default(cuid())
+  term        String   @unique
+  description String
+  comments    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MealLog {
+  id          String   @id @default(cuid())
+  date        DateTime @default(now())
+  foodName    String
+  calories    Int
+  imagePath   String?  // 画像を保存する場合
+  advice      String?  // Geminiからの削り出し助言
+}
+
+model FoodPreset {
+  id        String @id @default(cuid())
+  name      String @unique
+  calories  Int
+}
+
+model PokerAchiever {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  achievedAt  DateTime  @default(now())
+  finalGold   Int
+}

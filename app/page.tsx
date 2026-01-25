@@ -36,6 +36,28 @@ export default function Home() {
             ツールを開く
           </Link>
         </div>
+
+        {/* カロリー記録アプリ */}
+        <div className="bg-white rounded-lg shadow-xl p-8 flex flex-col items-center text-center">
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">カロリー記録アプリ</h2>
+          <p className="text-gray-600 mb-6">
+            写真を撮るだけでAIがカロリーを推定し、目標達成を視覚的にサポートします。日々の食事管理を効率化しましょう。
+          </p>
+          <Link href="/calorie" className="mt-auto px-8 py-3 bg-red-600 text-white text-lg font-semibold rounded-lg hover:bg-red-700 transition duration-300">
+            ツールを開く
+          </Link>
+        </div>
+
+        {/* ポーカーゲーム */}
+        <div className="bg-white rounded-lg shadow-xl p-8 flex flex-col items-center text-center">
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">ポーカーゲーム</h2>
+          <p className="text-gray-600 mb-6">
+            コンピュータとポーカーで対戦できます。戦略を練って勝利を目指しましょう！
+          </p>
+          <Link href="/poker" className="mt-auto px-8 py-3 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 transition duration-300">
+            ゲームを開始
+          </Link>
+        </div>
       </div>
     </main>
   );

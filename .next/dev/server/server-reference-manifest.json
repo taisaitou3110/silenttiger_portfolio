@@ -1,0 +1,36 @@
+{
+  "node": {
+    "6065710c8c11ada75cf33df625aa07246d096d081b": {
+      "workers": {
+        "app/poker/page": {
+          "moduleId": "[project]/.next-internal/server/app/poker/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/poker/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "addAchiever",
+          "filename": "app/poker/actions.ts"
+        }
+      },
+      "layer": {
+        "app/poker/page": "action-browser"
+      },
+      "filename": "app/poker/actions.ts",
+      "exportedName": "addAchiever"
+    },
+    "00ba1b7e12ba232d78e9432a6aeae8f52cfd8c26e0": {
+      "workers": {
+        "app/poker/page": {
+          "moduleId": "[project]/.next-internal/server/app/poker/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/poker/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getAchievers",
+          "filename": "app/poker/actions.ts"
+        }
+      },
+      "layer": {
+        "app/poker/page": "action-browser"
+      },
+      "filename": "app/poker/actions.ts",
+      "exportedName": "getAchievers"
+    }
+  },
+  "edge": {},
+  "encryptionKey": "qAB0p739nPE5fCntYn9XeGdZ7kSGQNH0+LWr7E24Das="
+}

@@ -1,6 +1,8 @@
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
 
+export const dynamic = "force-dynamic"; // これを追加
+
 export default async function CalorieDashboardPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0); // Set to start of today

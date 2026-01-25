@@ -1,19 +1,18 @@
 import { PrismaClient } from '@prisma/client'
 
 const prismaClientSingleton = () => {
-  // Ensure DATABASE_URL is set. In Next.js, this is typically handled by
-  // environment variables loaded from .env.local, etc.
-  // If not set, PrismaClient will throw an error when trying to connect,
-  // which is preferable to an undefined 'prisma' object.
+  if (!process.env.DATABASE_URL) {
+    console.error("CRITICAL ERROR: DATABASE_URL is not defined in process.env");
+  }
   return new PrismaClient()
 }
 
 declare global {
-  var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>
+  var prisma: undefined | ReturnType<typeof prismaClientSingleton>
 }
 
-const prisma = globalThis.prismaGlobal ?? prismaClientSingleton()
+const prisma = globalThis.prisma ?? prismaClientSingleton()
 
 export default prisma
 
-if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = prisma
+if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma

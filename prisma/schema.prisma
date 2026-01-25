@@ -1,7 +1,6 @@
 // prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client" // これを追記または確認
   // 以下の2行を追加して、Vercel上での動作を安定させます
   engineType    = "library"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
@@ -10,6 +9,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl      = env("DATABASE_URL")
 }
 
 model Word {

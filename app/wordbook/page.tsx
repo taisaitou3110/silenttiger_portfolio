@@ -2,6 +2,8 @@ import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import Link from 'next/link';
 
+export const dynamic = "force-dynamic"; // これを追加！
+
 export default async function WordbookPage() {
   // 1. SQLiteから単語一覧を取得（サーバーサイドで実行）
   const words = await prisma.word.findMany({

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic"; // これを追加
 import CalorieScanner from '@/components/CalorieScanner';
 
 export default function CalorieScannerPage() {

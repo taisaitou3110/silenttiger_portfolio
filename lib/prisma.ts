@@ -3,10 +3,10 @@ import { PrismaClient } from '@prisma/client'
 const prismaClientSingleton = () => {
   const url = process.env.DATABASE_URL;
   
-  if (!url) {
-    console.error("CRITICAL ERROR: DATABASE_URL is not defined");
-  }
-
+      if (!url) {
+        // Throw an error to explicitly stop execution if DATABASE_URL is missing
+        throw new Error("CRITICAL ERROR: DATABASE_URL is not defined in environment variables. Please set it in your Vercel project settings.");
+      }
   return new PrismaClient({
     datasources: {
       db: {

@@ -12,7 +12,7 @@
     "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^5.22.0",
     "dotenv": "^17.2.3",
-    "next": "15.1.7",
+    "next": "15.1.9",
     "react": "19.0.0",
     "react-dom": "19.0.0"
   },
@@ -23,7 +23,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.1.7",
+    "eslint-config-next": "15.1.9",
     "prisma": "^5.22.0",
     "tailwindcss": "^4",
     "typescript": "^5"

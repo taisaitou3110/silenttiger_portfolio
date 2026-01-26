@@ -40,7 +40,7 @@ export async function getAchievers() {
   try {
     const achievers = await prisma.pokerAchiever.findMany({
       orderBy: {
-        achievedAt: "asc", // Order by achievement date, oldest first
+        finalGold: "desc", // Order by final gold, highest first
       },
       take: 10, // Get top 10 achievers, adjust as needed
     });

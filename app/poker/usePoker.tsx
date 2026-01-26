@@ -1,44 +1,44 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
-// カードの強さ順（JOKERを最強に設定）
 const CARD_TYPES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', 'JK'];
 
-export function usePoker(initialGold: number = 5000, initialBet: number = 100) {
-  const [gold, setGold] = useState(initialGold);
-  const [startGold, setStartGold] = useState(initialGold); // To keep track of the chosen starting gold for reset
-  const [currentBetAmount, setCurrentBetAmount] = useState(initialBet); // To keep track of the chosen initial bet
+export function usePoker() {
+  const [gold, setGold] = useState(0);
+  const [startGold, setStartGold] = useState(0);
+  const [currentBetAmount, setCurrentBetAmount] = useState(0);
   const [deck, setDeck] = useState<string[]>([]);
   const [usedCards, setUsedCards] = useState<string[]>([]);
   const [currentCard, setCurrentCard] = useState('');
   const [nextCard, setNextCard] = useState('');
   const [bet, setBet] = useState(0);
-  const [message, setMessage] = useState('100G はらって ゲームを はじめよう！');
-  const [gameState, setGameState] = useState<'IDLE' | 'PLAYING' | 'RESULT' | 'LOSE' | 'CLEAR'>('IDLE');
+  const [message, setMessage] = useState('');
+  const [gameState, setGameState] = useState<'UNINITIALIZED' | 'IDLE' | 'PLAYING' | 'RESULT' | 'LOSE' | 'CLEAR'>('UNINITIALIZED');
 
-  // 54枚の山札を生成する関数
-  const createFullDeck = () => {
+  const createFullDeck = useCallback(() => {
     const newDeck: string[] = [];
-    // 2〜Aまでを4枚ずつ追加
     CARD_TYPES.slice(0, 13).forEach(type => {
       for (let i = 0; i < 4; i++) newDeck.push(type);
     });
-    // ジョーカーを2枚追加
     newDeck.push('JK');
     newDeck.push('JK');
     return newDeck.sort(() => Math.random() - 0.5);
-  };
-
-  useEffect(() => {
-    if (deck.length === 0) {
-      setDeck(createFullDeck());
-    }
   }, []);
+
+  const initializeGame = useCallback((sg: number, ib: number) => {
+    setStartGold(sg);
+    setGold(sg);
+    setCurrentBetAmount(ib);
+    setDeck(createFullDeck());
+    setUsedCards([]);
+    setBet(0);
+    setGameState('IDLE');
+    setMessage(`${ib}G はらって ゲームを はじめよう！`);
+  }, [createFullDeck]);
 
   const pullCard = (currentDeck: string[]) => {
     let tempDeck = [...currentDeck];
     if (tempDeck.length === 0) {
-      // 山札が切れたらその場で新しく生成
       tempDeck = createFullDeck();
       setUsedCards([]); 
       setMessage("山札が なくなったので あたらしく つくった！");
@@ -49,12 +49,12 @@ export function usePoker(initialGold: number = 5000, initialBet: number = 100) {
   };
 
   const startNewHand = () => {
-    if (gold < currentBetAmount) return; // Use currentBetAmount
-    setGold(prev => prev - currentBetAmount); // Deduct currentBetAmount
+    if (gold < currentBetAmount) return;
+    setGold(prev => prev - currentBetAmount);
     const card = pullCard(deck);
     setCurrentCard(card);
     setUsedCards(prev => [...prev, card]);
-    setBet(currentBetAmount); // Set bet to currentBetAmount
+    setBet(currentBetAmount);
     setGameState('PLAYING');
     setMessage(`スライムは ${card} をだした！ 上か？下か？`);
   };
@@ -101,17 +101,17 @@ export function usePoker(initialGold: number = 5000, initialBet: number = 100) {
   };
 
   const fullReset = () => {
-    setGold(startGold); // Reset to startGold
+    setGold(startGold);
     setDeck(createFullDeck());
     setUsedCards([]);
     setBet(0);
     setGameState('IDLE');
-    setMessage(`${currentBetAmount}G はらって ゲームを はじめよう！`); // Update message
+    setMessage(`${currentBetAmount}G はらって ゲームを はじめよう！`);
   };
 
   return {
     gold, deck, usedCards, currentCard, nextCard, bet, message, gameState,
     startNewHand, handleGuess, collect, continueGame, fullReset, CARD_TYPES,
-    startGold, setStartGold, currentBetAmount, setCurrentBetAmount
+    initializeGame, currentBetAmount
   };
 }

@@ -38,3 +38,22 @@ model PokerAchiever {
   achievedAt  DateTime  @default(now())
   finalGold   Int
 }
+
+model Feedback {
+  id        Int      @id @default(autoincrement()) // 通し番号
+  name      String   @default("匿名")
+  category  String   // 全般、ポーカー等
+  content   String   @db.VarChar(100)
+  reply     String?  // あなたの返信用
+  createdAt DateTime @default(now())
+}
+
+model DevelopmentLog {
+  id          Int      @id @default(autoincrement())
+  date        DateTime
+  title       String   @db.VarChar(30)
+  progress    String   @db.VarChar(100)
+  issues      String   @db.VarChar(400)
+  attachment  String?
+  createdAt   DateTime @default(now())
+}

@@ -1,0 +1,215 @@
+[
+  {
+    "word": "commemorative",
+    "definitions": ["記念の", "記念物", "記念切手"],
+    "comments": [
+      { "source": "weblio", "example": "a commemorative stamp 記念切手" },
+      { "source": "斎藤和英大辞典", "example": "a commemorative meeting 記念会" }
+    ]
+  },
+  {
+    "word": "deity",
+    "definitions": ["神位", "神格", "神性"],
+    "comments": [
+      { "source": "Wikipedia日英京都関連文書対訳コーパス", "example": "Enshrined deity 祭神" }
+    ]
+  },
+  {
+    "word": "naughty",
+    "definitions": ["いたずら好きな", "わんぱくな", "言うことをきかない"],
+    "comments": [
+      { "source": "weblio", "example": "a naughty boy わんぱくな少年" },
+      { "source": "日本語WordNet", "example": "a naughty boy 悪童" }
+    ]
+  },
+  {
+    "word": "overprotective",
+    "definitions": ["過保護の"],
+    "comments": [
+      { "source": "日本語WordNet", "example": "overprotective parents 過保護な両親" }
+    ]
+  },
+  {
+    "word": "ailment",
+    "definitions": ["軽い病気", "慢性の病気", "不快"],
+    "comments": [
+      { "source": "研究社 新英和中辞典", "example": "a slight ailment 軽い病気" }
+    ]
+  },
+  {
+    "word": "diverse",
+    "definitions": ["種々の", "多様な"],
+    "comments": [
+      { "source": "英語ことわざ教訓辞典", "example": "Diverse men, diverse minds. 十人十色" }
+    ]
+  },
+  {
+    "word": "spirituality",
+    "definitions": ["霊性", "霊的なこと", "崇高"],
+    "comments": [
+      { "source": "Wikipedia日英京都関連文書対訳コーパス", "example": "Principles and spirituality 理念・精神性" }
+    ]
+  },
+  {
+    "word": "wade through",
+    "definitions": ["努力して進む", "やっと切り抜ける", "読み通す"],
+    "comments": [
+      { "source": "研究社 新英和中辞典", "example": "wade through the shallows 浅瀬を歩いて渡る" }
+    ]
+  },
+  {
+    "word": "all along",
+    "definitions": ["初めから", "ずっと"],
+    "comments": [
+      { "source": "weblio", "example": "He knew it all along 彼はそれを初めから知っていた" }
+    ]
+  },
+  {
+    "word": "compassion",
+    "definitions": ["同情心", "哀れみ"],
+    "comments": [
+      { "source": "斎藤和英大辞典", "example": "to have compassion for one's inferiors 下を憐む" }
+    ]
+  },
+  {
+    "word": "concussion",
+    "definitions": ["震動", "激動", "脳震盪"],
+    "comments": [
+      { "source": "研究社 新英和中辞典", "example": "concussion of the brain 脳震盪" }
+    ]
+  },
+  {
+    "word": "discretion",
+    "definitions": ["思慮分別", "慎重"],
+    "comments": [
+      { "source": "weblio", "example": "the age of discretion 分別年齢" },
+      { "source": "日本語WordNet", "example": "with discretion 慎重に" }
+    ]
+  },
+  {
+    "word": "foe",
+    "definitions": ["敵"],
+    "comments": [
+      { "source": "Eゲイト英和辞典", "example": "a political foe 政敵" }
+    ]
+  },
+  {
+    "word": "atone",
+    "definitions": ["償う", "罪滅ぼしをする", "埋め合わせをする"],
+    "comments": [
+      { "source": "EDR日英対訳辞書", "example": "to atone for 埋め合わせをする" }
+    ]
+  },
+  {
+    "word": "proficiency",
+    "definitions": ["熟達", "堪能"],
+    "comments": [
+      { "source": "Eゲイト英和辞典", "example": "an English proficiency test 英語実力テスト" }
+    ]
+  },
+  {
+    "word": "replenish",
+    "definitions": ["再び満たす", "補充する"],
+    "comments": [
+      { "source": "斎藤和英大辞典", "example": "to replenish the treasury 国庫を補充する" }
+    ]
+  },
+  {
+    "word": "versatile",
+    "definitions": ["多才の", "多芸な", "万能の"],
+    "comments": [
+      { "source": "日本語WordNet", "example": "a versatile man 多才な人" }
+    ]
+  },
+  {
+    "word": "accumulate",
+    "definitions": ["ためる", "蓄積する"],
+    "comments": [
+      { "source": "研究社 新英和中辞典", "example": "accumulate wealth 富を積む" }
+    ]
+  },
+  {
+    "word": "convey",
+    "definitions": ["運ぶ", "運搬する", "伝える"],
+    "comments": [
+      { "source": "EDR日英対訳辞書", "example": "to convey 運搬する" }
+    ]
+  },
+  {
+    "word": "deprive",
+    "definitions": ["奪う", "拒む"],
+    "comments": [
+      { "source": "weblio", "example": "deprive a person of his rights 権利を奪う" }
+    ]
+  },
+  {
+    "word": "elicit",
+    "definitions": ["引き出す", "誘い出す"],
+    "comments": [
+      { "source": "研究社 新英和中辞典", "example": "elicit the truth 真実を引き出す" }
+    ]
+  },
+  {
+    "word": "embody",
+    "definitions": ["具体化する", "具現する"],
+    "comments": [
+      { "source": "日本語WordNet", "example": "embody an idea アイデアを具体化する" }
+    ]
+  },
+  {
+    "word": "gratitude",
+    "definitions": ["感謝の気持ち"],
+    "comments": [
+      { "source": "weblio", "example": "express one's gratitude 感謝の意を表す" }
+    ]
+  },
+  {
+    "word": "intake",
+    "definitions": ["摂取", "取り入れ"],
+    "comments": [
+      { "source": "Eゲイト英和辞典", "example": "daily intake of calories 1日のカロリー摂取量" }
+    ]
+  },
+  {
+    "word": "prevalent",
+    "definitions": ["普及している", "流行している"],
+    "comments": [
+      { "source": "日本語WordNet", "example": "prevalent belief 一般に信じられていること" }
+    ]
+  },
+  {
+    "word": "prosper",
+    "definitions": ["繁栄する", "成功する"],
+    "comments": [
+      { "source": "斎藤和英大辞典", "example": "May you prosper! 前途の多幸を祈る" }
+    ]
+  },
+  {
+    "word": "retrieve",
+    "definitions": ["取り戻す", "回収する", "再興する"],
+    "comments": [
+      { "source": "斎藤和英大辞典", "example": "to retrieve one's fortunes 家を再興する" }
+    ]
+  },
+  {
+    "word": "filthy",
+    "definitions": ["不潔な", "汚い"],
+    "comments": [
+      { "source": "weblio", "example": "The kitchen is absolutely filthy. 台所はよごれほうだいだ。" }
+    ]
+  },
+  {
+    "word": "commend",
+    "definitions": ["賞賛する", "推薦する"],
+    "comments": [
+      { "source": "Weblio英語基本例文集", "example": "To commend achievement 業績を賞賛すること" }
+    ]
+  },
+  {
+    "word": "reluctant",
+    "definitions": ["気乗りしない", "渋る"],
+    "comments": [
+      { "source": "EDR日英対訳辞書", "example": "to be reluctant to buy 買い渋る" }
+    ]
+  }
+]

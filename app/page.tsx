@@ -58,6 +58,17 @@ export default function Home() {
             ゲームを開始
           </Link>
         </div>
+
+        {/* フィードバック掲示板 */}
+        <div className="bg-white rounded-lg shadow-xl p-8 flex flex-col items-center text-center">
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">フィードバック掲示板</h2>
+          <p className="text-gray-600 mb-6">
+            アプリケーションに関するご意見・ご要望をお寄せください。開発の参考にさせていただきます。
+          </p>
+          <Link href="/feedback" className="mt-auto px-8 py-3 bg-yellow-600 text-white text-lg font-semibold rounded-lg hover:bg-yellow-700 transition duration-300">
+            掲示板を開く
+          </Link>
+        </div>
       </div>
     </main>
   );

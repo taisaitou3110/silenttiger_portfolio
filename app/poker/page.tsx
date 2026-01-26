@@ -1,25 +1,24 @@
 "use client";
-import React, { useEffect, useState } from 'react'; // Import useEffect and useState
+import React, { useEffect, useState } from 'react';
 import { usePoker } from './usePoker';
-import { addAchiever, getAchievers } from './actions'; // Import the new actions
+import { addAchiever, getAchievers } from './actions';
 
-// Define a type for Achiever for better type safety
 interface Achiever {
   id: string;
   name: string;
   finalGold: number;
-  achievedAt: string; // Assuming it's returned as a string
+  achievedAt: string;
 }
 
 export default function PokerPage() {
-  const [selectedStartGold, setSelectedStartGold] = useState(5000); // Default to 5000G
-  const [selectedInitialBet, setSelectedInitialBet] = useState(100); // Default to 100G
+  const [selectedStartGold, setSelectedStartGold] = useState(5000);
+  const [selectedInitialBet, setSelectedInitialBet] = useState(100);
 
   const {
     gold, deck, usedCards, currentCard, nextCard, bet, message, gameState,
     startNewHand, handleGuess, collect, continueGame, fullReset, CARD_TYPES,
-    startGold, setStartGold, currentBetAmount, setCurrentBetAmount // Destructure setters
-  } = usePoker(selectedStartGold, selectedInitialBet); // Pass selected values
+    initializeGame, currentBetAmount
+  } = usePoker();
 
   const [achievers, setAchievers] = useState<Achiever[]>([]);
   const [achieverNameInput, setAchieverNameInput] = useState('');
@@ -28,45 +27,86 @@ export default function PokerPage() {
   useEffect(() => {
     const fetchAchievers = async () => {
       const result = await getAchievers();
-      if (result.success && result.data) { // Ensure data exists
+      if (result.success && result.data) {
         setAchievers(result.data);
       } else {
         console.error("Failed to fetch achievers:", result.error);
       }
     };
     fetchAchievers();
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
   const handleSubmitAchiever = async () => {
     setSubmitMessage('Submitting...');
-    // Basic client-side validation before sending to server action
     if (!/^[A-Z]{1,4}$/.test(achieverNameInput)) {
       setSubmitMessage('Error: Name must be 1 to 4 uppercase alphabetic characters.');
       return;
     }
-
-    const result = await addAchiever(achieverNameInput.toUpperCase(), gold); // Pass 'gold' here
-    if (result.success && result.data) { // Ensure data exists
+    const result = await addAchiever(achieverNameInput.toUpperCase(), gold);
+    if (result.success && result.data) {
       setSubmitMessage('Successfully registered!');
-      // Update local state and sort by achievedAt for display
       setAchievers(prev => 
-        [...prev, result.data].sort((a, b) => 
-          new Date(a.achievedAt).getTime() - new Date(b.achievedAt).getTime()
-        )
+        [...prev, result.data].sort((a, b) => b.finalGold - a.finalGold)
       );
-      setAchieverNameInput(''); // Clear input
+      setAchieverNameInput('');
     } else {
       setSubmitMessage(`Error: ${result.error}`);
     }
   };
 
+  // Welcome Screen
+  if (gameState === 'UNINITIALIZED') {
+    return (
+      <div className="min-h-screen bg-black text-white p-4 font-mono select-none flex flex-col justify-center items-center">
+        <div className="w-full max-w-lg text-center">
+          <div className="border-4 border-white p-6 bg-blue-900 shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg mb-8">
+            <h1 className="text-2xl font-bold mb-4">ハイ＆ロー ポーカー</h1>
+            <p className="text-lg leading-relaxed">手持ちのゴールドを増やして10000Gを目指せ！</p>
+          </div>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <h4 className="text-yellow-400 font-bold text-center">開始ゴールドを選択:</h4>
+              <div className="flex justify-center gap-4">
+                {[5000, 2000, 500].map(amount => (
+                  <MenuButton 
+                    key={amount} 
+                    onClick={() => setSelectedStartGold(amount)}
+                    highlight={selectedStartGold === amount}
+                  >
+                    {amount}G
+                  </MenuButton>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-yellow-400 font-bold text-center">初回ベット額を選択:</h4>
+              <div className="flex justify-center gap-4">
+                {[100, 500, 1000].map(amount => (
+                  <MenuButton 
+                    key={amount} 
+                    onClick={() => setSelectedInitialBet(amount)}
+                    highlight={selectedInitialBet === amount}
+                  >
+                    {amount}G
+                  </MenuButton>
+                ))}
+              </div>
+            </div>
+            <MenuButton onClick={() => initializeGame(selectedStartGold, selectedInitialBet)} highlight>
+              ゲームをはじめよう！
+            </MenuButton>
+            <MenuButton onClick={() => window.location.href = '/'}>トップにもどる</MenuButton>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main Game Screen
   return (
     <div className="min-h-screen bg-black text-white p-4 font-mono select-none flex flex-col lg:flex-row gap-6 justify-center items-start max-w-7xl mx-auto">
-      
-      {/* メインゲームエリア (幅 約2/3) */}
       <div className="w-full lg:w-2/3">
-        {/* ステータスウィンドウ */}
-        <div className="border-4 border-white p-4 mb-4 bg-blue-900 shadow-[4px_4px_0_0_rgba(255,255,255,1)]">
+        <div className="border-4 border-white p-4 mb-4 bg-blue-900 shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg">
           <div className="flex justify-between items-center">
             <span className="text-2xl font-bold text-yellow-400 font-serif tracking-tighter">GOLD: {gold}G</span>
             <span className="text-xs opacity-50 font-bold">山札残り: {deck.length} / 54枚</span>
@@ -78,13 +118,11 @@ export default function PokerPage() {
           )}
         </div>
 
-        {/* メッセージウィンドウ */}
-        <div className="border-4 border-white p-6 bg-blue-900 min-h-[120px] flex items-center mb-8 relative shadow-[4px_4px_0_0_rgba(255,255,255,1)]">
+        <div className="border-4 border-white p-6 bg-blue-900 min-h-[120px] flex items-center mb-8 relative shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg">
           <p className="text-xl leading-relaxed font-bold">➤ {message}</p>
           <div className="absolute bottom-2 right-4 animate-bounce text-xs opacity-50">▼</div>
         </div>
 
-        {/* カード表示エリア */}
         <div className="flex justify-center gap-10 mb-12">
           <CardDisplay value={currentCard} label="いま" />
           <CardDisplay 
@@ -93,60 +131,18 @@ export default function PokerPage() {
           />
         </div>
 
-        {/* 操作コマンド */}
         <div className="space-y-3 max-w-sm mx-auto">
-          {/* ゲーム開始前、または負けた後 */}
-          {(gameState === 'IDLE' || gameState === 'LOSE') && gold >= selectedInitialBet && ( // Use selectedInitialBet here
+          {(gameState === 'IDLE' || gameState === 'LOSE') && gold >= currentBetAmount && (
             <>
-              {/* Start Gold Selection */}
-              <div className="space-y-2">
-                <h4 className="text-yellow-400 font-bold text-center">開始ゴールドを選択:</h4>
-                <div className="flex justify-center gap-4">
-                  {[5000, 2000, 500].map(amount => (
-                    <MenuButton 
-                      key={amount} 
-                      onClick={() => {
-                        setSelectedStartGold(amount);
-                        setStartGold(amount); // Update usePoker's internal state
-                      }}
-                      highlight={selectedStartGold === amount}
-                    >
-                      {amount}G
-                    </MenuButton>
-                  ))}
-                </div>
-              </div>
-
-              {/* Initial Bet Selection */}
-              <div className="space-y-2 mt-4">
-                <h4 className="text-yellow-400 font-bold text-center">初回ベット額を選択:</h4>
-                <div className="flex justify-center gap-4">
-                  {[100, 500, 1000].map(amount => (
-                    <MenuButton 
-                      key={amount} 
-                      onClick={() => {
-                        setSelectedInitialBet(amount);
-                        setCurrentBetAmount(amount); // Update usePoker's internal state
-                      }}
-                      highlight={selectedInitialBet === amount}
-                    >
-                      {amount}G
-                    </MenuButton>
-                  ))}
-                </div>
-              </div>
-
-              <MenuButton onClick={startNewHand}>ぼうけんに でる ({currentBetAmount}G)</MenuButton> {/* Use currentBetAmount */}
+              <MenuButton onClick={startNewHand}>ぼうけんに でる ({currentBetAmount}G)</MenuButton>
               <MenuButton onClick={() => window.location.href = '/'}>ゲームを やめる</MenuButton>
             </>
           )}
 
-          {/* 破産時 */}
-          {gold < selectedInitialBet && gameState !== 'PLAYING' && gameState !== 'RESULT' && ( // Use selectedInitialBet here
+          {gold < currentBetAmount && gameState !== 'PLAYING' && gameState !== 'RESULT' && (
              <MenuButton onClick={fullReset}>復活の呪文を となえる (リセット)</MenuButton>
           )}
 
-          {/* HIGH/LOW 選択中 */}
           {gameState === 'PLAYING' && (
             <div className="grid grid-cols-2 gap-4">
               <MenuButton onClick={() => handleGuess('HIGH')}>HIGH (上)</MenuButton>
@@ -154,7 +150,6 @@ export default function PokerPage() {
             </div>
           )}
 
-          {/* 当たり判定後 */}
           {gameState === 'RESULT' && (
             <div className="flex flex-col gap-3">
               <MenuButton onClick={continueGame} highlight>ダブルアップに いどむ</MenuButton>
@@ -162,16 +157,15 @@ export default function PokerPage() {
             </div>
           )}
 
-          {/* 10,000G クリア時 */}
           {gameState === 'CLEAR' && (
             <div className="flex flex-col gap-3">
-              <div className="border-4 border-yellow-400 p-4 bg-yellow-900 text-yellow-50 text-center font-bold text-xl mb-4 shadow-[4px_4px_0_0_rgba(252,211,77,1)]">
+              <div className="border-4 border-yellow-400 p-4 bg-yellow-900 text-yellow-50 text-center font-bold text-xl mb-4 shadow-[4px_4px_0_0_rgba(252,211,77,1)] rounded-lg">
                 10000G 達成おめでとう！
               </div>
               <input
                 type="text"
                 placeholder="名前 (4文字以内, 大文字英字)"
-                className="w-full p-3 bg-gray-700 text-white border-2 border-gray-600 focus:border-yellow-400 outline-none uppercase text-center"
+                className="w-full p-3 bg-gray-700 text-white border-2 border-gray-600 focus:border-yellow-400 outline-none uppercase text-center rounded-lg"
                 maxLength={4}
                 value={achieverNameInput}
                 onChange={(e) => setAchieverNameInput(e.target.value.toUpperCase())}
@@ -186,10 +180,8 @@ export default function PokerPage() {
         </div>
       </div>
 
-      {/* 右側：履歴エリア + ランキングエリア (幅 約1/3) */}
       <div className="w-full lg:w-1/3 flex flex-col gap-6">
-        {/* 履歴エリア */}
-        <div className="border-4 border-white p-4 bg-blue-900 shadow-[4px_4px_0_0_rgba(255,255,255,1)]">
+        <div className="border-4 border-white p-4 bg-blue-900 shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg">
           <h3 className="text-yellow-400 text-lg mb-4 border-b-2 border-white pb-2 font-bold text-center italic tracking-widest">
             でたカード記録
           </h3>
@@ -198,20 +190,14 @@ export default function PokerPage() {
               const count = usedCards.filter(c => c === type).length;
               const max = type === 'JK' ? 2 : 4;
               const hasAppeared = count > 0;
-              
               return (
                 <div key={type} className={`flex justify-between items-center px-2 py-1 border-b border-white/10 transition-all duration-300 ${hasAppeared ? 'text-white' : 'opacity-20 text-gray-500'}`}>
                   <span className="font-bold w-8">{type}</span>
-                  {/* 履歴のドット表示 */}
                   <div className="flex gap-1 flex-1 justify-center">
                     {[...Array(max)].map((_, i) => (
                       <div 
                         key={i} 
-                        className={`w-3 h-3 border transition-colors ${
-                          i < count 
-                            ? 'bg-yellow-400 border-yellow-400 shadow-[0_0_5px_rgba(255,255,0,0.5)]' 
-                            : 'border-white/30'
-                        }`} 
+                        className={`w-3 h-3 border transition-colors ${i < count ? 'bg-yellow-400 border-yellow-400 shadow-[0_0_5px_rgba(255,255,0,0.5)]' : 'border-white/30'}`} 
                       />
                     ))}
                   </div>
@@ -223,14 +209,13 @@ export default function PokerPage() {
             })}
           </div>
           {gold <= 0 && (gameState === 'IDLE' || gameState === 'LOSE') && (
-            <div className="mt-6 p-2 border-2 border-red-500 text-red-500 text-center animate-pulse font-bold text-xs">
+            <div className="mt-6 p-2 border-2 border-red-500 text-red-500 text-center animate-pulse font-bold text-xs rounded-lg">
               破産しました...
             </div>
           )}
         </div>
 
-        {/* ランキングエリア */}
-        <div className="border-4 border-white p-4 bg-blue-900 shadow-[4px_4px_0_0_rgba(255,255,255,1)] self-stretch">
+        <div className="border-4 border-white p-4 bg-blue-900 shadow-[4px_4px_0_0_rgba(255,255,255,1)] self-stretch rounded-lg">
           <h3 className="text-yellow-400 text-lg mb-4 border-b-2 border-white pb-2 font-bold text-center italic tracking-widest">
             10000G 達成者ランキング
           </h3>
@@ -243,14 +228,9 @@ export default function PokerPage() {
                   <span className="font-bold text-lg">{index + 1}. {achiever.name}</span>
                   <span className="text-yellow-400 text-base">{achiever.finalGold}G</span>
                   <span className="text-sm text-gray-400 ml-2">
-                    {/* Display date with time and minutes */}
-                    {new Date(achiever.achievedAt).toLocaleString('ja-JP', { // Using 'ja-JP' for locale, can be changed
-                        year: 'numeric',
-                        month: 'numeric',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false // 24-hour format
+                    {new Date(achiever.achievedAt).toLocaleString('ja-JP', {
+                        year: 'numeric', month: 'numeric', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit', hour12: false
                     })}
                   </span>
                 </li>
@@ -262,8 +242,6 @@ export default function PokerPage() {
     </div>
   );
 }
-
-// --- サポートコンポーネント ---
 
 function CardDisplay({ value, label }: { value: string, label: string }) {
   const isBack = value === '?' || value === '';
@@ -282,7 +260,7 @@ function MenuButton({ children, onClick, highlight = false }: { children: React.
   return (
     <button 
       onClick={onClick} 
-      className={`w-full text-left px-6 py-4 border-2 border-transparent hover:border-white group flex items-center transition-all duration-75 bg-blue-900/40 hover:bg-blue-800 ${highlight ? 'text-yellow-400' : 'text-white'}`}
+      className={`w-full text-left px-6 py-4 border-2 border-transparent hover:border-white group flex items-center transition-all duration-75 bg-blue-900/40 hover:bg-blue-800 rounded-lg ${highlight ? 'text-yellow-400' : 'text-white'}`}
     >
       <span className="opacity-0 group-hover:opacity-100 mr-3 font-bold text-2xl transition-transform transform translate-x-[-4px] group-hover:translate-x-0">➤</span>
       <span className="text-xl font-bold tracking-tight">{children}</span>

@@ -78,62 +78,98 @@ await prisma.word.create({
   return (
     <main className="p-8 max_w-4xl mx-auto">
       <Link href="/" className="text-blue-600 hover:underline">← 戻る</Link>
-      <h1 className="text-3xl font-bold mb-8">Wikipedia風単語帳 (Local DB版)</h1>
+      <h1 className="text-3xl font-bold mb-2">Wikipedia風単語帳</h1>
+      <p className="mb-8 text-gray-600">登録単語数: {words.length}件</p>
 
-      {/* 入力フォーム */}
-      <form action={addWord} className="mb-12 p-6 bg-white rounded-lg shadow-md border">
-        <div className="flex flex-col gap-4">
-          <input
-            name="term"
-            placeholder="単語を入力 (例: ベクトル検索)"
-            className="p-2 border rounded"
-            required
-          />
-          <textarea
-            name="definition"
-            placeholder="定義を入力"
-            className="p-2 border rounded"
-            rows={3}
-            required
-          />
-                <button className="bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">
-                  DBに登録する
-                </button>
-              </div>
-            </form>
-          
-            {/* JSONファイルから単語をインポートするフォーム */}
-            <form action={importWordsFromJson} className="mb-12 p-6 bg-white rounded-lg shadow-md border">
-              <div className="flex flex-col gap-4">
-                <input
-                  type="file"
-                  name="jsonFile"
-                  accept=".json"
-                  className="p-2 border rounded"
-                  required
-                />
-                <button className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">
-                  JSONからインポート
-                </button>
-              </div>
-            </form>
-          
-            {/* 単語リスト */}
-            <div className="grid gap-6">        {words.map((word) => (
-          <div key={word.id} className="p-6 bg-white rounded-lg shadow border relative group">
-            <h3 className="text-xl font-bold border-b mb-2">{word.term}</h3>
-            <p className="text-gray-700 whitespace-pre-wrap">{word.definition}</p>
-            
-            <form action={deleteWord} className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition">
-              <input type="hidden" name="id" value={word.id} />
-              <button className="text-red-500 hover:text-red-700 text-sm">削除</button>
-            </form>
+      {/* 入力フォーム群 */}
+      <div className="grid md:grid-cols-2 gap-12 mb-12">
+        {/* 手動入力フォーム */}
+        <form action={addWord} className="p-6 bg-white rounded-lg shadow-md border h-full flex flex-col">
+          <h2 className="text-xl font-bold mb-4">手動で単語を追加</h2>
+          <div className="flex flex-col gap-4 flex-grow">
+            <input
+              name="term"
+              placeholder="単語を入力 (例: ベクトル検索)"
+              className="p-2 border rounded"
+              required
+            />
+            <textarea
+              name="definition"
+              placeholder="定義を入力"
+              className="p-2 border rounded flex-grow"
+              rows={3}
+              required
+            />
+            <button className="bg-green-600 text-white py-2 rounded hover:bg-green-700 transition mt-auto">
+              DBに登録する
+            </button>
           </div>
-        ))}
-        {words.length === 0 && (
-          <p className="text-center text-gray-500">登録されている単語はありません。</p>
-        )}
+        </form>
+      
+        {/* JSONファイルから単語をインポートするフォーム */}
+        <form action={importWordsFromJson} className="p-6 bg-white rounded-lg shadow-md border h-full flex flex-col">
+          <h2 className="text-xl font-bold mb-4">JSONからインポート</h2>
+          <div className="flex flex-col gap-4 flex-grow">
+            <input
+              type="file"
+              name="jsonFile"
+              accept=".json"
+              className="p-2 border rounded"
+              required
+            />
+            <div className="flex-grow"></div>
+            <button className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition mt-auto">
+              JSONからインポート
+            </button>
+          </div>
+        </form>
       </div>
-    </main>
+
+    {/* クイズ開始ボタン */}
+    <div className="text-center my-8">
+      <Link href="/wordbook/quiz" className="bg-purple-600 text-white py-3 px-8 rounded-lg text-xl hover:bg-purple-700 transition">
+        クイズに挑戦！
+      </Link>
+    </div>
+
+            {/* 単語リスト */}
+            <div className="grid grid-cols-1 gap-2">
+              {/* ヘッダー */}
+              <div className="grid grid-cols-3 gap-4 p-2 font-bold text-gray-500 border-b-2">
+                <h3>単語</h3>
+                <h3>主な意味</h3>
+                <h3>例文</h3>
+              </div>
+              {words.map((word) => {
+                const mainDefinition = word.description.split(',')[0];
+                let exampleSentence = '';
+                if (word.comments) {
+                  try {
+                    const comments = JSON.parse(word.comments);
+                    if (Array.isArray(comments) && comments.length > 0) {
+                      exampleSentence = comments[0].example;
+                    }
+                  } catch (e) {
+                    // コメントがJSON形式でない場合は何もしない
+                  }
+                }
+      
+                return (
+                  <div key={word.id} className="grid grid-cols-3 gap-4 items-center p-3 hover:bg-gray-50 rounded-lg relative group">
+                    <h3 className="text-md font-semibold truncate">{word.term}</h3>
+                    <p className="text-gray-700 truncate">{mainDefinition}</p>
+                    <p className="text-gray-600 truncate text-sm">{exampleSentence}</p>
+                    
+                    <form action={deleteWord} className="absolute top-1/2 -translate-y-1/2 right-2 opacity-0 group-hover:opacity-100 transition">
+                      <input type="hidden" name="id" value={word.id} />
+                      <button className="text-red-500 hover:text-red-700 text-xs p-1">削除</button>
+                    </form>
+                  </div>
+                );
+              })}
+              {words.length === 0 && (
+                <p className="text-center text-gray-500 mt-4">登録されている単語はありません。</p>
+              )}
+            </div>    </main>
   );
 }

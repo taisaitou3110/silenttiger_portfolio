@@ -57,6 +57,6 @@ export async function getCalorieEstimation(
     }
   } catch (error) {
     console.error('Error calling Gemini API:', error);
-    throw new Error('Failed to get calorie estimation from AI.');
+    throw new Error(`Failed to get calorie estimation from AI: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

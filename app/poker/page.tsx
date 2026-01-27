@@ -10,7 +10,11 @@ interface Achiever {
   achievedAt: string;
 }
 
-export default function PokerPage() {
+interface PokerPageProps {
+  version: string; // Add version prop
+}
+
+export default function PokerPage({ version }: PokerPageProps) {
   const [selectedStartGold, setSelectedStartGold] = useState(5000);
   const [selectedInitialBet, setSelectedInitialBet] = useState(100);
 
@@ -60,7 +64,7 @@ export default function PokerPage() {
       <div className="min-h-screen bg-black text-white p-4 font-mono select-none flex flex-col justify-center items-center">
         <div className="w-full max-w-lg text-center">
           <div className="border-4 border-white p-6 bg-blue-900 shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg mb-8">
-            <h1 className="text-2xl font-bold mb-4">ハイ＆ロー ポーカー</h1>
+            <h1 className="text-2xl font-bold mb-4">ハイ＆ロー ポーカー <span className="text-sm font-normal text-gray-400 ml-2">v{version}</span></h1>
             <p className="text-lg leading-relaxed">手持ちのゴールドを増やして10000Gを目指せ！</p>
           </div>
           <div className="space-y-6">
@@ -107,6 +111,7 @@ export default function PokerPage() {
     <div className="min-h-screen bg-black text-white p-4 font-mono select-none flex flex-col lg:flex-row gap-6 justify-center items-start max-w-7xl mx-auto">
       <div className="w-full lg:w-2/3">
         <div className="border-4 border-white p-4 mb-4 bg-blue-900 shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg">
+          <h1 className="text-2xl font-bold text-yellow-400 font-serif tracking-tighter mb-2">ハイ＆ロー ポーカー <span className="text-sm font-normal text-gray-400 ml-2">v{version}</span></h1>
           <div className="flex justify-between items-center">
             <span className="text-2xl font-bold text-yellow-400 font-serif tracking-tighter">GOLD: {gold}G</span>
             <span className="text-xs opacity-50 font-bold">山札残り: {deck.length} / 54枚</span>

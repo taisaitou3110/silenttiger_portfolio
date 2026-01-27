@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
+import versionData from '@/app/version.json'; // Import version data
 
 export default async function FeedbackPage() {
   const feedbacks = await prisma.feedback.findMany({
@@ -43,7 +44,7 @@ export default async function FeedbackPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-8">
-      <h1 className="text-2xl font-bold">フィードバック掲示板</h1>
+      <h1 className="text-2xl font-bold">フィードバック掲示板 <span className="text-sm font-normal text-gray-500 ml-2">v{versionData.apps.feedback}</span></h1>
       <Link href="/" className="text-blue-500 hover:underline">トップページへ戻る</Link>
 
       {/* 投稿フォーム */}

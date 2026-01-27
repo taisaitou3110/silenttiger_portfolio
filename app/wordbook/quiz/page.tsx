@@ -12,7 +12,11 @@ interface QuizWord {
   incorrectTerms: string[];
 }
 
-export default function QuizPage() {
+interface QuizPageProps {
+  version: string; // Add version prop
+}
+
+export default function QuizPage({ version }: QuizPageProps) {
   const [quizWords, setQuizWords] = useState<QuizWord[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -100,7 +104,7 @@ export default function QuizPage() {
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-white p-8 rounded-lg shadow-xl relative">
         <Link href="/wordbook" className="absolute top-4 left-4 text-blue-600 hover:underline">← 単語帳へ戻る</Link>
-        <h1 className="text-3xl font-bold text-center mb-8">単語クイズ</h1>
+        <h1 className="text-3xl font-bold text-center mb-8">単語クイズ <span className="text-sm font-normal text-gray-500 ml-2">v{version}</span></h1>
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">

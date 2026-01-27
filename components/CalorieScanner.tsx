@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
+import { getCalorieEstimation } from '@/app/calorie/scan/actions';
+import { saveMealLog } from '@/app/calorie/actions'; // Renamed to saveCalorieLog previously
 
 export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate' | 'train' }) {
   const [image, setImage] = useState<File | null>(null);
@@ -8,13 +10,14 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
   const [manualCalories, setManualCalories] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [estimation, setEstimation] = useState<any>(null);
+  const [estimation, setEstimation] = useState<any>(null); // To store Gemini's estimation
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImage(file);
       setImagePreview(URL.createObjectURL(file));
+      setEstimation(null); // Clear previous estimation
     }
   };
 
@@ -22,21 +25,58 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
     e.preventDefault();
     setLoading(true);
     setError(null);
-    // ここにGemini APIを呼び出すロジックが今後入ります
-    console.log("Submit:", { image, manualCalories });
-    setTimeout(() => {
+    setEstimation(null);
+
+    if (!image) {
+      setError('画像をアップロードしてください。');
       setLoading(false);
-      setEstimation({
-        foodName: "テストの料理",
-        calories: 550,
-        breakdown: "メイン: 400, 副菜: 150",
-        advice: "ご飯を一口残せば -50kcal 削れます！"
-      });
-    }, 2000);
+      return;
+    }
+
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(image);
+      reader.onloadend = async () => {
+        const base64EncodedImage = reader.result as string;
+        const mimeType = image.type;
+
+        // Extract base64 part only
+        const base64Data = base64EncodedImage.split(',')[1];
+
+        const geminiEstimation = await getCalorieEstimation(base64Data, mimeType);
+        setEstimation(geminiEstimation);
+      };
+    } catch (err: any) {
+      console.error("Error during estimation:", err);
+      setError(err.message || 'カロリー推定に失敗しました。');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRegisterMeal = () => {
-    alert("食事を保存しました！");
+  const handleRegisterMeal = async () => {
+    if (!estimation) {
+      setError('推定結果がありません。');
+      return;
+    }
+
+    try {
+      await saveMealLog({
+        foodName: estimation.foodName,
+        calories: estimation.calories,
+        advice: estimation.advice,
+        imagePath: imagePreview || undefined, // Save image preview URL
+        inputSource: 'photo',
+      });
+      alert('食事を保存しました！');
+      // Optionally, clear form or redirect
+      setImage(null);
+      setImagePreview(null);
+      setEstimation(null);
+    } catch (err: any) {
+      console.error("Error saving meal:", err);
+      setError(err.error || '食事の保存に失敗しました。');
+    }
   };
 
   // --- ここからが return 部分 ---

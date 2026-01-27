@@ -60,7 +60,12 @@ const presets: { label: string; data: AppState }[] = [
 ];
 
 // --- メインコンポーネント ---
-const FinancialDashboard = () => {
+// --- メインコンポーネント ---
+interface FinancialDashboardProps {
+  version: string;
+}
+
+const FinancialDashboard = ({ version }: FinancialDashboardProps) => {
   const { state, dispatch } = useContext(FinancialContext);
 
   // --- 計算ロジック ---
@@ -88,7 +93,9 @@ const FinancialDashboard = () => {
 
   return (
     <div className="w-full max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md mb-8">
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">損益計算（P/L）ダッシュボード</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">
+        損益計算（P/L）ダッシュボード <span className="text-sm font-normal text-gray-500 ml-2">v{version}</span>
+      </h2>
       <div className="flex flex-wrap gap-2 mb-6">
         <button onClick={() => dispatch({ type: 'SET_ENTIRE_STATE', payload: createRandomState() })} className="bg-indigo-500 text-white py-1 px-3 rounded-md hover:bg-indigo-600 transition text-xs">ランダム</button>
         {presets.map(p => <button key={p.label} onClick={() => dispatch({ type: 'SET_ENTIRE_STATE', payload: p.data })} className="bg-gray-200 text-gray-700 py-1 px-3 rounded-md hover:bg-gray-300 transition text-xs">{p.label}</button>)}

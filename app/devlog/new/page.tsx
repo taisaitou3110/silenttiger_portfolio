@@ -1,0 +1,145 @@
+"use client";
+
+import { useState, useEffect, FormEvent } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { createDevelopmentLog } from "../actions"; // 親ディレクトリのactionsをインポート
+
+const ADMIN_PASSWORD = "1234";
+
+interface NewDevlogPageProps {
+  // layout.tsx から version prop を受け取る
+  version: string;
+}
+
+export default function NewDevlogPage({ version }: NewDevlogPageProps) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [currentDate, setCurrentDate] = useState("");
+
+  useEffect(() => {
+    // Set default date to today
+    const today = new Date();
+    setCurrentDate(format(today, "yyyy-MM-dd"));
+  }, []);
+
+  const handlePasswordSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (password === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+    } else {
+      alert("パスワードが違います");
+      setPassword("");
+    }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+    
+    try {
+      await createDevelopmentLog(formData);
+      alert("日記を記録しました！");
+      form.reset(); // フォームをリセット
+      // 記録後、一覧ページに戻る
+      window.location.href = "/devlog";
+    } catch (error) {
+      console.error(error);
+      alert("日記の記録に失敗しました。");
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-4">
+        <h1 className="text-3xl font-bold mb-6">開発日記 投稿 <span className="text-sm font-normal text-gray-500 ml-2">v{version}</span></h1>
+        <form onSubmit={handlePasswordSubmit} className="bg-white p-6 rounded shadow-md space-y-4">
+          <p>日記を投稿するにはパスワードが必要です。</p>
+          <input
+            type="password"
+            placeholder="4桁のパスワード"
+            className="border p-2 rounded w-full"
+            maxLength={4}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded w-full">
+            認証
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto p-4 space-y-8">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-3xl font-bold">開発日記 投稿 <span className="text-sm font-normal text-gray-500 ml-2">v{version}</span></h1>
+        <Link href="/devlog" className="text-blue-500 hover:underline">← 日記一覧へ戻る</Link>
+      </div>
+
+      {/* 日記投稿フォーム */}
+      <form onSubmit={handleSubmit} className="bg-gray-100 p-6 rounded shadow-md space-y-4">
+        <h2 className="text-2xl font-semibold mb-4">新しい日記を投稿</h2>
+        <div>
+          <label htmlFor="date" className="block text-sm font-medium text-gray-700">日付</label>
+          <input
+            type="date"
+            id="date"
+            name="date"
+            className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+            defaultValue={currentDate}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700">タイトル (30文字以内)</label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            maxLength={30}
+            className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="progress" className="block text-sm font-medium text-gray-700">進捗 (100文字以内)</label>
+          <textarea
+            id="progress"
+            name="progress"
+            maxLength={100}
+            rows={3}
+            className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+            required
+          ></textarea>
+        </div>
+        <div>
+          <label htmlFor="issues" className="block text-sm font-medium text-gray-700">所管・課題 (400文字以内)</label>
+          <textarea
+            id="issues"
+            name="issues"
+            maxLength={400}
+            rows={5}
+            className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+            required
+          ></textarea>
+        </div>
+        <div>
+          <label htmlFor="attachment" className="block text-sm font-medium text-gray-700">添付ファイル (1つ)</label>
+          <input
+            type="file"
+            id="attachment"
+            name="attachment"
+            className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
+        </div>
+        <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded w-full">
+          日記を記録
+        </button>
+      </form>
+    </div>
+  );
+}

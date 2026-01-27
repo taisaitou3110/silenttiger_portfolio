@@ -17,13 +17,35 @@ model Word {
   updatedAt   DateTime @updatedAt
 }
 
-model MealLog {
+model CalorieLog {
   id          String   @id @default(cuid())
   date        DateTime @default(now())
   foodName    String
   calories    Int
   imagePath   String?  // 画像を保存する場合
   advice      String?  // Geminiからの削り出し助言
+  inputSource String?  // 入力ソース (例: "voice", "photo", "text")
+  userId      String?  // ユーザーID (UserSettingsと関連付ける場合)
+  user        UserSettings? @relation(fields: [userId], references: [id])
+}
+
+model UserSettings {
+  id               String       @id @default(cuid())
+  targetCalories   Int          @default(2000)
+  weight           Float?
+  activityLevel    String?      // 例: "sedentary", "light", "moderate", "active"
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  calorieLogs      CalorieLog[]
+  customFoods      CustomFood[]
+}
+
+model CustomFood {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  calories  Int
+  userId    String?  // ユーザーID (UserSettingsと関連付ける場合)
+  user      UserSettings? @relation(fields: [userId], references: [id])
 }
 
 model FoodPreset {

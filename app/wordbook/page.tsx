@@ -1,6 +1,7 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import Link from 'next/link';
+import versionData from '@/app/version.json'; // Import version data
 
 export const dynamic = "force-dynamic"; // これを追加！
 
@@ -78,7 +79,7 @@ await prisma.word.create({
   return (
     <main className="p-8 max_w-4xl mx-auto">
       <Link href="/" className="text-blue-600 hover:underline">← 戻る</Link>
-      <h1 className="text-3xl font-bold mb-2">Wikipedia風単語帳</h1>
+      <h1 className="text-3xl font-bold mb-2">Wikipedia風単語帳 <span className="text-sm font-normal text-gray-500 ml-2">v{versionData.apps.wordbook}</span></h1>
       <p className="mb-8 text-gray-600">登録単語数: {words.length}件</p>
 
       {/* 入力フォーム群 */}

@@ -1,16 +1,19 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation'; // Add this import
 import { getCalorieEstimation } from '@/app/calorie/scan/actions';
 import { saveMealLog } from '@/app/calorie/actions'; // Renamed to saveCalorieLog previously
 
 export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate' | 'train' }) {
+  const router = useRouter(); // Initialize useRouter
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [manualCalories, setManualCalories] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [estimation, setEstimation] = useState<any>(null); // To store Gemini's estimation
+  const [isRegistering, setIsRegistering] = useState(false);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -34,18 +37,18 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
     }
 
     try {
-      const reader = new FileReader();
-      reader.readAsDataURL(image);
-      reader.onloadend = async () => {
-        const base64EncodedImage = reader.result as string;
-        const mimeType = image.type;
+      const base64EncodedImage = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(image);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+      });
 
-        // Extract base64 part only
-        const base64Data = base64EncodedImage.split(',')[1];
+      const mimeType = image.type;
+      const base64Data = base64EncodedImage.split(',')[1];
 
-        const geminiEstimation = await getCalorieEstimation(base64Data, mimeType);
-        setEstimation(geminiEstimation);
-      };
+      const geminiEstimation = await getCalorieEstimation(base64Data, mimeType);
+      setEstimation(geminiEstimation);
     } catch (err: any) {
       console.error("Error during estimation:", err);
       setError(err.message || 'カロリー推定に失敗しました。');
@@ -60,6 +63,7 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
       return;
     }
 
+    setIsRegistering(true); // Set loading state
     try {
       await saveMealLog({
         foodName: estimation.foodName,
@@ -76,12 +80,20 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
     } catch (err: any) {
       console.error("Error saving meal:", err);
       setError(err.error || '食事の保存に失敗しました。');
+    } finally {
+      setIsRegistering(false); // Reset loading state
     }
   };
 
   // --- ここからが return 部分 ---
   return (
     <div className="p-8 max-w-2xl mx-auto bg-white rounded-lg shadow-md mt-10 text-gray-900">
+      <button
+        onClick={() => router.back()}
+        className="mb-4 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+      >
+        ← 戻る
+      </button>
       <h1 className="text-3xl font-bold mb-6 text-center">
         {mode === 'train' ? '写真とカロリーを登録' : 'AIカロリー推定'}
       </h1>
@@ -152,9 +164,10 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
 
           <button
             onClick={handleRegisterMeal}
-            className="mt-4 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+            className="mt-4 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
+            disabled={isRegistering}
           >
-            食事を記録する
+            {isRegistering ? '登録中...' : '食事を記録する'}
           </button>
         </div>
       )}

@@ -21,7 +21,7 @@ export async function getCalorieEstimation(
     throw new Error('GEMINI_API_KEY is not set in environment variables.');
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 
   const prompt = `あなたは「その100kcalを削り出せ」というスローガンのもと、ユーザーの減量を支援する管理栄養士です。
 送られた食事写真から以下の情報を解析してください。
@@ -55,8 +55,16 @@ export async function getCalorieEstimation(
       // If no code block, try to parse directly
       return JSON.parse(text);
     }
-  } catch (error) {
-    console.error('Error calling Gemini API:', error);
-    throw new Error(`Failed to get calorie estimation from AI: ${error instanceof Error ? error.message : String(error)}`);
+  } catch (error: any) {
+    // --- エラーハンドリングの追加 ---
+    console.error("Gemini API Error:", error);
+
+    // 無料枠の制限（429エラー）の場合
+    if (error.status === 429 || error.message?.includes('429')) {
+      throw new Error('【利用制限】現在リクエストが集中しています。1分ほど待ってから再度お試しください。');
+    }
+
+    // その他の一般的なエラー
+    throw new Error('AIによる解析中にエラーが発生しました。時間をおいて再度実行してください。');
   }
 }

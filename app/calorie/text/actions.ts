@@ -7,7 +7,7 @@ import prisma from '@/lib/prisma'; // Import prisma
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-export async function saveCalorieLogFromText(formData: FormData) {
+export async function saveCalorieLogFromText(prevState: any, formData: FormData) {
   const foodDescription = formData.get('foodDescription') as string;
 
   if (!foodDescription) {
@@ -36,7 +36,7 @@ export async function saveCalorieLogFromText(formData: FormData) {
   }
   // --- End CustomFood search logic ---
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+  const model = genAI.getGenerativeModel({ model: process.env.GEMINI_TEXT_MODEL || 'gemini-pro' });
 
   const prompt = `あなたは管理栄養士です。以下の食事内容のテキストを解析し、料理名、推定合計カロリー、カロリーの内訳、そして100kcalを削り出すための具体的なアドバイスをJSON形式で返してください。
 

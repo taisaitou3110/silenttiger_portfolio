@@ -1,9 +1,43 @@
+"use client";
+
+import { useFormStatus } from 'react-dom'; // Import useFormStatus
+import LoadingButton from '@/components/LoadingButton'; // Import LoadingButton
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import versionData from '@/app/version.json'; // Import version data
 import { addQuickLog, copyPreviousDayLogs } from './actions'; // Import new actions
 
 export const dynamic = "force-dynamic"; // これを追加
+
+// Define QuickLogSubmitButton outside the main component
+function QuickLogSubmitButton({ foodName, calories, className }: { foodName: string; calories: number; className?: string }) {
+  const { pending } = useFormStatus();
+  return (
+    <LoadingButton
+      type="submit"
+      isLoading={pending}
+      loadingText="登録中..."
+      className={className}
+    >
+      {foodName} ({calories} kcal)
+    </LoadingButton>
+  );
+}
+
+// Define CopyLogsSubmitButton outside the main component
+function CopyLogsSubmitButton({ className }: { className?: string }) {
+  const { pending } = useFormStatus();
+  return (
+    <LoadingButton
+      type="submit"
+      isLoading={pending}
+      loadingText="コピー中..."
+      className={className}
+    >
+      前日の記録を今日にコピー
+    </LoadingButton>
+  );
+}
 
 export default async function CalorieDashboardPage() {
   const today = new Date();
@@ -24,8 +58,8 @@ export default async function CalorieDashboardPage() {
       },
       userId: userSettings?.id, // Filter by user if available
     },
-    select: {
-      calories: true,
+    orderBy: {
+      date: 'desc', // Show most recent first
     },
   });
 
@@ -102,8 +136,30 @@ export default async function CalorieDashboardPage() {
 
         <div className="flex-1 bg-white rounded-lg shadow-md p-6 min-w-[300px]"> {/* Adjusted for flex-1 */}
           <h2 className="text-2xl font-semibold mb-4">過去7日間の平均カロリー</h2>
-          <p className="text-xl">平均: <span className="font-bold text-green-600">{sevenDayAverage.toFixed(0)} kcal</span></p>
+          <p className="text-xl mb-4">平均: <span className="font-bold text-green-600">{sevenDayAverage.toFixed(0)} kcal</span></p>
+          <Link href="/calorie/log" className="text-sm text-blue-600 hover:underline">
+            詳細なログを見る →
+          </Link>
         </div>
+      </div>
+
+      <div className="mt-8 bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-2xl font-semibold mb-4">本日登録した食事</h2>
+        {todaysCaloriesLogs.length === 0 ? (
+          <p className="text-gray-500">まだ登録がありません。</p>
+        ) : (
+          <ul className="space-y-2">
+            {todaysCaloriesLogs.map((log) => (
+              <li key={log.id} className="flex justify-between items-center p-2 rounded-md bg-gray-50">
+                <div>
+                  <span className="font-semibold">{log.foodName}</span>
+                  <span className="text-sm text-gray-500 ml-2">({log.inputSource})</span>
+                </div>
+                <span className="font-bold text-blue-600">{log.calories} kcal</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow-md p-6 mt-8">
@@ -132,18 +188,12 @@ export default async function CalorieDashboardPage() {
             <p className="text-gray-500">まだ登録がありません。食事を登録するとここに頻繁なメニューが表示されます。</p>
           ) : (
             frequentMeals.map((meal) => (
-              <form key={meal.foodName} action={async () => {
-                'use server';
-                const { success, error } = await addQuickLog(meal.foodName, meal.calories);
-                if (!success) {
-                  console.error("Quick log failed:", error);
-                  // Optionally, handle error display in UI
-                }
-                revalidatePath('/calorie');
-              }}>
-                <button type="submit" className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full text-sm">
-                  {meal.foodName} ({meal.calories} kcal)
-                </button>
+              <form key={meal.foodName} action={addQuickLog.bind(null, meal.foodName, meal.calories)}>
+                <QuickLogSubmitButton
+                  foodName={meal.foodName}
+                  calories={meal.calories}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full text-sm"
+                />
               </form>
             ))
           )}
@@ -153,18 +203,8 @@ export default async function CalorieDashboardPage() {
       {/* 前日コピーボタン */}
       <div className="bg-white rounded-lg shadow-md p-6 mt-8">
         <h2 className="text-2xl font-semibold mb-4">前日の記録をコピー</h2>
-        <form action={async () => {
-          'use server';
-          const { success, error } = await copyPreviousDayLogs();
-          if (!success) {
-            console.error("Copy previous day failed:", error);
-            // Optionally, handle error display in UI
-          }
-          revalidatePath('/calorie');
-        }}>
-          <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-md">
-            前日の記録を今日にコピー
-          </button>
+        <form action={copyPreviousDayLogs}>
+          <CopyLogsSubmitButton className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-md" />
         </form>
       </div>
 

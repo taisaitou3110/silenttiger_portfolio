@@ -3,9 +3,10 @@
   "apps": {
     "dashboard": "1.0.0",
     "wordbook": "1.1.0",
-    "calorie": "1.1.0",
+    "calorie": "1.2.0",
     "poker": "1.2.0",
     "feedback": "1.0.0",
-    "devlog": "1.0.0"
+    "devlog": "1.0.0",
+    "pencil": "0.8.0"
   }
 }

@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import LoadingButton from '@/components/LoadingButton'; // Import LoadingButton
 import { saveCalorieLogFromVoice } from './actions';
 
 export default function VoiceCalorieInputPage() {
@@ -45,13 +46,14 @@ export default function VoiceCalorieInputPage() {
             required
           ></textarea>
         </div>
-        <button
+        <LoadingButton
           type="submit"
+          isLoading={loading}
+          loadingText="処理中..."
           className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-          disabled={loading}
         >
-          {loading ? '処理中...' : '登録'}
-        </button>
+          登録
+        </LoadingButton>
       </form>
 
       {response && response.error && (

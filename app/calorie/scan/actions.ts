@@ -21,7 +21,7 @@ export async function getCalorieEstimation(
     throw new Error('GEMINI_API_KEY is not set in environment variables.');
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
+  const model = genAI.getGenerativeModel({ model: process.env.GEMINI_VISION_MODEL || 'gemini-pro-vision' });
 
   const prompt = `あなたは「その100kcalを削り出せ」というスローガンのもと、ユーザーの減量を支援する管理栄養士です。
 送られた食事写真から以下の情報を解析してください。

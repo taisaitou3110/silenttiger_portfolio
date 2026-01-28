@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation'; // Add this import
+import LoadingButton from '@/components/LoadingButton'; // Add this import
 import { getCalorieEstimation } from '@/app/calorie/scan/actions';
 import { saveMealLog } from '@/app/calorie/actions'; // Renamed to saveCalorieLog previously
 
@@ -139,13 +140,14 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
           </div>
         )}
 
-        <button
+        <LoadingButton
           type="submit"
           className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400"
-          disabled={loading || !image}
+          isLoading={loading || !image}
+          loadingText="推定中..."
         >
-          {loading ? '推定中...' : mode === 'train' ? '画像とカロリーを送信' : 'AIでカロリー推定'}
-        </button>
+          {mode === 'train' ? '画像とカロリーを送信' : 'AIでカロリー推定'}
+        </LoadingButton>
       </form>
 
       {error && (
@@ -162,13 +164,14 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
           <p className="text-sm mb-1"><strong>内訳:</strong> {estimation.breakdown}</p>
           <p className="text-sm text-green-700 font-medium"><strong>💡 アドバイス:</strong> {estimation.advice}</p>
 
-          <button
+          <LoadingButton
             onClick={handleRegisterMeal}
             className="mt-4 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
-            disabled={isRegistering}
+            isLoading={isRegistering}
+            loadingText="登録中..."
           >
-            {isRegistering ? '登録中...' : '食事を記録する'}
-          </button>
+            食事を記録する
+          </LoadingButton>
         </div>
       )}
     </div>

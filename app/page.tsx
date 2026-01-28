@@ -61,6 +61,17 @@ export default function Home() {
               ゲームを開始
             </Link>
           </div>
+
+          {/* Pencil App */}
+          <div className="bg-white rounded-lg shadow-xl p-8 flex flex-col items-center text-center">
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">Pencil App <span className="text-sm font-normal text-gray-500 ml-2">v{versionData.apps.pencil}</span></h2>
+            <p className="text-gray-600 mb-6">
+              ペットボトルロケットの物理演算をシミュレートするゲームアプリです。
+            </p>
+            <Link href="/pencil" className="mt-auto px-8 py-3 bg-indigo-600 text-white text-lg font-semibold rounded-lg hover:bg-indigo-700 transition duration-300">
+              アプリを開く
+            </Link>
+          </div>
         </div>
 
         {/* 右側: フィードバックと開発日記 */}

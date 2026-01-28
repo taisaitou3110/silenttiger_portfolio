@@ -36,7 +36,7 @@ export async function saveCalorieLogFromVoice(formData: FormData) {
   }
   // --- End CustomFood search logic ---
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+  const model = genAI.getGenerativeModel({ model: process.env.GEMINI_VOICE_MODEL || 'gemini-pro' });
 
   const prompt = `あなたは管理栄養士です。以下の音声入力（文字起こし）を解析し、料理名、推定合計カロリー、カロリーの内訳、そして100kcalを削り出すための具体的なアドバイスをJSON形式で返してください。
 

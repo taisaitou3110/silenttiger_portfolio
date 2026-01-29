@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { FinancialProvider } from "../contexts/FinancialContext";
+import { GameProvider } from "../contexts/GameContext";
 import EnvBadge from "@/components/EnvBadge";
 
 const geistSans = Geist({
@@ -29,7 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <FinancialProvider>{children}</FinancialProvider>
+        <GameProvider>{children}</GameProvider>
         <EnvBadge />
       </body>
     </html>

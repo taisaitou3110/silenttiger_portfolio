@@ -1,0 +1,403 @@
+[
+  {
+    "id": "L1_04_APR",
+    "turn": 1,
+    "month": "April",
+    "title": "雪解けと新年度",
+    "body": "長い冬が終わり、町にはまだ冷たい風が残っている。観光客はほとんどいないが、新年度が始まった。実家の食堂を正式に引き継ぎ、最初の一歩をどう踏み出す？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "地元客向けに仕入れを最低限整える",
+        "effects": [
+          { "type": "inventory.buy", "qty": 60, "unitCost": 300 },
+          { "type": "cash.out", "amount": 18000 }
+        ],
+        "hint": "春は守りから始まる。"
+      },
+      {
+        "id": "B",
+        "text": "広告を出して観光客を少しでも呼び込む",
+        "effects": [
+          { "type": "expense.ad", "amount": 15000 },
+          { "type": "cash.out", "amount": 15000 },
+          { "type": "demand.baseBonus", "value": 3 }
+        ],
+        "hint": "需要は作れるが、コストは確実に出る。"
+      },
+      {
+        "id": "C",
+        "text": "何もせず様子を見る",
+        "effects": [],
+        "hint": "静かなスタートも一つの選択だ。"
+      }
+    ]
+  },
+
+  {
+    "id": "L1_05_MAY",
+    "turn": 2,
+    "month": "May",
+    "title": "遅い春と連休",
+    "body": "桜がようやく咲き、ゴールデンウィークで少しだけ人の動きが出てきた。短いチャンスをどう活かす？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "仕入れを増やして連休需要に備える",
+        "effects": [
+          { "type": "inventory.buy", "qty": 50, "unitCost": 300 },
+          { "type": "cash.out", "amount": 15000 }
+        ],
+        "hint": "短期需要には在庫が効く。"
+      },
+      {
+        "id": "B",
+        "text": "価格を少し上げて利益を確保する",
+        "effects": [
+          { "type": "price.adjust", "value": 5 }
+        ],
+        "hint": "値上げは即効性がある。"
+      },
+      {
+        "id": "C",
+        "text": "普段通り営業する",
+        "effects": [],
+        "hint": "無理をしない判断もある。"
+      }
+    ]
+  },
+
+  {
+    "id": "L1_06_JUN",
+    "turn": 3,
+    "month": "June",
+    "title": "雨と静けさ",
+    "body": "雨の日が続き、観光地は静まり返っている。来客数は読みづらい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "広告を出して存在感を出す",
+        "effects": [
+          { "type": "expense.ad", "amount": 12000 },
+          { "type": "cash.out", "amount": 12000 },
+          { "type": "demand.baseBonus", "value": 4 }
+        ],
+        "hint": "静かな時期ほど差が出る。"
+      },
+      {
+        "id": "B",
+        "text": "支出を抑えて耐える",
+        "effects": [
+          { "type": "expense.control", "value": -10 }
+        ],
+        "hint": "梅雨は我慢の月。"
+      },
+      {
+        "id": "C",
+        "text": "成り行きに任せる",
+        "effects": [],
+        "hint": "運に身を委ねる経営。"
+      }
+    ]
+  },
+
+  {
+    "id": "L1_07_JUL",
+    "turn": 4,
+    "month": "July",
+    "title": "短い夏の始まり",
+    "body": "北国にも短い夏が訪れた。観光客が少しずつ戻り始める。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "小さな設備修繕を行う",
+        "effects": [
+          { "type": "cash.out", "amount": 30000 },
+          { "type": "capacity.bonus", "value": 10 }
+        ],
+        "hint": "準備は未来の売上を作る。"
+      },
+      {
+        "id": "B",
+        "text": "仕入れを増やす",
+        "effects": [
+          { "type": "inventory.buy", "qty": 40, "unitCost": 300 },
+          { "type": "cash.out", "amount": 12000 }
+        ],
+        "hint": "売れるとは限らない。"
+      },
+      {
+        "id": "C",
+        "text": "現状維持",
+        "effects": [],
+        "hint": "慎重な判断。"
+      }
+    ]
+  },
+
+  {
+    "id": "L1_08_AUG",
+    "turn": 5,
+    "month": "August",
+    "title": "夏休みのにぎわい",
+    "body": "夏休みで観光客が増える。だが北国の夏は短い。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "仕入れを厚めにする",
+        "effects": [
+          { "type": "inventory.buy", "qty": 70, "unitCost": 300 },
+          { "type": "cash.out", "amount": 21000 }
+        ],
+        "hint": "稼げる時に稼ぐ。"
+      },
+      {
+        "id": "B",
+        "text": "バイトを1人雇う",
+        "effects": [
+          { "type": "staff.parttime", "count": 1 },
+          { "type": "cash.out", "amount": 80000 }
+        ],
+        "hint": "人件費は重たい固定費になる。"
+      },
+      {
+        "id": "C",
+        "text": "無理をしない",
+        "effects": [],
+        "hint": "夏は一瞬で終わる。"
+      }
+    ]
+  },
+
+  {
+    "id": "L1_09_SEP",
+    "turn": 6,
+    "month": "September",
+    "title": "夏の終わり",
+    "body": "朝晩が急に冷え込み、観光客が減り始める。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "コストを引き締める",
+        "effects": [
+          { "type": "expense.control", "value": -15 }
+        ],
+        "hint": "波が引いた後の対応が重要。"
+      },
+      {
+        "id": "B",
+        "text": "新メニューを試す",
+        "effects": [
+          { "type": "cash.out", "amount": 10000 },
+          { "type": "demand.baseBonus", "value": 3 }
+        ],
+        "hint": "小さな挑戦。"
+      },
+      {
+        "id": "C",
+        "text": "何もしない",
+        "effects": [],
+        "hint": "停滞は後で効く。"
+      }
+    ]
+  },
+
+  {
+    "id": "L1_10_OCT",
+    "turn": 7,
+    "month": "October",
+    "title": "冬支度",
+    "body": "山には初雪の便り。冬の書き入れ時に向けて準備の月だ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "仕入れルートを見直す",
+        "effects": [
+          { "type": "cost.rateAdjust", "value": -5 }
+        ],
+        "hint": "原価率は利益を左右する。"
+      },
+      {
+        "id": "B",
+        "text": "冬向け広告を仕込む",
+        "effects": [
+          { "type": "expense.ad", "amount": 20000 },
+          { "type": "cash.out", "amount": 20000 }
+        ],
+        "hint": "準備が差になる。"
+      },
+      {
+        "id": "C",
+        "text": "特に何もしない",
+        "effects": [],
+        "hint": "冬はすぐそこだ。"
+      }
+    ]
+  },
+
+  {
+    "id": "L1_11_NOV",
+    "turn": 8,
+    "month": "November",
+    "title": "静かな谷間",
+    "body": "観光もなく、町は一年で最も静かな時期に入る。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "徹底的に支出を抑える",
+        "effects": [
+          { "type": "expense.control", "value": -20 }
+        ],
+        "hint": "耐える力が問われる。"
+      },
+      {
+        "id": "B",
+        "text": "小さな販促を続ける",
+        "effects": [
+          { "type": "expense.ad", "amount": 10000 },
+          { "type": "cash.out", "amount": 10000 }
+        ],
+        "hint": "静かな月でも種をまく。"
+      },
+      {
+        "id": "C",
+        "text": "現状維持",
+        "effects": [],
+        "hint": "我慢の月。"
+      }
+    ]
+  },
+
+  {
+    "id": "L1_12_DEC",
+    "turn": 9,
+    "month": "December",
+    "title": "冬の訪れ",
+    "body": "雪が積もり始め、観光シーズンが本格化する。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "仕入れを増やして迎え撃つ",
+        "effects": [
+          { "type": "inventory.buy", "qty": 100, "unitCost": 300 },
+          { "type": "cash.out", "amount": 30000 }
+        ],
+        "hint": "勝負の始まり。"
+      },
+      {
+        "id": "B",
+        "text": "無理をせず様子を見る",
+        "effects": [],
+        "hint": "慎重策。"
+      },
+      {
+        "id": "C",
+        "text": "利益重視で支出を抑える",
+        "effects": [
+          { "type": "expense.control", "value": -10 }
+        ],
+        "hint": "守りの判断。"
+      }
+    ]
+  },
+
+  {
+    "id": "L1_01_JAN",
+    "turn": 10,
+    "month": "January",
+    "title": "真冬の繁忙期",
+    "body": "雪深い冬。観光客が一気に押し寄せる。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "全力で仕入れと営業",
+        "effects": [
+          { "type": "inventory.buy", "qty": 150, "unitCost": 300 },
+          { "type": "cash.out", "amount": 45000 },
+          { "type": "demand.baseBonus", "value": 8 }
+        ],
+        "hint": "最大の稼ぎ時。"
+      },
+      {
+        "id": "B",
+        "text": "安定運営を選ぶ",
+        "effects": [],
+        "hint": "安全策も正解になりうる。"
+      },
+      {
+        "id": "C",
+        "text": "コストを抑える",
+        "effects": [
+          { "type": "expense.control", "value": -10 }
+        ],
+        "hint": "守りの選択。"
+      }
+    ]
+  },
+
+  {
+    "id": "L1_02_FEB",
+    "turn": 11,
+    "month": "February",
+    "title": "冬の終盤戦",
+    "body": "観光客はまだ多いが、疲れも出てくる頃だ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "バイトを追加で雇う",
+        "effects": [
+          { "type": "staff.parttime", "count": 1 },
+          { "type": "cash.out", "amount": 80000 }
+        ],
+        "hint": "人手は売上を支えるが、重い。"
+      },
+      {
+        "id": "B",
+        "text": "仕入れだけ増やす",
+        "effects": [
+          { "type": "inventory.buy", "qty": 80, "unitCost": 300 },
+          { "type": "cash.out", "amount": 24000 }
+        ],
+        "hint": "売れるかは運もある。"
+      },
+      {
+        "id": "C",
+        "text": "体力を優先する",
+        "effects": [],
+        "hint": "無理は長続きしない。"
+      }
+    ]
+  },
+
+  {
+    "id": "L1_03_MAR",
+    "turn": 12,
+    "month": "March",
+    "title": "決算の月",
+    "body": "雪が少しずつ溶け始める。1年間の結果が数字として突きつけられる。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "最後まで売上を追う",
+        "effects": [
+          { "type": "demand.baseBonus", "value": 4 }
+        ],
+        "hint": "最後の一押し。"
+      },
+      {
+        "id": "B",
+        "text": "利益を守る",
+        "effects": [
+          { "type": "expense.control", "value": -10 }
+        ],
+        "hint": "決算は結果発表だ。"
+      },
+      {
+        "id": "C",
+        "text": "静かに締める",
+        "effects": [],
+        "hint": "一年を振り返る。"
+      }
+    ]
+  }
+]

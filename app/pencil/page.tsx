@@ -406,7 +406,7 @@ export default function RocketGame() {
   if (level === 0) {
     return (
       <div style={{ textAlign: 'center', background: '#1a1a1a', color: 'white', padding: '50px', minHeight: '100vh' }}>
-              <h1 style={{ color: '#0cf', margin: '0' }}>ROCKET SIM v1.3</h1>        <Link href="/" style={{ background: '#444', color: 'white', border: 'none', padding: '8px 20px', cursor: 'pointer', borderRadius: '4px', textDecoration: 'none', marginBottom: '20px', display: 'inline-block' }}>
+              <h1 style={{ color: '#0cf', margin: '0' }}>ROCKET SIM v1.4</h1>        <Link href="/" style={{ background: '#444', color: 'white', border: 'none', padding: '8px 20px', cursor: 'pointer', borderRadius: '4px', textDecoration: 'none', marginBottom: '20px', display: 'inline-block' }}>
             トップページに戻る
         </Link>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', maxWidth: '800px', margin: '40px auto' }}>
@@ -422,51 +422,56 @@ export default function RocketGame() {
 
   return (
     <div style={{ textAlign: 'center', background: '#1a1a1a', color: 'white', padding: '20px', minHeight: '100vh', fontFamily: 'monospace' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', width: '100%', maxWidth: '950px', margin: '0 auto' }}> {/* Adjusted max-width */}
         <button onClick={() => { setLevel(0); setShowResult(false); }} style={{ background: '#444', color: 'white', border: 'none', padding: '8px 20px', cursor: 'pointer', borderRadius: '4px' }}>MENU</button>
         <h2 style={{ color: '#0cf', margin: 0 }}>{levelConfigs[level as keyof typeof levelConfigs].name}</h2>
         <div style={{ width: '80px' }}></div>
       </div>
       
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', position: 'relative' }}>
-        <div style={{ position: 'relative' }}>
-          <canvas ref={canvasRef} width={CANVAS_WIDTH} height={400} style={{ background: '#f0f4f8', borderRadius: '8px', border: '4px solid #333' }} />
-          {showResult && lastResultType === 'MISS' && ( // Show result overlay ONLY for MISS
-            <div onClick={() => { setShowResult(false); trail.current = []; pastTrails.current = []; rocket.current = { x: LAUNCH_X, y: GROUND_Y, vx: 0, vy: 0 }; setLastResultType(null); }}
-                 style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', zIndex: 10, borderRadius: '8px' }}>
-              <h2 style={{ fontSize: '42px', color: '#ffff00', margin: '0 0 10px 0' }}>{result}</h2>
-              <p style={{ color: 'white', fontSize: '18px' }}>[ CLICK TO RETRY ]</p>
-            </div>
-          )}
+      {/* Main responsive container for canvas, history, and controls */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center', width: '100%', maxWidth: '950px', margin: '0 auto' }}>
 
-          {showNextLevelPrompt && ( // New next level prompt overlay
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 10, borderRadius: '8px' }}>
-              <h2 style={{ fontSize: '42px', color: '#00ff00', margin: '0 0 10px 0' }}>GOAL!!</h2>
-              <p style={{ color: 'white', fontSize: '18px', marginBottom: '20px' }}>次のレベルに進みますか？</p>
-              <div style={{ display: 'flex', gap: '20px' }}>
-                <button onClick={goToNextLevel} style={{ padding: '12px 25px', fontSize: '18px', background: '#0cf', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
-                  次へ (レベル {level + 1})
-                </button>
-                <button onClick={retryCurrentLevel} style={{ padding: '12px 25px', fontSize: '18px', background: '#f00', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
-                  リトライ
+        {/* Canvas and overlays wrapper */}
+        <div style={{ width: '100%', overflowX: 'auto' }}> {/* Scrollable canvas container */}
+          <div style={{ position: 'relative', width: CANVAS_WIDTH, height: 400, margin: '0 auto' }}> {/* Actual canvas holder */}
+            <canvas ref={canvasRef} width={CANVAS_WIDTH} height={400} style={{ background: '#f0f4f8', borderRadius: '8px', border: '4px solid #333' }} />
+            {showResult && lastResultType === 'MISS' && ( // Show result overlay ONLY for MISS
+              <div onClick={() => { setShowResult(false); trail.current = []; pastTrails.current = []; rocket.current = { x: LAUNCH_X, y: GROUND_Y, vx: 0, vy: 0 }; setLastResultType(null); }}
+                   style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', zIndex: 10, borderRadius: '8px' }}>
+                <h2 style={{ fontSize: '42px', color: '#ffff00', margin: '0 0 10px 0' }}>{result}</h2>
+                <p style={{ color: 'white', fontSize: '18px' }}>[ CLICK TO RETRY ]</p>
+              </div>
+            )}
+
+            {showNextLevelPrompt && ( // New next level prompt overlay
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 10, borderRadius: '8px' }}>
+                <h2 style={{ fontSize: '42px', color: '#00ff00', margin: '0 0 10px 0' }}>GOAL!!</h2>
+                <p style={{ color: 'white', fontSize: '18px', marginBottom: '20px' }}>次のレベルに進みますか？</p>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <button onClick={goToNextLevel} style={{ padding: '12px 25px', fontSize: '18px', background: '#0cf', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+                    次へ (レベル {level + 1})
+                  </button>
+                  <button onClick={retryCurrentLevel} style={{ padding: '12px 25px', fontSize: '18px', background: '#f00', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+                    リトライ
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {showGameClear && ( // New Game Clear overlay
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.95)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 11, borderRadius: '8px' }}>
+                <h2 style={{ fontSize: '60px', color: '#ffff00', margin: '0 0 20px 0', textShadow: '0 0 15px #ffff00' }}>GAME CLEAR!</h2>
+                <p style={{ color: 'white', fontSize: '24px', marginBottom: '30px' }}>全てのレベルをクリアしました！</p>
+                <button onClick={() => setLevel(0)} style={{ padding: '15px 30px', fontSize: '20px', background: '#0cf', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+                  メニューに戻る
                 </button>
               </div>
-            </div>
-          )}
-
-          {showGameClear && ( // New Game Clear overlay
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.95)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 11, borderRadius: '8px' }}>
-              <h2 style={{ fontSize: '60px', color: '#ffff00', margin: '0 0 20px 0', textShadow: '0 0 15px #ffff00' }}>GAME CLEAR!</h2>
-              <p style={{ color: 'white', fontSize: '24px', marginBottom: '30px' }}>全てのレベルをクリアしました！</p>
-              <button onClick={() => setLevel(0)} style={{ padding: '15px 30px', fontSize: '20px', background: '#0cf', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
-                メニューに戻る
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* 過去の挑戦履歴 */}
-        <div style={{ width: '200px', background: '#222', padding: '15px', borderRadius: '12px', border: '1px solid #444', overflowY: 'auto', maxHeight: '400px' }}>
+        <div style={{ width: '100%', maxWidth: '750px', background: '#222', padding: '15px', borderRadius: '12px', border: '1px solid #444', overflowY: 'auto', maxHeight: '200px', marginTop: '20px' }}> {/* Adjusted width and max height for mobile */}
           <h3 style={{ color: '#0cf', marginTop: '0', marginBottom: '10px' }}>過去の挑戦</h3>
           {pastAttempts.current.length === 0 ? (
             <p style={{ fontSize: '12px', color: '#666' }}>まだ挑戦はありません。</p>
@@ -482,25 +487,26 @@ export default function RocketGame() {
             </ul>
           )}
         </div>
-      </div>
 
-      <div style={{ background: '#222', padding: '20px', borderRadius: '12px', marginTop: '15px', display: 'inline-block', width: '100%', maxWidth: '750px', border: '1px solid #444' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
-          <div>
-            <label style={{ display: 'block', color: '#0cf', marginBottom: '10px' }}>PRESSURE: {pressure.toFixed(2)} MPa</label>
-            <input type="range" min="0.1" max="2.0" step="0.01" value={pressure} onChange={e => setPressure(Number(e.target.value))} style={{ width: '100%' }} />
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '10px' }}>ANGLE: {angle}°</label>
-            <input type="range" min="0" max="90" value={angle} onChange={e => setAngle(Number(e.target.value))} style={{ width: '100%' }} />
-          </div>
-          {levelConfigs[level as keyof typeof levelConfigs].hasWind && (
-            <div style={{ gridColumn: '1 / -1', textAlign: 'left', marginTop: '10px' }}>
-              <label style={{ display: 'block', color: '#fff', fontSize: '14px' }}>{getWindDescription(wind.x, wind.y)}</label>
+        {/* Controls */}
+        <div style={{ background: '#222', padding: '20px', borderRadius: '12px', width: '100%', maxWidth: '750px', border: '1px solid #444', marginTop: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+            <div>
+              <label style={{ display: 'block', color: '#0cf', marginBottom: '10px' }}>PRESSURE: {pressure.toFixed(2)} MPa</label>
+              <input type="range" min="0.1" max="2.0" step="0.01" value={pressure} onChange={e => setPressure(Number(e.target.value))} style={{ width: '100%' }} />
             </div>
-          )}
+            <div>
+              <label style={{ display: 'block', marginBottom: '10px' }}>ANGLE: {angle}°</label>
+              <input type="range" min="0" max="90" value={angle} onChange={e => setAngle(Number(e.target.value))} style={{ width: '100%' }} />
+            </div>
+            {levelConfigs[level as keyof typeof levelConfigs].hasWind && (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'left', marginTop: '10px' }}>
+                <label style={{ display: 'block', color: '#fff', fontSize: '14px' }}>{getWindDescription(wind.x, wind.y)}</label>
+              </div>
+            )}
+          </div>
+          {!showResult && <button onClick={launch} disabled={isFlying} style={{ width: '100%', marginTop: '20px', padding: '15px', fontSize: '22px', fontWeight: 'bold', background: isFlying ? '#444' : '#0cf', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>🚀 LAUNCH</button>}
         </div>
-        {!showResult && <button onClick={launch} disabled={isFlying} style={{ width: '100%', marginTop: '20px', padding: '15px', fontSize: '22px', fontWeight: 'bold', background: isFlying ? '#444' : '#0cf', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>🚀 LAUNCH</button>}
       </div>
 
       {failureCount >= 3 && (

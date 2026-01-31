@@ -1,0 +1,70 @@
+// src/components/rocket-game/drawUtils.ts
+import { GROUND_Y, LAUNCH_X, CANVAS_WIDTH, VISUAL_SCALE } from './constants';
+import { LevelConfig, Point } from './types';
+
+export const drawRocket = (ctx: CanvasRenderingContext2D, x: number, y: number, vx: number, vy: number, isFlying: boolean) => {
+  const angleRad = Math.atan2(vy, vx);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angleRad);
+  ctx.fillStyle = "gray";
+  ctx.beginPath();
+  ctx.moveTo(-10, 0); ctx.lineTo(15, 0); ctx.lineTo(10, -5); ctx.lineTo(-10, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  if (isFlying) {
+    ctx.fillStyle = "orange";
+    ctx.beginPath();
+    ctx.moveTo(-10, 0); ctx.lineTo(-15, 3); ctx.lineTo(-15, -3);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+};
+
+export const drawScene = (
+  ctx: CanvasRenderingContext2D, 
+  rocket: {x: number, y: number, vx: number, vy: number}, 
+  config: LevelConfig, 
+  isFlying: boolean,
+  trail: Point[],
+  pastTrails: Point[][]
+) => {
+  ctx.clearRect(0, 0, CANVAS_WIDTH * VISUAL_SCALE, 400 * VISUAL_SCALE);
+  ctx.save();
+  ctx.scale(VISUAL_SCALE, VISUAL_SCALE);
+
+  // 背景
+  ctx.fillStyle = "#87CEEB";
+  ctx.fillRect(0, 0, CANVAS_WIDTH, 400);
+  ctx.fillStyle = config.hasWind ? "#0000FF" : "#228B22";
+  ctx.fillRect(0, GROUND_Y + 10, CANVAS_WIDTH, 40);
+  
+  // 打ち上げ位置
+  ctx.fillStyle = "blue";
+  ctx.beginPath();
+  ctx.moveTo(LAUNCH_X - 10, GROUND_Y + 20); ctx.lineTo(LAUNCH_X + 10, GROUND_Y + 20); ctx.lineTo(LAUNCH_X, GROUND_Y);
+  ctx.fill();
+  
+  // 山
+  if (config.obstacle) {
+    ctx.fillStyle = "#5d4037";
+    ctx.beginPath();
+    ctx.moveTo(400, GROUND_Y + 10); ctx.lineTo(550, 100); ctx.lineTo(700, GROUND_Y + 10);
+    ctx.fill();
+  }
+
+  // ターゲット
+  if (config.targetY < GROUND_Y) {
+    ctx.fillStyle = "#78909c";
+    ctx.fillRect(LAUNCH_X + config.targetX - 5, config.targetY + 10, 50, GROUND_Y - config.targetY);
+  }
+  ctx.fillStyle = "red";
+  ctx.fillRect(LAUNCH_X + config.targetX, config.targetY, 40, 10);
+
+  // 軌跡の描画（過去・現在）... (元のロジックを移植)
+  
+  drawRocket(ctx, rocket.x, rocket.y, rocket.vx, rocket.vy, isFlying);
+  ctx.restore();
+};

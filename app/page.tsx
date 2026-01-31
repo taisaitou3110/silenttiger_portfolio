@@ -1,101 +1,118 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import versionData from '@/app/version.json';
+
+type AppKey = keyof typeof versionData.apps;
+
+const apps: { name: string; description: string; path: string; versionKey: AppKey }[] = [
+  {
+    name: '北国食堂 〜数字で生き残れ〜',
+    description: '北国の観光地にある実家の飲食店を引き継ぎ、意思決定によってBS/PL/CFがリアルタイムに変化。「黒字なのに金がない」「人を雇うと楽だが苦しい」を体感し、簿記が判断の言語になることを目的としたゲーム。',
+    path: '/dashboard',
+    versionKey: 'dashboard',
+  },
+  {
+    name: 'Wikipedia風単語帳',
+    description: 'あなたの学習メモから単語と定義を登録できるパーソナル単語帳。',
+    path: '/wordbook',
+    versionKey: 'wordbook',
+  },
+  {
+    name: 'カロリー記録アプリ',
+    description: '写真を撮るだけでAIがカロリーを推定し、目標達成を視覚的にサポートします。',
+    path: '/calorie',
+    versionKey: 'calorie',
+  },
+  {
+    name: 'ハイ＆ロー ポーカー',
+    description: 'コンピュータとポーカーで対戦できます。戦略を練って勝利を目指しましょう！',
+    path: '/poker',
+    versionKey: 'poker',
+  },
+  {
+    name: 'ロケットゲーム',
+    description: 'ペットボトルロケットの物理演算をシミュレートするゲームアプリです。',
+    path: '/rocket-game',
+    versionKey: 'pencil',
+  },
+  {
+    name: 'フィードバック掲示板',
+    description: 'ご意見・ご要望をお寄せください。',
+    path: '/feedback',
+    versionKey: 'feedback',
+  },
+  {
+    name: '開発日記',
+    description: '日々の開発記録を綴りましょう。',
+    path: '/devlog',
+    versionKey: 'devlog',
+  },
+];
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-12 lg:p-24 bg-gray-100">
-      <div className="w-full max-w-4xl text-center mb-12">
-        <h1 className="text-5xl md:text-6xl font-extrabold text-gray-800 mb-4">
-          経営支援ダッシュボード
-        </h1>
-        <p className="text-xl text-gray-600">
-          あなたのビジネスをサポートするツールセット
-        </p>
-      </div>
+    <main className="relative h-screen w-screen overflow-hidden">
+      {/* Background Image */}
+      <Image
+        src="/images/toppage_wheel_labo.png"
+        alt="車輪再発明室 背景"
+        layout="fill"
+        objectFit="cover"
+        className="z-0"
+        priority
+      />
 
-      <div className="flex flex-col lg:flex-row gap-8 w-full max-w-4xl">
-        {/* 左側: メインの4つのカード */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:w-3/4">
-          {/* 簡易経営管理ツール */}
-          <div className="bg-white rounded-lg shadow-xl p-8 flex flex-col items-center text-center">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">簡易経営管理ツール <span className="text-sm font-normal text-gray-500 ml-2">v{versionData.apps.dashboard}</span></h2>
-            <p className="text-gray-600 mb-6">
-              損益計算書 (P/L) 形式でビジネスの財務状況をシミュレーション。売上高、販管費などの各項目をクリックして詳細な内訳を編集できます。
-              ランダムデータ生成や業種別プリセットで、多様なシナリオを素早く試すことが可能です。
-            </p>
-            <Link href="/dashboard" className="mt-auto px-8 py-3 bg-blue-600 text-white text-lg font-semibold rounded-lg hover:bg-blue-700 transition duration-300">
-              ツールを開く
-            </Link>
-          </div>
+      {/* Scrollable Content Container */}
+      <div className="relative z-10 h-full w-full overflow-y-auto">
+        {/* Spacer to push content down, leaving top of image visible */}
+        <div className="h-[50vh]" />
 
-          {/* Wikipedia風単語帳 */}
-          <div className="bg-white rounded-lg shadow-xl p-8 flex flex-col items-center text-center">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">Wikipedia風単語帳 <span className="text-sm font-normal text-gray-500 ml-2">v{versionData.apps.wordbook}</span></h2>
-            <p className="text-gray-600 mb-6">
-              あなたの学習メモから単語と定義を登録できるパーソナル単語帳。単語の追加、削除、検索機能に加え、JSONファイルからのインポートにも対応。
-              英単語学習や専門用語の整理に役立ちます。
-            </p>
-            <Link href="/wordbook" className="mt-auto px-8 py-3 bg-green-600 text-white text-lg font-semibold rounded-lg hover:bg-green-700 transition duration-300">
-              ツールを開く
-            </Link>
-          </div>
-
-          {/* カロリー記録アプリ */}
-          <div className="bg-white rounded-lg shadow-xl p-8 flex flex-col items-center text-center">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">カロリー記録アプリ <span className="text-sm font-normal text-gray-500 ml-2">v{versionData.apps.calorie}</span></h2>
-            <p className="text-gray-600 mb-6">
-              写真を撮るだけでAIがカロリーを推定し、目標達成を視覚的にサポートします。日々の食事管理を効率化しましょう。
-            </p>
-            <Link href="/calorie" className="mt-auto px-8 py-3 bg-red-600 text-white text-lg font-semibold rounded-lg hover:bg-red-700 transition duration-300">
-              ツールを開く
-            </Link>
-          </div>
-
-          {/* ポーカーゲーム */}
-          <div className="bg-white rounded-lg shadow-xl p-8 flex flex-col items-center text-center">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">ポーカーゲーム <span className="text-sm font-normal text-gray-500 ml-2">v{versionData.apps.poker}</span></h2>
-            <p className="text-gray-600 mb-6">
-              コンピュータとポーカーで対戦できます。戦略を練って勝利を目指しましょう！
-            </p>
-            <Link href="/poker" className="mt-auto px-8 py-3 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 transition duration-300">
-              ゲームを開始
-            </Link>
-          </div>
-
-          {/* Pencil App */}
-          <div className="bg-white rounded-lg shadow-xl p-8 flex flex-col items-center text-center">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">Pencil App <span className="text-sm font-normal text-gray-500 ml-2">v{versionData.apps.pencil}</span></h2>
-            <p className="text-gray-600 mb-6">
-              ペットボトルロケットの物理演算をシミュレートするゲームアプリです。
-            </p>
-            <Link href="/pencil" className="mt-auto px-8 py-3 bg-indigo-600 text-white text-lg font-semibold rounded-lg hover:bg-indigo-700 transition duration-300">
-              アプリを開く
-            </Link>
-          </div>
-        </div>
-
-        {/* 右側: フィードバックと開発日記 */}
-        <div className="flex flex-col gap-8 lg:w-1/4">
-          {/* フィードバック掲示板 */}
-          <div className="bg-white rounded-lg shadow-xl p-4 flex flex-col items-center text-center">
-            <h2 className="text-xl font-bold text-gray-800 mb-2">フィードバック掲示板 <span className="text-xs font-normal text-gray-500 ml-2">v{versionData.apps.feedback}</span></h2>
-            <p className="text-gray-600 text-sm mb-4">
-              ご意見・ご要望をお寄せください。
-            </p>
-            <Link href="/feedback" className="px-4 py-2 bg-yellow-600 text-white text-sm font-semibold rounded-lg hover:bg-yellow-700 transition duration-300">
-              掲示板を開く
-            </Link>
-          </div>
-
-          {/* 開発日記 */}
-          <div className="bg-white rounded-lg shadow-xl p-4 flex flex-col items-center text-center">
-            <h2 className="text-xl font-bold text-gray-800 mb-2">開発日記 <span className="text-xs font-normal text-gray-500 ml-2">v{versionData.apps.devlog}</span></h2>
-            <p className="text-gray-600 text-sm mb-4">
-              日々の開発記録を綴りましょう。
-            </p>
-            <Link href="/devlog" className="px-4 py-2 bg-teal-600 text-white text-sm font-semibold rounded-lg hover:bg-teal-700 transition duration-300">
-              日記を見る
-            </Link>
+        {/* Table Section */}
+        <div className="px-2 pb-24 sm:px-4 md:px-8">
+          <div className="mx-auto max-w-5xl rounded-xl border border-white/10 bg-black/40 p-1 shadow-2xl backdrop-blur-lg">
+            <div className="overflow-x-auto rounded-lg">
+              <table className="min-w-full divide-y divide-white/10 text-sm">
+                <thead className="">
+                  <tr>
+                    <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-white/80 md:px-6">
+                      Application
+                    </th>
+                    {/* Hide description on small screens */}
+                    <th className="hidden px-6 py-3 text-left font-medium text-white/80 md:table-cell">
+                      Description
+                    </th>
+                    <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-white/80 md:px-6">
+                      Version
+                    </th>
+                    <th className="px-4 py-3 md:px-6"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/10">
+                  {apps.map((app) => (
+                    <tr key={app.path} className="hover:bg-black/20">
+                      <td className="whitespace-nowrap px-4 py-4 font-medium text-white md:px-6">
+                        {app.name}
+                      </td>
+                      {/* Hide description on small screens */}
+                      <td className="hidden px-6 py-4 text-white/80 md:table-cell">
+                        {app.description}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-4 font-mono text-white/80 md:px-6">
+                        v{versionData.apps[app.versionKey]}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-4 text-right md:px-6">
+                        <Link
+                          href={app.path}
+                          className="inline-block rounded-md bg-indigo-500 px-4 py-2 text-xs font-medium text-white transition hover:bg-indigo-400"
+                        >
+                          Open
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

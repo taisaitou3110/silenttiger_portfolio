@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image'; // Import Image component
 import { usePoker } from './usePoker';
 import { addAchiever, getAchievers } from './actions';
 
@@ -61,9 +62,17 @@ export default function PokerPage({ version }: PokerPageProps) {
   // Welcome Screen
   if (gameState === 'UNINITIALIZED') {
     return (
-      <div className="min-h-screen bg-black text-white p-4 font-mono select-none flex flex-col justify-center items-center">
-        <div className="w-full max-w-lg text-center">
-          <div className="border-4 border-white p-6 bg-blue-900 shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg mb-8">
+      <div className="relative min-h-screen w-screen overflow-hidden text-white font-mono select-none flex flex-col justify-center items-center">
+        <Image
+          src="/images/image_background_poker.png"
+          alt="ポーカー背景"
+          layout="fill"
+          objectFit="cover"
+          className="z-0"
+          priority
+        />
+        <div className="relative z-10 w-full max-w-lg text-center p-4">
+          <div className="border-4 border-white p-6 bg-blue-900/70 shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg mb-8 backdrop-blur-sm">
             <h1 className="text-2xl font-bold mb-4">ハイ＆ロー ポーカー <span className="text-sm font-normal text-gray-400 ml-2">v{version}</span></h1>
             <p className="text-lg leading-relaxed">手持ちのゴールドを増やして10000Gを目指せ！</p>
           </div>
@@ -108,140 +117,150 @@ export default function PokerPage({ version }: PokerPageProps) {
 
   // Main Game Screen
   return (
-    <div className="min-h-screen bg-black text-white p-4 font-mono select-none flex flex-col lg:flex-row gap-6 justify-center items-start max-w-7xl mx-auto">
-      <div className="w-full lg:w-2/3">
-        <div className="border-4 border-white p-4 mb-4 bg-blue-900 shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg">
-          <h1 className="text-2xl font-bold text-yellow-400 font-serif tracking-tighter mb-2">ハイ＆ロー ポーカー <span className="text-sm font-normal text-gray-400 ml-2">v{version}</span></h1>
-          <div className="flex justify-between items-center">
-            <span className="text-2xl font-bold text-yellow-400 font-serif tracking-tighter">GOLD: {gold}G</span>
-            <span className="text-xs opacity-50 font-bold">山札残り: {deck.length} / 54枚</span>
-          </div>
-          {bet > 0 && (
-            <div className="text-red-400 mt-2 animate-pulse text-lg font-bold text-center border-t border-white/20 pt-2">
-              現在の配当: {bet}G
+    <div className="relative min-h-screen w-screen overflow-hidden text-white font-mono select-none flex flex-col justify-center items-center p-4">
+       <Image
+          src="/images/image_background_poker.png"
+          alt="ポーカー背景"
+          layout="fill"
+          objectFit="cover"
+          className="z-0"
+          priority
+        />
+      <div className="relative z-10 flex flex-col lg:flex-row gap-6 justify-center items-start max-w-7xl mx-auto backdrop-blur-sm bg-black/50 p-6 rounded-lg">
+        <div className="w-full lg:w-2/3">
+          <div className="border-4 border-white p-4 mb-4 bg-blue-900/70 shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg">
+            <h1 className="text-2xl font-bold text-yellow-400 font-serif tracking-tighter mb-2">ハイ＆ロー ポーカー <span className="text-sm font-normal text-gray-400 ml-2">v{version}</span></h1>
+            <div className="flex justify-between items-center">
+              <span className="text-2xl font-bold text-yellow-400 font-serif tracking-tighter">GOLD: {gold}G</span>
+              <span className="text-xs opacity-50 font-bold">山札残り: {deck.length} / 54枚</span>
             </div>
-          )}
-        </div>
-
-        <div className="border-4 border-white p-6 bg-blue-900 min-h-[120px] flex items-center mb-8 relative shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg">
-          <p className="text-xl leading-relaxed font-bold">➤ {message}</p>
-          <div className="absolute bottom-2 right-4 animate-bounce text-xs opacity-50">▼</div>
-        </div>
-
-        <div className="flex justify-center gap-10 mb-12">
-          <CardDisplay value={currentCard} label="いま" />
-          <CardDisplay 
-            value={(gameState === 'RESULT' || gameState === 'LOSE') ? nextCard : '?'} 
-            label="つぎ" 
-          />
-        </div>
-
-        <div className="space-y-3 max-w-sm mx-auto">
-          {(gameState === 'IDLE' || gameState === 'LOSE') && gold >= currentBetAmount && (
-            <>
-              <MenuButton onClick={startNewHand}>ぼうけんに でる ({currentBetAmount}G)</MenuButton>
-              <MenuButton onClick={() => window.location.href = '/'}>ゲームを やめる</MenuButton>
-            </>
-          )}
-
-          {gold < currentBetAmount && gameState !== 'PLAYING' && gameState !== 'RESULT' && (
-             <MenuButton onClick={fullReset}>復活の呪文を となえる (リセット)</MenuButton>
-          )}
-
-          {gameState === 'PLAYING' && (
-            <div className="grid grid-cols-2 gap-4">
-              <MenuButton onClick={() => handleGuess('HIGH')}>HIGH (上)</MenuButton>
-              <MenuButton onClick={() => handleGuess('LOW')}>LOW (下)</MenuButton>
-            </div>
-          )}
-
-          {gameState === 'RESULT' && (
-            <div className="flex flex-col gap-3">
-              <MenuButton onClick={continueGame} highlight>ダブルアップに いどむ</MenuButton>
-              <MenuButton onClick={collect}>ゴールドを かいしゅう</MenuButton>
-            </div>
-          )}
-
-          {gameState === 'CLEAR' && (
-            <div className="flex flex-col gap-3">
-              <div className="border-4 border-yellow-400 p-4 bg-yellow-900 text-yellow-50 text-center font-bold text-xl mb-4 shadow-[4px_4px_0_0_rgba(252,211,77,1)] rounded-lg">
-                10000G 達成おめでとう！
+            {bet > 0 && (
+              <div className="text-red-400 mt-2 animate-pulse text-lg font-bold text-center border-t border-white/20 pt-2">
+                現在の配当: {bet}G
               </div>
-              <input
-                type="text"
-                placeholder="名前 (4文字以内, 大文字英字)"
-                className="w-full p-3 bg-gray-700 text-white border-2 border-gray-600 focus:border-yellow-400 outline-none uppercase text-center rounded-lg"
-                maxLength={4}
-                value={achieverNameInput}
-                onChange={(e) => setAchieverNameInput(e.target.value.toUpperCase())}
-              />
-              <MenuButton onClick={handleSubmitAchiever} highlight>
-                ランキングに登録
-              </MenuButton>
-              {submitMessage && <p className="text-center text-sm mt-2">{submitMessage}</p>}
-              <MenuButton onClick={fullReset}>➤ 伝説の勇者として 戻る</MenuButton>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="w-full lg:w-1/3 flex flex-col gap-6">
-        <div className="border-4 border-white p-4 bg-blue-900 shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg">
-          <h3 className="text-yellow-400 text-lg mb-4 border-b-2 border-white pb-2 font-bold text-center italic tracking-widest">
-            でたカード記録
-          </h3>
-          <div className="space-y-1">
-            {CARD_TYPES.map(type => {
-              const count = usedCards.filter(c => c === type).length;
-              const max = type === 'JK' ? 2 : 4;
-              const hasAppeared = count > 0;
-              return (
-                <div key={type} className={`flex justify-between items-center px-2 py-1 border-b border-white/10 transition-all duration-300 ${hasAppeared ? 'text-white' : 'opacity-20 text-gray-500'}`}>
-                  <span className="font-bold w-8">{type}</span>
-                  <div className="flex gap-1 flex-1 justify-center">
-                    {[...Array(max)].map((_, i) => (
-                      <div 
-                        key={i} 
-                        className={`w-3 h-3 border transition-colors ${i < count ? 'bg-yellow-400 border-yellow-400 shadow-[0_0_5px_rgba(255,255,0,0.5)]' : 'border-white/30'}`} 
-                      />
-                    ))}
-                  </div>
-                  <span className={`text-xs ml-2 w-6 text-right ${hasAppeared ? 'text-yellow-400' : ''}`}>
-                    {count}
-                  </span>
-                </div>
-              );
-            })}
+            )}
           </div>
-          {gold <= 0 && (gameState === 'IDLE' || gameState === 'LOSE') && (
-            <div className="mt-6 p-2 border-2 border-red-500 text-red-500 text-center animate-pulse font-bold text-xs rounded-lg">
-              破産しました...
-            </div>
-          )}
+
+          <div className="border-4 border-white p-6 bg-blue-900 min-h-[120px] flex items-center mb-8 relative shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg">
+            <p className="text-xl leading-relaxed font-bold">➤ {message}</p>
+            <div className="absolute bottom-2 right-4 animate-bounce text-xs opacity-50">▼</div>
+          </div>
+
+          <div className="flex justify-center gap-10 mb-12">
+            <CardDisplay value={currentCard} label="いま" />
+            <CardDisplay 
+              value={(gameState === 'RESULT' || gameState === 'LOSE') ? nextCard : '?'} 
+              label="つぎ" 
+            />
+          </div>
+
+          <div className="space-y-3 max-w-sm mx-auto">
+            {(gameState === 'IDLE' || gameState === 'LOSE') && gold >= currentBetAmount && (
+              <>
+                <MenuButton onClick={startNewHand}>ぼうけんに でる ({currentBetAmount}G)</MenuButton>
+                <MenuButton onClick={() => window.location.href = '/'}>ゲームを やめる</MenuButton>
+              </>
+            )}
+
+            {gold < currentBetAmount && gameState !== 'PLAYING' && gameState !== 'RESULT' && (
+              <MenuButton onClick={fullReset}>復活の呪文を となえる (リセット)</MenuButton>
+            )}
+
+            {gameState === 'PLAYING' && (
+              <div className="grid grid-cols-2 gap-4">
+                <MenuButton onClick={() => handleGuess('HIGH')}>HIGH (上)</MenuButton>
+                <MenuButton onClick={() => handleGuess('LOW')}>LOW (下)</MenuButton>
+              </div>
+            )}
+
+            {gameState === 'RESULT' && (
+              <div className="flex flex-col gap-3">
+                <MenuButton onClick={continueGame} highlight>ダブルアップに いどむ</MenuButton>
+                <MenuButton onClick={collect}>ゴールドを かいしゅう</MenuButton>
+              </div>
+            )}
+
+            {gameState === 'CLEAR' && (
+              <div className="flex flex-col gap-3">
+                <div className="border-4 border-yellow-400 p-4 bg-yellow-900/70 text-yellow-50 text-center font-bold text-xl mb-4 shadow-[4px_4px_0_0_rgba(252,211,77,1)] rounded-lg">
+                  10000G 達成おめでとう！
+                </div>
+                <input
+                  type="text"
+                  placeholder="名前 (4文字以内, 大文字英字)"
+                  className="w-full p-3 bg-gray-700/70 text-white border-2 border-gray-600 focus:border-yellow-400 outline-none uppercase text-center rounded-lg"
+                  maxLength={4}
+                  value={achieverNameInput}
+                  onChange={(e) => setAchieverNameInput(e.target.value.toUpperCase())}
+                />
+                <MenuButton onClick={handleSubmitAchiever} highlight>
+                  ランキングに登録
+                </MenuButton>
+                {submitMessage && <p className="text-center text-sm mt-2">{submitMessage}</p>}
+                <MenuButton onClick={fullReset}>➤ 伝説の勇者として 戻る</MenuButton>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="border-4 border-white p-4 bg-blue-900 shadow-[4px_4px_0_0_rgba(255,255,255,1)] self-stretch rounded-lg">
-          <h3 className="text-yellow-400 text-lg mb-4 border-b-2 border-white pb-2 font-bold text-center italic tracking-widest">
-            10000G 達成者ランキング
-          </h3>
-          {achievers.length === 0 ? (
-            <p className="text-center text-gray-400">まだ達成者はいません。</p>
-          ) : (
-            <ol className="list-decimal list-inside space-y-1">
-              {achievers.map((achiever, index) => (
-                <li key={achiever.id} className="flex justify-between items-center py-1 border-b border-white/10 last:border-b-0">
-                  <span className="font-bold text-lg">{index + 1}. {achiever.name}</span>
-                  <span className="text-yellow-400 text-base">{achiever.finalGold}G</span>
-                  <span className="text-sm text-gray-400 ml-2">
-                    {new Date(achiever.achievedAt).toLocaleString('ja-JP', {
-                        year: 'numeric', month: 'numeric', day: 'numeric',
-                        hour: '2-digit', minute: '2-digit', hour12: false
-                    })}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          )}
+        <div className="w-full lg:w-1/3 flex flex-col gap-6">
+          <div className="border-4 border-white p-4 bg-blue-900/70 shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg">
+            <h3 className="text-yellow-400 text-lg mb-4 border-b-2 border-white pb-2 font-bold text-center italic tracking-widest">
+              でたカード記録
+            </h3>
+            <div className="space-y-1">
+              {CARD_TYPES.map(type => {
+                const count = usedCards.filter(c => c === type).length;
+                const max = type === 'JK' ? 2 : 4;
+                const hasAppeared = count > 0;
+                return (
+                  <div key={type} className={`flex justify-between items-center px-2 py-1 border-b border-white/10 transition-all duration-300 ${hasAppeared ? 'text-white' : 'opacity-20 text-gray-500'}`}>
+                    <span className="font-bold w-8">{type}</span>
+                    <div className="flex gap-1 flex-1 justify-center">
+                      {[...Array(max)].map((_, i) => (
+                        <div 
+                          key={i} 
+                          className={`w-3 h-3 border transition-colors ${i < count ? 'bg-yellow-400 border-yellow-400 shadow-[0_0_5px_rgba(255,255,0,0.5)]' : 'border-white/30'}`} 
+                        />
+                      ))}
+                    </div>
+                    <span className={`text-xs ml-2 w-6 text-right ${hasAppeared ? 'text-yellow-400' : ''}`}>
+                      {count}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            {gold <= 0 && (gameState === 'IDLE' || gameState === 'LOSE') && (
+              <div className="mt-6 p-2 border-2 border-red-500 text-red-500 text-center animate-pulse font-bold text-xs rounded-lg">
+                破産しました...
+              </div>
+            )}
+          </div>
+
+          <div className="border-4 border-white p-4 bg-blue-900/70 shadow-[4px_4px_0_0_rgba(255,255,255,1)] self-stretch rounded-lg">
+            <h3 className="text-yellow-400 text-lg mb-4 border-b-2 border-white pb-2 font-bold text-center italic tracking-widest">
+              10000G 達成者ランキング
+            </h3>
+            {achievers.length === 0 ? (
+              <p className="text-center text-gray-400">まだ達成者はいません。</p>
+            ) : (
+              <ol className="list-decimal list-inside space-y-1">
+                {achievers.map((achiever, index) => (
+                  <li key={achiever.id} className="flex justify-between items-center py-1 border-b border-white/10 last:border-b-0">
+                    <span className="font-bold text-lg">{index + 1}. {achiever.name}</span>
+                    <span className="text-yellow-400 text-base">{achiever.finalGold}G</span>
+                    <span className="text-sm text-gray-400 ml-2">
+                      {new Date(achiever.achievedAt).toLocaleString('ja-JP', {
+                          year: 'numeric', month: 'numeric', day: 'numeric',
+                          hour: '2-digit', minute: '2-digit', hour12: false
+                      })}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
         </div>
       </div>
     </div>

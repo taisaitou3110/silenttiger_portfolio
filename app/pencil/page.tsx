@@ -30,6 +30,7 @@ export default function RocketGame() {
   const GROUND_Y = 350;
   const LAUNCH_X = 50;
   const CANVAS_WIDTH = 1200;
+  const VISUAL_SCALE = 0.5;
 
   // --- ステージ構成の拡張 ---
   const levelConfigs = {
@@ -97,6 +98,9 @@ export default function RocketGame() {
   };
 
   const drawScene = (ctx: CanvasRenderingContext2D, rx: number, ry: number) => {
+    ctx.save(); // Save current context state
+    ctx.scale(VISUAL_SCALE, VISUAL_SCALE); // Apply scaling
+
     const config = levelConfigs[level as keyof typeof levelConfigs];
     ctx.fillStyle = "#87CEEB";
     ctx.fillRect(0, 0, CANVAS_WIDTH, 400);
@@ -169,8 +173,12 @@ export default function RocketGame() {
     const rocketAngle = Math.atan2(rocket.current.vy, rocket.current.vx);
     drawRocket(ctx, rx, ry, rocketAngle);
 
-    // メーター
+    // メーター (Scale back for meter text so it doesn't get tiny)
+    ctx.restore(); // Restore context to draw meters unscaled, then save again
+    ctx.save();
+    
     ctx.fillStyle = "rgba(0,0,0,0.8)";
+    // Adjust coordinates by multiplying with VISUAL_SCALE to place them correctly in the scaled view
     ctx.fillRect(10, 10, 200, 80);
     ctx.fillStyle = "#0f0";
     ctx.font = "14px monospace";
@@ -178,6 +186,8 @@ export default function RocketGame() {
     ctx.fillText(`DISTANCE: ${Math.round(rx - LAUNCH_X)} m`, 20, 50);
     const speed = Math.round(Math.sqrt(rocket.current.vx**2 + rocket.current.vy**2) * 3.6);
     ctx.fillText(`SPEED   : ${speed} km/h`, 20, 70);
+    
+    ctx.restore(); // Final restore
   };
 
   const animate = () => {
@@ -406,7 +416,7 @@ export default function RocketGame() {
   if (level === 0) {
     return (
       <div style={{ textAlign: 'center', background: '#1a1a1a', color: 'white', padding: '50px', minHeight: '100vh' }}>
-              <h1 style={{ color: '#0cf', margin: '0' }}>ROCKET SIM v1.4</h1>        <Link href="/" style={{ background: '#444', color: 'white', border: 'none', padding: '8px 20px', cursor: 'pointer', borderRadius: '4px', textDecoration: 'none', marginBottom: '20px', display: 'inline-block' }}>
+              <h1 style={{ color: '#0cf', margin: '0' }}>ROCKET SIM v1.7</h1>        <Link href="/" style={{ background: '#444', color: 'white', border: 'none', padding: '8px 20px', cursor: 'pointer', borderRadius: '4px', textDecoration: 'none', marginBottom: '20px', display: 'inline-block' }}>
             トップページに戻る
         </Link>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', maxWidth: '800px', margin: '40px auto' }}>
@@ -422,7 +432,8 @@ export default function RocketGame() {
 
   return (
     <div style={{ textAlign: 'center', background: '#1a1a1a', color: 'white', padding: '20px', minHeight: '100vh', fontFamily: 'monospace' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', width: '100%', maxWidth: '950px', margin: '0 auto' }}> {/* Adjusted max-width */}
+      {/* Header and Level Name */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', width: '100%', maxWidth: '950px', margin: '0 auto' }}>
         <button onClick={() => { setLevel(0); setShowResult(false); }} style={{ background: '#444', color: 'white', border: 'none', padding: '8px 20px', cursor: 'pointer', borderRadius: '4px' }}>MENU</button>
         <h2 style={{ color: '#0cf', margin: 0 }}>{levelConfigs[level as keyof typeof levelConfigs].name}</h2>
         <div style={{ width: '80px' }}></div>
@@ -434,7 +445,7 @@ export default function RocketGame() {
         {/* Canvas and overlays wrapper */}
         <div style={{ width: '100%', overflowX: 'auto' }}> {/* Scrollable canvas container */}
           <div style={{ position: 'relative', width: CANVAS_WIDTH, height: 400, margin: '0 auto' }}> {/* Actual canvas holder */}
-            <canvas ref={canvasRef} width={CANVAS_WIDTH} height={400} style={{ background: '#f0f4f8', borderRadius: '8px', border: '4px solid #333' }} />
+            <canvas ref={canvasRef} width={CANVAS_WIDTH * VISUAL_SCALE} height={400 * VISUAL_SCALE} style={{ background: '#f0f4f8', borderRadius: '8px', border: '4px solid #333' }} />
             {showResult && lastResultType === 'MISS' && ( // Show result overlay ONLY for MISS
               <div onClick={() => { setShowResult(false); trail.current = []; pastTrails.current = []; rocket.current = { x: LAUNCH_X, y: GROUND_Y, vx: 0, vy: 0 }; setLastResultType(null); }}
                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', zIndex: 10, borderRadius: '8px' }}>
@@ -467,30 +478,30 @@ export default function RocketGame() {
                 </button>
               </div>
             )}
+
+            {/* 過去の挑戦履歴 (Overlayed on canvas) */}
+            <div style={{ position: 'absolute', top: 10 * VISUAL_SCALE, right: 10 * VISUAL_SCALE, width: 200 * VISUAL_SCALE, background: 'rgba(34, 34, 34, 0.7)', padding: 10 * VISUAL_SCALE, borderRadius: 8 * VISUAL_SCALE, border: `1px solid rgba(68, 68, 68, 0.7)`, overflowY: 'auto', maxHeight: 150 * VISUAL_SCALE, zIndex: 5 }}>
+              <h3 style={{ color: '#0cf', marginTop: '0', marginBottom: 5 * VISUAL_SCALE, fontSize: 14 * VISUAL_SCALE }}>過去の挑戦</h3>
+              {pastAttempts.current.length === 0 ? (
+                <p style={{ fontSize: 10 * VISUAL_SCALE, color: '#666' }}>まだ挑戦はありません。</p>
+              ) : (
+                <ul style={{ listStyleType: 'none', padding: '0' }}>
+                  {pastAttempts.current.map((attempt, index) => (
+                    <li key={index} style={{ marginBottom: 5 * VISUAL_SCALE, paddingBottom: 5 * VISUAL_SCALE, borderBottom: `1px dashed rgba(68, 68, 68, 0.7)`, fontSize: 10 * VISUAL_SCALE, color: '#ddd' }}>
+                      <p style={{ margin: '0' }}>試行 {index + 1}:</p>
+                      <p style={{ margin: '0' }}>圧: {attempt.pressure.toFixed(2)}, 角: {attempt.angle}°</p>
+                      <p style={{ margin: '0' }}>距離: {attempt.distance}m, 結果: {attempt.result}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* 過去の挑戦履歴 */}
-        <div style={{ width: '100%', maxWidth: '750px', background: '#222', padding: '15px', borderRadius: '12px', border: '1px solid #444', overflowY: 'auto', maxHeight: '200px', marginTop: '20px' }}> {/* Adjusted width and max height for mobile */}
-          <h3 style={{ color: '#0cf', marginTop: '0', marginBottom: '10px' }}>過去の挑戦</h3>
-          {pastAttempts.current.length === 0 ? (
-            <p style={{ fontSize: '12px', color: '#666' }}>まだ挑戦はありません。</p>
-          ) : (
-            <ul style={{ listStyleType: 'none', padding: '0' }}>
-              {pastAttempts.current.map((attempt, index) => (
-                <li key={index} style={{ marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px dashed #444', fontSize: '12px', color: '#ddd' }}>
-                  <p style={{ margin: '0' }}>試行 {index + 1}:</p>
-                  <p style={{ margin: '0' }}>圧: {attempt.pressure.toFixed(2)}, 角: {attempt.angle}°</p>
-                  <p style={{ margin: '0' }}>距離: {attempt.distance}m, 結果: {attempt.result}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
         {/* Controls */}
-        <div style={{ background: '#222', padding: '20px', borderRadius: '12px', width: '100%', maxWidth: '750px', border: '1px solid #444', marginTop: '20px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+        <div style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: '#222', padding: '20px', borderTop: '1px solid #444', zIndex: 100 }}> {/* Fixed to bottom */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', maxWidth: '750px', margin: '0 auto' }}> {/* Centered content */}
             <div>
               <label style={{ display: 'block', color: '#0cf', marginBottom: '10px' }}>PRESSURE: {pressure.toFixed(2)} MPa</label>
               <input type="range" min="0.1" max="2.0" step="0.01" value={pressure} onChange={e => setPressure(Number(e.target.value))} style={{ width: '100%' }} />
@@ -510,7 +521,7 @@ export default function RocketGame() {
       </div>
 
       {failureCount >= 3 && (
-        <div style={{ background: '#333', padding: '15px', borderRadius: '12px', marginTop: '15px', maxWidth: '750px', margin: '15px auto', border: '1px solid #ffcc00', textAlign: 'left' }}>
+        <div style={{ background: '#333', padding: '15px', borderRadius: '12px', marginTop: '15px', maxWidth: '750px', margin: '15px auto 100px auto', border: '1px solid #ffcc00', textAlign: 'left' }}>
           <h3 style={{ color: '#ffcc00', margin: '0 0 10px 0' }}>ヒント:</h3>
           <p style={{ color: 'white', fontSize: '14px', marginBottom: '5px' }}>
             {hints.parabolic}

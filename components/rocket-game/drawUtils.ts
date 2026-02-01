@@ -27,7 +27,6 @@ export const drawScene = (
   ctx: CanvasRenderingContext2D, 
   rocket: {x: number, y: number, vx: number, vy: number}, 
   config: LevelConfig, 
-  isFlying: boolean,
   trail: Point[],
   pastTrails: Point[][]
 ) => {
@@ -48,10 +47,14 @@ export const drawScene = (
   ctx.fill();
   
   // 山
-  if (config.obstacle) {
+  if (config.obstacle && config.obstacleX && config.obstacleWidth && config.obstacleHeight) {
     ctx.fillStyle = "#5d4037";
     ctx.beginPath();
-    ctx.moveTo(400, GROUND_Y + 10); ctx.lineTo(550, 100); ctx.lineTo(700, GROUND_Y + 10);
+    const peakX = config.obstacleX + config.obstacleWidth / 2;
+    const peakY = GROUND_Y + 10 - config.obstacleHeight;
+    ctx.moveTo(config.obstacleX, GROUND_Y + 10);
+    ctx.lineTo(peakX, peakY);
+    ctx.lineTo(config.obstacleX + config.obstacleWidth, GROUND_Y + 10);
     ctx.fill();
   }
 
@@ -63,8 +66,31 @@ export const drawScene = (
   ctx.fillStyle = "red";
   ctx.fillRect(LAUNCH_X + config.targetX, config.targetY, 40, 10);
 
-  // 軌跡の描画（過去・現在）... (元のロジックを移植)
+  // 過去の軌跡を描画
+  ctx.strokeStyle = "rgba(150, 150, 150, 0.5)";
+  ctx.lineWidth = 1;
+  pastTrails.forEach(pTrail => {
+    if (pTrail.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(pTrail[0].x, pTrail[0].y);
+    for (let i = 1; i < pTrail.length; i++) {
+      ctx.lineTo(pTrail[i].x, pTrail[i].y);
+    }
+    ctx.stroke();
+  });
+
+  // 現在の軌跡を描画
+  if (trail.length > 1) {
+    ctx.strokeStyle = "orange";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(trail[0].x, trail[0].y);
+    for (let i = 1; i < trail.length; i++) {
+      ctx.lineTo(trail[i].x, trail[i].y);
+    }
+    ctx.stroke();
+  }
   
-  drawRocket(ctx, rocket.x, rocket.y, rocket.vx, rocket.vy, isFlying);
+  drawRocket(ctx, rocket.x, rocket.y, rocket.vx, rocket.vy, true); // Temporarily hardcode isFlying to true
   ctx.restore();
 };

@@ -12,6 +12,9 @@ export interface LevelConfig {
   obstacle: boolean;
   hasWind?: boolean;
   startHeight?: number;
+  obstacleX?: number;
+  obstacleWidth?: number;
+  obstacleHeight?: number;
 }
 
 export interface Attempt {

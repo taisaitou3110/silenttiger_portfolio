@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, Fragment } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import versionData from '@/app/version.json';
@@ -6,8 +9,8 @@ type AppKey = keyof typeof versionData.apps;
 
 const apps: { name: string; description: string; path: string; versionKey: AppKey }[] = [
   {
-    name: '北国食堂 〜数字で生き残れ〜',
-    description: '北国の観光地にある実家の飲食店を引き継ぎ、意思決定によってBS/PL/CFがリアルタイムに変化。「黒字なのに金がない」「人を雇うと楽だが苦しい」を体感し、簿記が判断の言語になることを目的としたゲーム。',
+    name: '経営シミュレーションゲーム',
+    description: '簿記を学ぶための経営シミュレーションゲーム。',
     path: '/dashboard',
     versionKey: 'dashboard',
   },
@@ -50,9 +53,14 @@ const apps: { name: string; description: string; path: string; versionKey: AppKe
 ];
 
 export default function Home() {
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+
+  const handleRowClick = (path: string) => {
+    setExpandedRow(expandedRow === path ? null : path);
+  };
+
   return (
     <main className="relative h-screen w-screen overflow-hidden">
-      {/* Background Image */}
       <Image
         src="/images/toppage_wheel_labo.png"
         alt="車輪再発明室 背景"
@@ -61,25 +69,16 @@ export default function Home() {
         className="z-0"
         priority
       />
-
-      {/* Scrollable Content Container */}
       <div className="relative z-10 h-full w-full overflow-y-auto">
-        {/* Spacer to push content down, leaving top of image visible */}
         <div className="h-[50vh]" />
-
-        {/* Table Section */}
         <div className="px-2 pb-24 sm:px-4 md:px-8">
           <div className="mx-auto max-w-5xl rounded-xl border border-white/10 bg-black/40 p-1 shadow-2xl backdrop-blur-lg">
             <div className="overflow-x-auto rounded-lg">
               <table className="min-w-full divide-y divide-white/10 text-sm">
-                <thead className="">
+                <thead>
                   <tr>
                     <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-white/80 md:px-6">
                       Application
-                    </th>
-                    {/* Hide description on small screens */}
-                    <th className="hidden px-6 py-3 text-left font-medium text-white/80 md:table-cell">
-                      Description
                     </th>
                     <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-white/80 md:px-6">
                       Version
@@ -89,26 +88,36 @@ export default function Home() {
                 </thead>
                 <tbody className="divide-y divide-white/10">
                   {apps.map((app) => (
-                    <tr key={app.path} className="hover:bg-black/20">
-                      <td className="whitespace-nowrap px-4 py-4 font-medium text-white md:px-6">
-                        {app.name}
-                      </td>
-                      {/* Hide description on small screens */}
-                      <td className="hidden px-6 py-4 text-white/80 md:table-cell">
-                        {app.description}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4 font-mono text-white/80 md:px-6">
-                        v{versionData.apps[app.versionKey]}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4 text-right md:px-6">
-                        <Link
-                          href={app.path}
-                          className="inline-block rounded-md bg-indigo-500 px-4 py-2 text-xs font-medium text-white transition hover:bg-indigo-400"
-                        >
-                          Open
-                        </Link>
-                      </td>
-                    </tr>
+                    <Fragment key={app.path}>
+                      <tr
+                        className="cursor-pointer hover:bg-black/20"
+                        onClick={() => handleRowClick(app.path)}
+                      >
+                        <td className="whitespace-nowrap px-4 py-4 font-medium text-white md:px-6">
+                          {app.name}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 font-mono text-white/80 md:px-6">
+                          v{versionData.apps[app.versionKey]}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 text-right md:px-6">
+                          <Link
+                            href={app.path}
+                            onClick={(e) => e.stopPropagation()} // Prevent row click from firing
+                            className="inline-block rounded-md bg-indigo-500 px-4 py-2 text-xs font-medium text-white transition hover:bg-indigo-400"
+                          >
+                            Open
+                          </Link>
+                        </td>
+                      </tr>
+                      {expandedRow === app.path && (
+                        <tr className="bg-black/10">
+                          <td colSpan={3} className="px-4 py-4 text-white/90 md:px-6">
+                            <p className="font-bold mb-1">Description:</p>
+                            <p>{app.description}</p>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>

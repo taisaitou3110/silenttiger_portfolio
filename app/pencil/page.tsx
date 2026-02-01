@@ -1,8 +1,7 @@
 "use client";
-//comment add
-
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image'; // Import Image component
 
 export default function RocketGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -336,10 +335,9 @@ export default function RocketGame() {
       setAngle(0);    // 最低値
     }
 
-    // Draw the initial scene
+    // Set initial rocket position, potentially elevated
     const ctx = canvasRef.current?.getContext('2d');
     if (ctx) {
-      // Set initial rocket position, potentially elevated
       const config = levelConfigs[currentLevel as keyof typeof levelConfigs];
       rocket.current = {
         x: LAUNCH_X,
@@ -361,32 +359,6 @@ export default function RocketGame() {
     }
 
   }, [level]); // Depend on level state
-
-  // This useEffect will be replaced
-  // useEffect(() => {
-  //   if (level > 0) { // レベルが選択されたら
-  //     setPressure(0.1); // 最低値
-  //     setAngle(0);    // 最低値
-  //     // その他の初期化
-  //     pastAttempts.current = [];
-  //     pastTrails.current = [];
-  //     trail.current = [];
-  //     rocket.current = { x: LAUNCH_X, y: GROUND_Y, vx: 0, vy: 0 };
-  //     setShowResult(false);
-  //     setShowNextLevelPrompt(false);
-  //     setFailureCount(0);
-  //     setLastResultType(null);
-
-  //     const ctx = canvasRef.current?.getContext('2d');
-  //     if (ctx) drawScene(ctx, LAUNCH_X, GROUND_Y);
-  //   }
-  // }, [level]);
-
-  // This useEffect will also be replaced (or merged)
-  // useEffect(() => {
-  //   const ctx = canvasRef.current?.getContext('2d');
-  //   if (ctx && level > 0) drawScene(ctx, LAUNCH_X, GROUND_Y);
-  // }, [level]);
 
   const retryCurrentLevel = () => {
     setShowNextLevelPrompt(false);
@@ -415,7 +387,7 @@ export default function RocketGame() {
 
   if (level === 0) {
     return (
-      <div style={{ textAlign: 'center', background: '#1a1a1a', color: 'white', padding: '50px', minHeight: '100vh' }}>
+      <div style={{ textAlign: 'center', color: 'white', padding: '50px' }}>
               <h1 style={{ color: '#0cf', margin: '0' }}>ROCKET SIM v1.7</h1>        <Link href="/" style={{ background: '#444', color: 'white', border: 'none', padding: '8px 20px', cursor: 'pointer', borderRadius: '4px', textDecoration: 'none', marginBottom: '20px', display: 'inline-block' }}>
             トップページに戻る
         </Link>
@@ -431,7 +403,7 @@ export default function RocketGame() {
   }
 
   return (
-    <div style={{ textAlign: 'center', background: '#1a1a1a', color: 'white', padding: '20px', minHeight: '100vh', fontFamily: 'monospace' }}>
+    <div style={{ textAlign: 'center', color: 'white', padding: '20px', fontFamily: 'monospace' }}>
       {/* Header and Level Name */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', width: '100%', maxWidth: '950px', margin: '0 auto' }}>
         <button onClick={() => { setLevel(0); setShowResult(false); }} style={{ background: '#444', color: 'white', border: 'none', padding: '8px 20px', cursor: 'pointer', borderRadius: '4px' }}>MENU</button>

@@ -1,5 +1,5 @@
 // src/components/rocket-game/drawUtils.ts
-import { GROUND_Y, LAUNCH_X, CANVAS_WIDTH, VISUAL_SCALE } from './constants';
+import { GROUND_Y, LAUNCH_X, CANVAS_WIDTH } from './constants';
 import { LevelConfig, Point } from './types';
 
 export const drawRocket = (ctx: CanvasRenderingContext2D, x: number, y: number, vx: number, vy: number, isFlying: boolean) => {
@@ -28,11 +28,14 @@ export const drawScene = (
   rocket: {x: number, y: number, vx: number, vy: number}, 
   config: LevelConfig, 
   trail: Point[],
-  pastTrails: Point[][]
+  pastTrails: Point[][],
+  canvasWidth: number,
+  canvasHeight: number,
+  scale: number
 ) => {
-  ctx.clearRect(0, 0, CANVAS_WIDTH * VISUAL_SCALE, 400 * VISUAL_SCALE);
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   ctx.save();
-  ctx.scale(VISUAL_SCALE, VISUAL_SCALE);
+  ctx.scale(scale, scale);
 
   // 背景
   ctx.fillStyle = "#87CEEB";
@@ -65,6 +68,13 @@ export const drawScene = (
   }
   ctx.fillStyle = "red";
   ctx.fillRect(LAUNCH_X + config.targetX, config.targetY, 40, 10);
+
+  // ゴール地点の距離表示
+  ctx.fillStyle = "white";
+  ctx.font = "14px monospace";
+  ctx.textAlign = "center";
+  ctx.fillText(`${config.targetX}m`, LAUNCH_X + config.targetX + 20, config.targetY - 5);
+
 
   // 過去の軌跡を描画
   ctx.strokeStyle = "rgba(150, 150, 150, 0.5)";

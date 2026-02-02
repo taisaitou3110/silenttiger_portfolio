@@ -47,7 +47,49 @@ export function usePhysics(
     // 描画コールバックを実行
     draw();
 
-    // 衝突判定ロジック（元のコードから移植）
+    // --- 衝突判定ロジック ---
+
+    // 1. 山との衝突
+    if (config.obstacle && config.obstacleX && config.obstacleWidth && config.obstacleHeight) {
+      const { x, y } = rocket.current;
+      const { obstacleX, obstacleWidth, obstacleHeight } = config;
+      
+      const p1 = { x: obstacleX, y: GROUND_Y + 10 };
+      const p2 = { x: obstacleX + obstacleWidth / 2, y: GROUND_Y + 10 - obstacleHeight };
+      const p3 = { x: obstacleX + obstacleWidth, y: GROUND_Y + 10 };
+
+      // 重心座標による内外判定
+      const s = p1.y * p3.x - p1.x * p3.y + (p3.y - p1.y) * x + (p1.x - p3.x) * y;
+      const t = p1.x * p2.y - p1.y * p2.x + (p1.y - p2.y) * x + (p2.x - p1.x) * y;
+
+      if ((s < 0) != (t < 0) && s != 0 && t != 0) {
+          // No collision
+      } else {
+          const A = -p2.y * p3.x + p1.y * (p3.x - p2.x) + p1.x * (p2.y - p3.y) + p2.x * p3.y;
+          if (A < 0 ? (s <= 0 && s + t >= A) : (s >= 0 && s + t <= A)) {
+              setIsFlying(false);
+              onEnd('💥 MISS: 山にぶつかった！', x, y);
+              return;
+          }
+      }
+    }
+
+    // 2. ゴールの台との衝突
+    if (config.targetY < GROUND_Y) {
+      const { x, y } = rocket.current;
+      const platformX = LAUNCH_X + config.targetX - 5;
+      const platformY = config.targetY + 10;
+      const platformWidth = 50;
+      const platformHeight = GROUND_Y - config.targetY;
+      
+      if (x > platformX && x < platformX + platformWidth && y > platformY && y < platformY + platformHeight) {
+        setIsFlying(false);
+        onEnd('💥 MISS: 台にぶつかった！', x, y);
+        return;
+      }
+    }
+    
+    // 3. 地面との衝突
     if (rocket.current.y > GROUND_Y) {
       setIsFlying(false);
 
@@ -56,8 +98,13 @@ export function usePhysics(
       const tolerance = targetDistance * 0.01;
 
       let message = "";
-      if (landedDistance >= targetDistance - tolerance && landedDistance <= targetDistance + tolerance) {
-        message = `🎉 GOAL!`; // メッセージから距離を削除
+      if (
+        landedDistance >= targetDistance - tolerance &&
+        landedDistance <= targetDistance + tolerance &&
+        // ゴール地点のY座標も考慮（高台の場合）
+        rocket.current.y <= config.targetY + 20 // 少し余裕を持たせる
+      ) {
+        message = `🎉 GOAL!`;
       } else if (landedDistance > targetDistance + tolerance) {
         message = `💥 MISS: 目標をオーバー`;
       } else {

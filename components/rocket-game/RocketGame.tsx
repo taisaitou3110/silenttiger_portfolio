@@ -5,8 +5,8 @@ import {
   LEVEL_CONFIGS, 
   LAUNCH_X, 
   GROUND_Y, 
-  VISUAL_SCALE, 
-  CANVAS_WIDTH 
+  CANVAS_WIDTH,
+  HINTS 
 } from './constants';
 import { drawScene } from './drawUtils';
 import { usePhysics } from './usePhysics';
@@ -18,46 +18,77 @@ export default function RocketGame() {
   const [level, setLevel] = useState(0);
   const [pressure, setPressure] = useState(0.5);
   const [angle, setAngle] = useState(45);
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<{ msg: string; distance: number } | null>(null);
   const [wind, setWind] = useState({ x: 0, y: 0 });
   const [pastTrails, setPastTrails] = useState<Point[][]>([]);
   const [pastAttempts, setPastAttempts] = useState<Attempt[]>([]); // 試行履歴
   const [realtimeStatus, setRealtimeStatus] = useState({ altitude: 0, velocity: 0, distance: 0 }); // リアルタイムステータス
+  const [failedAttempts, setFailedAttempts] = useState(0); // 失敗回数カウンター
+  const [hint, setHint] = useState<string | null>(null); // ヒントメッセージ
+  const [canvasSize, setCanvasSize] = useState({ width: CANVAS_WIDTH, height: 400 });
+
 
   // --- 参照 (DOM & データ) ---
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const contextRef = useRef<CanvasRenderingContext2D | null>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   // --- 描画コールバック ---
   const draw = useCallback(() => {
     const ctx = contextRef.current;
     if (!ctx || level === 0) return;
 
+    const scale = canvasSize.width / CANVAS_WIDTH;
     // 毎フレーム描画
     drawScene(
       ctx,
       rocket.current,
       LEVEL_CONFIGS[level],
       trail.current,
-      pastTrails
+      pastTrails,
+      canvasSize.width,
+      canvasSize.height,
+      scale
     );
-  }, [level, pastTrails]);
+  }, [level, pastTrails, canvasSize]);
 
   // --- 物理エンジン Hook の接続 ---
   const { rocket, trail, isFlying, launch } = usePhysics(level, (msg, finalX, finalY) => {
-    setResult(msg); // シミュレーション終了時にメッセージをセット
+    const distance = Math.round(finalX - LAUNCH_X);
+    setResult({ msg, distance }); // オブジェクトで結果をセット
 
     // 試行履歴に保存
     setPastAttempts(prev => [
       ...prev,
       {
-        pressure: currentPressure.current, // handleLaunchで保存した圧力
-        angle: currentAngle.current,       // handleLaunchで保存した角度
-        distance: Math.round(finalX - LAUNCH_X),
+        pressure: currentPressure.current,
+        angle: currentAngle.current,
+        distance: distance,
         result: msg,
       }
     ]);
-  }, draw, setRealtimeStatus); // setRealtimeStatus を追加
+    
+    // ヒント機能のロジック
+    if (msg.includes('MISS')) {
+      const newFailedCount = failedAttempts + 1;
+      if (newFailedCount >= 3) {
+        const config = LEVEL_CONFIGS[level];
+        let relevantHint = HINTS.parabolic; // デフォルトヒント
+        if (config.obstacle) {
+          relevantHint = HINTS.obstacle;
+        } else if (config.drag > 0) {
+          relevantHint = HINTS.drag;
+        }
+        setHint(relevantHint);
+        setFailedAttempts(0); // ヒント表示後にカウンターをリセット
+      } else {
+        setFailedAttempts(newFailedCount);
+      }
+    } else if (msg.includes('GOAL')) {
+      setFailedAttempts(0);
+      setHint(null);
+    }
+  }, draw, setRealtimeStatus);
 
   // handleLaunch時に最新の圧力と角度を記録するためのref
   const currentPressure = useRef(pressure);
@@ -78,16 +109,18 @@ export default function RocketGame() {
     setAngle(45);
     setResult(null);
     setPastTrails([]);
-    setPastAttempts([]); // 試行履歴もリセット
-    setRealtimeStatus({ altitude: 0, velocity: 0, distance: 0 }); // リアルタイムステータスもリセット
+    setPastAttempts([]);
+    setRealtimeStatus({ altitude: 0, velocity: 0, distance: 0 });
+    setFailedAttempts(0);
+    setHint(null);
 
     // 風の設定
     const config = LEVEL_CONFIGS[level];
     if (config.hasWind) {
       const randomSign = () => (Math.random() < 0.5 ? 1 : -1);
-      setWind({
-        x: (Math.random() * 4 + 1) * randomSign(),
-        y: (Math.random() * 4 + 1) * randomSign()
+      setWind({ 
+        x: (Math.random() * 4 + 1) * randomSign(), 
+        y: (Math.random() * 4 + 1) * randomSign() 
       });
     } else {
       setWind({ x: 0, y: 0 });
@@ -100,15 +133,30 @@ export default function RocketGame() {
     if (!canvas) return;
     contextRef.current = canvas.getContext('2d');
     
-    // 状態が変わるたびに再描画（特にisFlyingがfalseになった時など）
+    const handleResize = () => {
+      if (canvasContainerRef.current) {
+        const containerWidth = canvasContainerRef.current.clientWidth;
+        const newHeight = containerWidth / (CANVAS_WIDTH / 400); // Maintain aspect ratio
+        setCanvasSize({
+          width: containerWidth,
+          height: newHeight,
+        });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Initial size
+
     draw();
 
-  }, [draw]); // draw関数が再生成されたら実行
+    return () => window.removeEventListener('resize', handleResize);
+  }, [draw]);
   
   // --- ハンドラ ---
   const handleLaunch = () => {
     if (isFlying) return;
     setResult(null);
+    setHint(null); // Launch時にヒントを消す
 
     const currentTrail = [...trail.current];
     if (currentTrail.length > 0) {
@@ -124,7 +172,7 @@ export default function RocketGame() {
         <h1 style={{ color: '#0cf', fontSize: '3rem', marginBottom: '40px' }}>ROCKET SIM v1.6</h1>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', maxWidth: '800px', margin: '0 auto' }}>
           {Object.keys(LEVEL_CONFIGS).map((key) => {
-            if (Number(key) === 0) return null; // Skip dummy data
+            if (Number(key) === 0) return null;
             return (
               <button 
                 key={key} 
@@ -145,19 +193,20 @@ export default function RocketGame() {
   // --- 表示: ゲーム画面 ---
   return (
           <div style={{ 
-            padding: '20px', 
             textAlign: 'center', 
             fontFamily: 'monospace', 
             color: 'white',
             backgroundImage: 'url("/images/image_background_rocket.png")',
             backgroundSize: 'cover',                                     
             backgroundAttachment: 'fixed',                               
-            minHeight: '100vh',                                          
+            width: '100vw',
+            height: '100vh',
             display: 'flex',                                             
             flexDirection: 'column',                                     
             alignItems: 'center',                                        
             justifyContent: 'center',                                    
             position: 'relative', 
+            padding: '20px',
           }}>
             {/* MENU ボタン */}
             <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 20 }}>
@@ -171,13 +220,13 @@ export default function RocketGame() {
               <h2 style={{ color: '#0cf', margin: 0, fontSize: '1.2rem' }}>{LEVEL_CONFIGS[level].name}</h2>
             </div>
     
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', maxWidth: '1200px', margin: '0 auto' }}>        {/* メインキャンバス部 */}
-        <div style={{ flexGrow: 1, position: 'relative', display: 'inline-block', borderRadius: '12px', border: '5px solid #333', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', backgroundImage: 'url("/images/image_background_rocket.png")', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', margin: '0 auto', flexWrap: 'wrap', width: '100%' }}>
+            <div ref={canvasContainerRef} style={{ flex: '1 1 600px', minWidth: '300px', position: 'relative', borderRadius: '12px', border: '5px solid #333', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.5)'}}>
           <canvas 
             ref={canvasRef} 
-            width={CANVAS_WIDTH * VISUAL_SCALE} 
-            height={400 * VISUAL_SCALE} 
-            style={{ display: 'block', opacity: 0.8 }}
+            width={canvasSize.width} 
+            height={canvasSize.height}
+            style={{ display: 'block', opacity: 0.9, width: '100%' }}
           />
           
           {isFlying && (
@@ -189,30 +238,32 @@ export default function RocketGame() {
           )}
 
           {/* 結果オーバーレイ */}
-          {result && !isFlying && (
+          {result && !isFlying && ( // resultがnullでなく、かつロケットが飛行中でない場合にのみ表示
             <div 
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10 }}
+            // 全画面を覆う半透明オーバーレイ
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10 }} 
             >
-              <div style={{ textAlign: 'center', background: 'rgba(34, 34, 34, 0.9)', padding: '30px', borderRadius: '12px', boxShadow: '0 5px 20px rgba(0,0,0,0.5)' }}>
-                <h2 style={{ fontSize: '3rem', color: result.includes('GOAL') ? '#0f0' : '#ff0', margin: 0 }}>{result}</h2>
-                {result.includes('GOAL') ? (
-                  <div style={{ marginTop: '20px' }}>
-                    <p style={{ color: 'white', fontSize: '1.2rem', marginBottom: '15px' }}>次のレベルへ進みますか？</p>
+              <div style={{ textAlign: 'center', background: 'rgba(34, 34, 34, 0.9)', padding: '30px', borderRadius: '12px', boxShadow: '0 5px 20px rgba(0,0,0,0.5)' }}> {/* 中央に表示されるメッセージボックスのスタイル */}
+                <h2 style={{ fontSize: '1rem', color: result.msg.includes('GOAL') ? '#0f0' : '#ff0', margin: 0 }}>{result.msg}</h2> {/* 結果メッセージ（GOAL! または MISS: ...） */}
+                <p style={{ color: 'white', fontSize: '1.5rem', margin: '5px 0 0 0' }}>飛距離: {result.distance}m</p> {/* 達成した飛距離を表示 */}
+                {result.msg.includes('GOAL') ? ( // GOAL! の場合
+                  <div style={{ marginTop: '20px' }}> {/* ボタンコンテナ */}
+                    <p style={{ color: 'white', fontSize: '1.2rem', marginBottom: '15px' }}>次のレベルへ進みますか？</p> {/* ユーザーへの問いかけ */}
                     <button 
-                      onClick={() => { setLevel(level + 1); setResult(null); }} 
+                      onClick={() => { setLevel(level + 1); setResult(null); }} // 次のレベルへ進むボタン。レベルを上げ、結果表示をクリア
                       style={{ background: '#0cf', color: 'white', border: 'none', padding: '10px 25px', cursor: 'pointer', borderRadius: '6px', marginRight: '10px' }}
                     >
                       次のレベルへ
                     </button>
                     <button 
-                      onClick={() => setResult(null)} 
+                      onClick={() => setResult(null)} // 現在のレベルを続けるボタン。結果表示をクリア
                       style={{ background: '#444', color: 'white', border: 'none', padding: '10px 25px', cursor: 'pointer', borderRadius: '6px' }}
                     >
                       このレベルを続ける
                     </button>
                   </div>
-                ) : (
-                  <p onClick={() => setResult(null)} style={{ color: 'white', cursor: 'pointer' }}>[ CLICK TO RETRY ]</p>
+                ) : ( // MISS: の場合
+                  <p onClick={() => setResult(null)} style={{ color: 'white', cursor: 'pointer', marginTop: '20px' }}>[ CLICK TO RETRY ]</p> // 再試行を促すメッセージ。クリックでメッセージを閉じる
                 )}
               </div>
             </div>
@@ -220,23 +271,20 @@ export default function RocketGame() {
         </div>
 
         {/* 試行履歴サイドバー */}
-        <div style={{ width: '250px', background: 'rgba(34, 34, 34, 0.7)', borderRadius: '12px', padding: '15px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', overflowY: 'auto', maxHeight: '600px' }}>
+        <div style={{ flex: '1 1 250px', minWidth: '250px', background: 'rgba(34, 34, 34, 0.7)', borderRadius: '12px', padding: '15px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', overflowY: 'auto', maxHeight: '400px' }}>
           <h3 style={{ color: '#0cf', fontSize: '1.5rem', marginBottom: '15px', textAlign: 'center' }}>試行履歴</h3>
           {pastAttempts.length === 0 ? (
             <p style={{ color: '#aaa', fontSize: '0.9rem', textAlign: 'center' }}>まだ試行がありません。</p>
           ) : (
             <ul style={{ listStyle: 'none', padding: 0 }}>
-              {pastAttempts.slice().reverse().slice(0, 3).map((attempt, index) => ( // 最新3つ分だけ表示
+              {pastAttempts.slice().reverse().map((attempt, index) => (
                 <li key={pastAttempts.length - 1 - index} style={{ marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #333' }}>
-                  {/* 1行目: 結果メッセージ (フォントサイズ小さく) */}
                   <p style={{ color: '#fff', fontSize: '0.85rem', margin: '0 0 5px 0' }}>
-                    <strong>#{pastAttempts.length - index}:</strong> {attempt.result.split('(')[0].trim()}
+                    <strong>#{pastAttempts.length - index}:</strong> {attempt.result}
                   </p>
-                  {/* 2行目: P, A, D の順で一行に */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '0.85rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-around', color: '#ccc', fontSize: '0.85rem' }}>
                     <span>P: {attempt.pressure.toFixed(2)}</span>
                     <span>A: {attempt.angle}°</span>
-                    <span>D: {attempt.distance}m</span>
                   </div>
                 </li>
               ))}
@@ -245,8 +293,14 @@ export default function RocketGame() {
         </div>
       </div>
 
+      {hint && (
+        <div style={{ background: 'rgba(255, 255, 100, 0.9)', color: 'black', padding: '10px', borderRadius: '8px', marginTop: '15px', width: '100%', boxShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
+          <strong>ヒント:</strong> {hint}
+        </div>
+      )}
+
       {/* 操作パネル (外部コンポーネント) */}
-      <div style={{ width: '100%', maxWidth: '950px', marginTop: '20px' }}>
+      <div style={{ width: '100%', marginTop: '15px' }}>
         <GameControls 
           pressure={pressure} 
           setPressure={setPressure} 

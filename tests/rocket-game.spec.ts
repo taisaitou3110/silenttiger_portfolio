@@ -77,42 +77,35 @@ test.describe('Rocket Game', () => {
     expect(screenshot1).not.toEqual(screenshot2);
   });
 
-  test('should display launch history', async ({ page }) => {
+  test('should display launch history correctly', async ({ page }) => {
     // 1回目の試行 (MISSを想定)
     await page.getByRole('button', { name: /LAUNCH/i }).click();
     await expect(page.getByText(/CLICK TO RETRY/)).toBeVisible({ timeout: 10000 });
     
-    // 結果のテキストを確認し、クリックして消す
-    const firstAttemptResultText = await page.locator('li').first().locator('p').first().textContent();
-    expect(firstAttemptResultText).toContain('💥 MISS:');
+    // 履歴のテキストを確認
+    const firstAttempt = page.locator('li').first();
+    await expect(firstAttempt.locator('p').first()).toContainText('💥 MISS:');
+    await expect(firstAttempt.locator('div').first()).toContainText('P: 0.50');
+    await expect(firstAttempt.locator('div').first()).toContainText('A: 45°');
     
     await page.getByText(/CLICK TO RETRY/).click();
     
-    await expect(page.locator('li')).toHaveCount(1); // 履歴が1件追加されたことを確認
-    await expect(page.locator('li').first()).toContainText('P: 0.50'); // デフォルト値
-    await expect(page.locator('li').first()).toContainText('A: 45°');   // デフォルト値
-    await expect(page.locator('li').first()).toContainText('D:'); // 飛距離が含まれていることを確認
-
     // 2回目の試行 (パラメータを変更してMISSを想定)
     const pressureSlider = page.locator('input[type="range"]').first();
-    await pressureSlider.fill('0.7'); // 圧力を変更
+    await pressureSlider.fill('0.7');
 
     await page.getByRole('button', { name: /LAUNCH/i }).click();
     await expect(page.getByText(/CLICK TO RETRY/)).toBeVisible({ timeout: 10000 });
     
-    // 結果のテキストを確認し、クリックして消す
-    const secondAttemptResultText = await page.locator('li').nth(1).locator('p').first().textContent();
-    expect(secondAttemptResultText).toContain('💥 MISS:');
-
-    await page.getByText(/CLICK TO RETRY/).click();
-
-    await expect(page.locator('li')).toHaveCount(2); // 履歴が2件になったことを確認
-    await expect(page.locator('li').nth(1)).toContainText('P: 0.50');
-    await expect(page.locator('li').nth(1)).toContainText('A: 45°');
-    await expect(page.locator('li').nth(1)).toContainText('D:');
+    // 履歴が2件になっていることを確認
+    await expect(page.locator('li')).toHaveCount(2);
+    
+    const secondAttempt = page.locator('li').first(); // 新しい履歴は一番上
+    await expect(secondAttempt.locator('p').first()).toContainText('💥 MISS:');
+    await expect(secondAttempt.locator('div').first()).toContainText('P: 0.70');
   });
 
-  test('should show GOAL message with correct parameters', async ({ page }) => {
+  test('should show GOAL message with distance', async ({ page }) => {
     // レベル1 (目標: 1000m) でゴールを狙う
     const pressureSlider = page.locator('input[type="range"]').first();
     const angleSlider = page.locator('input[type="range"]').last();
@@ -124,7 +117,9 @@ test.describe('Rocket Game', () => {
     await page.getByRole('button', { name: /LAUNCH/i }).click();
 
     // ゴールメッセージが表示されるのを待つ
-    await expect(page.getByRole('heading', { name: /🎉 GOAL!/ })).toBeVisible({ timeout: 10000 });
+    const resultOverlay = page.locator('h2:has-text("🎉 GOAL!")').locator('..');
+    await expect(resultOverlay).toBeVisible({ timeout: 10000 });
+    await expect(resultOverlay).toContainText('飛距離: 998m');
     
     // 履歴にもGOALが表示されることを確認
     const historyText = await page.locator('li').first().textContent();
@@ -138,13 +133,13 @@ test.describe('Rocket Game', () => {
     await page.getByRole('button', { name: /LAUNCH/i }).click();
 
     // リアルタイムステータス表示エリアが表示されていることを確認
-    const statusDisplay = page.locator('p', { hasText: 'Altitude:' }).first().locator('..'); // Altitudeを持つpの親要素
+    const statusDisplay = page.locator('p', { hasText: 'Altitude:' }).first().locator('..');
     await expect(statusDisplay).toBeVisible();
 
     // Altitude, Velocity, Distance の値が表示されていることを確認 (0以外)
-    await expect(statusDisplay).toContainText(/Altitude: [1-9]\d*m/); // 0m以外
-    await expect(statusDisplay).toContainText(/Velocity: [1-9]\d*m\/s/); // 0m/s以外
-    await expect(statusDisplay).toContainText(/Distance: [1-9]\d*m/); // 0m以外
+    await expect(statusDisplay).toContainText(/Altitude: [1-9]\d*m/);
+    await expect(statusDisplay).toContainText(/Velocity: [1-9]\d*m\/s/);
+    await expect(statusDisplay).toContainText(/Distance: [1-9]\d*m/);
 
     // ロケットが着地するまで待つ
     await expect(page.getByText(/CLICK TO RETRY/)).toBeVisible({ timeout: 10000 });
@@ -155,8 +150,8 @@ test.describe('Rocket Game', () => {
 
   test('should navigate to next level after GOAL', async ({ page }) => {
     // ゴールするパラメータで発射
-    await page.locator('input[type="range"]').first().fill('0.49'); // Pressure
-    await page.locator('input[type="range"]').last().fill('45');   // Angle
+    await page.locator('input[type="range"]').first().fill('0.49');
+    await page.locator('input[type="range"]').last().fill('45');
     await page.getByRole('button', { name: /LAUNCH/i }).click();
 
     // ゴールメッセージが表示されるのを待つ
@@ -167,5 +162,31 @@ test.describe('Rocket Game', () => {
 
     // レベルが2に上がったことを確認 (Lv.2: 山を越えろ)
     await expect(page.getByRole('heading', { name: /Lv.2: 山を越えろ/i })).toBeVisible();
+  });
+
+  test('should show hint after 3 failures', async ({ page }) => {
+    // 3回連続で失敗する
+    for (let i = 0; i < 3; i++) {
+      await page.getByRole('button', { name: /LAUNCH/i }).click();
+      await expect(page.getByText(/CLICK TO RETRY/)).toBeVisible({ timeout: 10000 });
+      await page.getByText(/CLICK TO RETRY/).click();
+    }
+    
+    // ヒントが表示されていることを確認
+    await expect(page.getByText(/ヒント:/)).toBeVisible();
+  });
+
+  test('should show obstacle collision message', async ({ page }) => {
+    // レベル2に移動
+    await page.getByRole('button', { name: 'MENU' }).click();
+    await page.getByRole('button', { name: /Lv.2: 山を越えろ/i }).click();
+
+    // 山にぶつかるように発射 (低い角度と圧力)
+    await page.locator('input[type="range"]').first().fill('0.5'); // Pressure
+    await page.locator('input[type="range"]').last().fill('30');   // Angle
+    await page.getByRole('button', { name: /LAUNCH/i }).click();
+
+    // 衝突メッセージが表示されるのを待つ
+    await expect(page.getByRole('heading', { name: /山にぶつかった！/ })).toBeVisible({ timeout: 10000 });
   });
 });

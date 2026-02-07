@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import LoadingButton from '@/components/LoadingButton';
 import { getCalorieEstimation } from '@/app/calorie/scan/actions';
 import { saveMealLog } from '@/app/calorie/actions';
-import ErrorHandler from './ErrorHandler';
-import MessageBox from './MessageBox'; // Import MessageBox
+// ✅ 修正後（標準仕様 6.3：エイリアス強制）
+import ErrorHandler from '@/components/ErrorHandler';
+import MessageBox from '@/components/MessageBox';
 
 export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate' | 'train' }) {
   const router = useRouter();

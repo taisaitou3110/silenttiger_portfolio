@@ -9,11 +9,11 @@ export default function EnvBadge() {
 
   // URLからどのアプリか判定してバージョンを選択
   const getVersion = () => {
-    if (pathname.includes("/poker")) return `poker v${versions.poker}`;
-    if (pathname.includes("/wordbook")) return `wordbook v${versions.wordbook}`;
-    if (pathname.includes("/calorie")) return `calorie v${versions.calorie}`;
-    if (pathname.includes("/feedback")) return `feedback v${versions.feedback}`;
-    return `global v${versions.global}`; // 該当なしは全体バージョン
+    if (pathname.includes("/poker")) return `poker v${versions.apps.poker}`;
+    if (pathname.includes("/wordbook")) return `wordbook v${versions.apps.wordbook}`;
+    if (pathname.includes("/calorie")) return `calorie v${versions.apps.calorie}`;
+    if (pathname.includes("/feedback")) return `feedback v${versions.apps.feedback}`;
+    return `global v${versions.version}`; // 該当なしは全体バージョン
   };
 
   return (

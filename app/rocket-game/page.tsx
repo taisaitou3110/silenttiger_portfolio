@@ -1,5 +1,5 @@
 // src/app/rocket-game/page.tsx
-import RocketGameContainer from "@/components/rocket-game/RocketGame";
+import RocketGameContainer from "@/app/rocket-game/RocketGame";
 
 export default function Page() {
   return (

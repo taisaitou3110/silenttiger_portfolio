@@ -30,9 +30,9 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
         setImagePreview(null);
         return;
       }
-      const MAX_CLIENT_SIDE_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+      const MAX_CLIENT_SIDE_FILE_SIZE_BYTES = 3 * 1024 * 1024; // 3MB
       if (file.size > MAX_CLIENT_SIDE_FILE_SIZE_BYTES) {
-        setError(`ファイルサイズが大きすぎます（最大${MAX_CLIENT_SIDE_FILE_SIZE_BYTES / (1024 * 1024)}MB）。より小さい画像をアップロードしてください。`);
+        setError(`ファイルサイズが大きすぎます（最大${MAX_CLIENT_SIDE_FILE_SIZE_BYTES / (1024 * 1024)}MB）。画像を圧縮するか、より小さいファイルをアップロードしてください。`);
         setImage(null);
         setImagePreview(null);
         return;
@@ -163,8 +163,9 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
                 </LoadingButton>
               </form>
         
-              {error && <ErrorHandler error={error} />}
-        
+              {error && (<ErrorHandler 
+                error={error} 
+                onClose={() => setError(null)} />)}        
               {estimation && (
                 <div className="mt-6 p-4 bg-gray-50 rounded-md shadow-inner border border-gray-200">
                   <h2 className="text-xl font-semibold mb-2 text-indigo-900">推定結果:</h2>

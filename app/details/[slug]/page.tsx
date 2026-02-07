@@ -3,7 +3,7 @@
 import { useContext, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { FinancialContext, AppState, DetailItem } from '../../../contexts/FinancialContext';
+import { FinancialContext, AppState, DetailItem } from '../../contexts/FinancialContext';
 
 // ヘルパー関数
 const toHankaku = (str: string): string => {

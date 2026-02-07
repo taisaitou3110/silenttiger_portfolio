@@ -47,6 +47,7 @@ export default async function FeedbackPage() {
       <h1 className="text-2xl font-bold">フィードバック掲示板 <span className="text-sm font-normal text-gray-500 ml-2">v{versionData.apps.feedback}</span></h1>
       <Link href="/" className="text-blue-500 hover:underline">トップページへ戻る</Link>
 
+
       {/* 投稿フォーム */}
       <form action={createFeedback} className="bg-gray-100 p-4 rounded shadow-sm space-y-2">
         <div className="flex gap-2">

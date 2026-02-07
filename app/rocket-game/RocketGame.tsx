@@ -36,14 +36,30 @@ export default function RocketGame() {
   // --- 描画コールバック ---
   const draw = useCallback(() => {
     const ctx = contextRef.current;
-    if (!ctx || level === 0) return;
+    if (!ctx) return; // Always need context
+
+    // Add robust checks for critical arguments before calling drawScene
+    // Guard against level 0 and ensure LEVEL_CONFIGS[level] is valid
+    if (level === 0 || !LEVEL_CONFIGS[level]) {
+      // If level 0, it's the menu. If config is missing, it's an invalid state.
+      // Simply return, as there's nothing meaningful to draw for an invalid level.
+      return; 
+    }
+    const currentLevelConfig = LEVEL_CONFIGS[level];
+
+    // Ensure rocket and trail refs are initialized and contain valid data
+    // The usePhysics hook should ensure these are always objects, but defensive check is good.
+    if (!rocket.current || !trail.current) {
+        // console.warn("Rocket or Trail data not yet available for drawing.");
+        return;
+    }
 
     const scale = canvasSize.width / CANVAS_WIDTH;
     // 毎フレーム描画
     drawScene(
       ctx,
       rocket.current,
-      LEVEL_CONFIGS[level],
+      currentLevelConfig, // Use the guarded config
       trail.current,
       pastTrails,
       canvasSize.width,

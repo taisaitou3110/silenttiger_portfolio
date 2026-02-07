@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import MessageBox from './MessageBox'; // 既存の共通メッセージボックス
+import MessageBox from '@/components/MessageBox'; // 既存の共通メッセージボックス
 // 他の既存コンポーネントもここでインポート
 // import LoadingSpinner from './LoadingSpinner'; 
 
@@ -9,6 +9,7 @@ import MessageBox from './MessageBox'; // 既存の共通メッセージボッ�
  * 標準仕様：エラーメッセージ変換ロジック
  */
 export const getFriendlyErrorMessage = (error: any): string => {
+    console.log("Captured Error:", error); // これで中身がブラウザのコンソールに見えます
   const message = error?.message || String(error);
 
   if (message.includes('timeout') || message.includes('timed out') || message.includes('digest')) {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { GameProvider } from "../contexts/GameContext";
+import { GameProvider } from "./contexts/GameContext";
 import EnvBadge from "@/components/EnvBadge";
 
 const geistSans = Geist({

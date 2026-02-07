@@ -12,3 +12,8 @@ node_modules
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Local files
+.DS_Store
+dev_output.log
+dev.db

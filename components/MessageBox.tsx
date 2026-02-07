@@ -1,3 +1,4 @@
+// MessageBox.tsx の修正案
 'use client';
 
 import React from 'react';
@@ -8,14 +9,18 @@ interface MessageBoxProps {
   title: string;
   description: string;
   onClose: () => void;
+  // ✅ オプションの追加ボタン（ラベルと実行する関数）
+  actionButton?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
-export default function MessageBox({ status, title, description, onClose }: MessageBoxProps) {
-  // ステータスに応じたアイコンと色の設定
+export default function MessageBox({ status, title, description, onClose, actionButton }: MessageBoxProps) {
   const statusConfig = {
     success: { icon: '✅', color: 'bg-green-100 text-green-600' },
     error: { icon: '⚠️', color: 'bg-red-100 text-red-600' },
-    warning: { icon: '🔸', color: 'bg-yellow-100 text-yellow-600' },
+    warning: { icon: '💡', color: 'bg-yellow-100 text-yellow-600' }, // ヒント用にアイコン変更
     info: { icon: '🔹', color: 'bg-blue-100 text-blue-600' },
   };
 
@@ -37,12 +42,24 @@ export default function MessageBox({ status, title, description, onClose }: Mess
             </div>
           </div>
           
-          <button
-            onClick={onClose}
-            className={`mt-6 ${MESSAGE_BOX_STYLES.button}`}
-          >
-            閉じる
-          </button>
+          <div className="flex flex-col gap-2 mt-6">
+            {/* ✅ おすすめセットボタンがある場合のみ表示 */}
+            {actionButton && (
+              <button
+                onClick={actionButton.onClick}
+                className={`${MESSAGE_BOX_STYLES.button} bg-yellow-500 hover:bg-yellow-400 text-white border-none`}
+              >
+                {actionButton.label}
+              </button>
+            )}
+            
+            <button
+              onClick={onClose}
+              className={MESSAGE_BOX_STYLES.button}
+            >
+              自分で考える（閉じる）
+            </button>
+          </div>
         </div>
       </div>
     </div>

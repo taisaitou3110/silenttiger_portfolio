@@ -8,6 +8,7 @@ import {
   CANVAS_WIDTH,
   HINTS 
 } from '@/app/rocket-game/constants';
+import MessageBox from '@/components/MessageBox';
 import { drawScene } from '@/app/rocket-game/drawUtils';
 import { usePhysics } from '@/app/rocket-game/usePhysics';
 import GameControls from '@/app/rocket-game/GameControls';
@@ -195,7 +196,7 @@ export default function RocketGame() {
   if (level === 0) {
     return (
       <div className="text-white p-12 text-center font-mono">
-        <h1 className="text-[#0cf] text-5xl mb-10 sm:text-6xl">ROCKET SIM v1.6</h1>
+        <h1 className="text-[#0cf] text-5xl mb-10 sm:text-6xl">真夏の方程式 ROCKET simulator v1.8</h1>
         <div className="grid grid-cols-1 gap-5 max-w-4xl mx-auto sm:grid-cols-2 lg:grid-cols-3">
           {Object.keys(LEVEL_CONFIGS).map((key) => {
             if (Number(key) === 0) return null;
@@ -301,12 +302,34 @@ export default function RocketGame() {
           )}
         </div>
       </div>
-
+{/*
       {hint && (
         <div className="bg-yellow-100/90 text-black p-3 rounded-lg mt-4 w-full shadow-lg shadow-black/30 text-sm sm:text-base">
           <strong>ヒント:</strong> {hint}
         </div>
       )}
+
+      */}
+      {hint && !isFlying && (
+  <MessageBox 
+    status="warning"
+    title="博士のアドバイス"
+    description={hint}
+    onClose={() => setHint(null)}
+    // ✅ ここで「おすすめセット」のロジックを渡す
+    actionButton={{
+      label: "おすすめの値をセットする",
+      onClick: () => {
+        const config = LEVEL_CONFIGS[level];
+/*         if (config.recommended) {
+          setAngle(config.recommended.angle);
+          setPressure(config.recommended.pressure);
+        } */
+        setHint(null);
+      }
+    }}
+  />
+)}
 
       {/* 操作パネル (外部コンポーネント) */}
       <div className="w-full mt-4">

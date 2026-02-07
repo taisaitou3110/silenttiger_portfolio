@@ -3,6 +3,7 @@ node_modules
 .env*
 .next
 /generated/prisma
+/docs/*
 
 # Playwright
 /tests/

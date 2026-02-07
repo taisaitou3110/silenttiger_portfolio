@@ -1,37 +1,65 @@
 "use client";
 
+import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import LoadingButton from '@/components/LoadingButton';
 import { addQuickLog, copyPreviousDayLogs } from './actions';
+import ErrorHandler from '@/components/ErrorHandler';
 
-// Define QuickLogSubmitButton outside the main component
-function QuickLogSubmitButton({ foodName, calories, className }: { foodName: string; calories: number; className?: string }) {
+// Wrapper component for the QuickLog form to manage its own state
+function QuickLogForm({ meal }: { meal: { foodName: string; calories: number } }) {
+  const [state, formAction] = useActionState(async (prevState: any, formData: FormData) => {
+    try {
+      await addQuickLog(meal.foodName, meal.calories);
+      return { error: null, success: true };
+    } catch (error) {
+      return { error: error, success: false };
+    }
+  }, { error: null, success: false });
+
   const { pending } = useFormStatus();
+
   return (
-    <LoadingButton
-      type="submit"
-      isLoading={pending}
-      loadingText="登録中..."
-      className={className}
-    >
-      {foodName} ({calories} kcal)
-    </LoadingButton>
+    <form action={formAction}>
+      <LoadingButton
+        type="submit"
+        isLoading={pending}
+        loadingText="登録中..."
+        className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-full text-sm"
+      >
+        {meal.foodName} ({meal.calories} kcal)
+      </LoadingButton>
+      {state?.error && <ErrorHandler error={state.error} />}
+    </form>
   );
 }
 
-// Define CopyLogsSubmitButton outside the main component
-function CopyLogsSubmitButton({ className }: { className?: string }) {
+// Wrapper component for the CopyLogs form
+function CopyLogsForm() {
+  const [state, formAction] = useActionState(async (prevState: any, formData: FormData) => {
+    try {
+      await copyPreviousDayLogs();
+      return { error: null, success: true };
+    } catch (error) {
+      return { error: error, success: false };
+    }
+  }, { error: null, success: false });
+
   const { pending } = useFormStatus();
+
   return (
-    <LoadingButton
-      type="submit"
-      isLoading={pending}
-      loadingText="コピー中..."
-      className={className}
-    >
-      前日の記録を今日にコピー
-    </LoadingButton>
+    <form action={formAction}>
+      <LoadingButton
+        type="submit"
+        isLoading={pending}
+        loadingText="コピー中..."
+        className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-md"
+      >
+        前日の記録を今日にコピー
+      </LoadingButton>
+      {state?.error && <ErrorHandler error={state.error} />}
+    </form>
   );
 }
 
@@ -118,13 +146,7 @@ export default function CalorieDashboard({
             <p className="text-gray-500">まだ登録がありません。食事を登録するとここに頻繁なメニューが表示されます。</p>
           ) : (
             frequentMeals.map((meal) => (
-              <form key={meal.foodName} action={addQuickLog.bind(null, meal.foodName, meal.calories)}>
-                <QuickLogSubmitButton
-                  foodName={meal.foodName}
-                  calories={meal.calories}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full text-sm"
-                />
-              </form>
+              <QuickLogForm key={meal.foodName} meal={meal} />
             ))
           )}
         </div>
@@ -132,9 +154,7 @@ export default function CalorieDashboard({
 
       <div className="bg-white rounded-lg shadow-md p-6 mt-8">
         <h2 className="text-2xl font-semibold mb-4">前日の記録をコピー</h2>
-        <form action={copyPreviousDayLogs}>
-          <CopyLogsSubmitButton className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-md" />
-        </form>
+        <CopyLogsForm />
       </div>
     </main>
   );

@@ -60,10 +60,9 @@ export async function addQuickLog(foodName: string, calories: number) {
       calories,
       inputSource: 'quick_button',
     });
-    return { success: true };
   } catch (error) {
     console.error('Failed to add quick log:', error);
-    return { success: false, error: 'クイック登録に失敗しました。' };
+    throw new Error('クイック登録に失敗しました。');
   }
 }
 
@@ -100,9 +99,8 @@ export async function copyPreviousDayLogs() {
 
     revalidatePath('/calorie');
     revalidatePath('/calorie/log');
-    return { success: true };
   } catch (error) {
     console.error('Failed to copy previous day logs:', error);
-    return { success: false, error: '前日の記録のコピーに失敗しました。' };
+    throw new Error('前日の記録のコピーに失敗しました。');
   }
 }

@@ -4,7 +4,7 @@
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom'; // Import useFormStatus
 import LoadingButton from '@/components/LoadingButton'; // Import LoadingButton
-import { saveCalorieLogFromText } from './actions';
+import { saveCalorieLogFromText } from '@/app/calorie/text/actions';
 
 // New SubmitButton component
 function SubmitButton() {

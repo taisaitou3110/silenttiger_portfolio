@@ -1,7 +1,7 @@
 "use client";
 
 import { useContext, useState, useEffect } from 'react';
-import { GameContext } from '../contexts/GameContext';
+import { GameContext } from '@/app/contexts/GameContext';
 import scenarios from '@/app/dashboard/scenarios/lv1.json';
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('ja-JP').format(Math.round(value));

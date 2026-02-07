@@ -2,7 +2,7 @@
 'use server';
 
 import prisma from '@/lib/prisma';
-import { ensureUserSettings } from '../actions';
+import { ensureUserSettings } from '@/app/calorie/actions';
 
 export async function saveUserSettings(formData: FormData) {
   const userId = await ensureUserSettings();
@@ -77,7 +77,8 @@ export async function deleteCustomFood(foodId: string) {
         id: foodId,
         userId: userId, // Ensure user can only delete their own custom foods
       },
-    });
+    },
+    );
     return { success: true };
   } catch (error) {
     console.error('Failed to delete custom food:', error);

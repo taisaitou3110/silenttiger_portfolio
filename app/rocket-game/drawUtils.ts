@@ -1,6 +1,6 @@
 // src/components/rocket-game/drawUtils.ts
-import { GROUND_Y, LAUNCH_X, CANVAS_WIDTH } from './constants';
-import { LevelConfig, Point } from './types';
+import { GROUND_Y, LAUNCH_X, CANVAS_WIDTH } from '@/app/rocket-game/constants';
+import { LevelConfig, Point } from '@/app/rocket-game/types';
 
 export const drawRocket = (ctx: CanvasRenderingContext2D, x: number, y: number, vx: number, vy: number, isFlying: boolean) => {
   const angleRad = Math.atan2(vy, vx);

@@ -2,7 +2,7 @@
 'use server';
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { saveMealLog } from '../actions';
+import { saveMealLog } from '@/app/calorie/actions';
 import prisma from '@/lib/prisma'; // Import prisma
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');

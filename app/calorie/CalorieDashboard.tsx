@@ -4,7 +4,7 @@ import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import LoadingButton from '@/components/LoadingButton';
-import { addQuickLog, copyPreviousDayLogs } from './actions';
+import { addQuickLog, copyPreviousDayLogs } from '@/app/calorie/actions';
 import ErrorHandler from '@/components/ErrorHandler';
 
 // Wrapper component for the QuickLog form to manage its own state

@@ -1,6 +1,6 @@
 // src/components/rocket-game/index.tsx
 "use client";
-import RocketGame from "./RocketGame";
+import RocketGame from "@/app/rocket-game/RocketGame";
 
 export default function RocketGameContainer() {
   return (

@@ -1,6 +1,6 @@
 // app/devlog/edit/[id]/page.tsx
-import { getDevelopmentLogById, updateDevelopmentLog } from "../../actions";
-import { DevlogForm } from "../../DevlogForm";
+import { getDevelopmentLogById, updateDevelopmentLog } from "@/app/devlog/actions";
+import { DevlogForm } from "@/app/devlog/DevlogForm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 

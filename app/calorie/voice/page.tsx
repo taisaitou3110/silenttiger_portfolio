@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import LoadingButton from '@/components/LoadingButton'; // Import LoadingButton
-import { saveCalorieLogFromVoice } from './actions';
+import { saveCalorieLogFromVoice } from '@/app/calorie/voice/actions';
 
 export default function VoiceCalorieInputPage() {
   const [transcribedText, setTranscribedText] = useState('');

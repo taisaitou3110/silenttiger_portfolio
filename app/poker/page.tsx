@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image'; // Import Image component
-import { usePoker } from './usePoker';
-import { addAchiever, getAchievers } from './actions';
+import { usePoker } from '@/app/poker/usePoker';
+import { addAchiever, getAchievers } from '@/app/poker/actions';
 
 interface Achiever {
   id: string;

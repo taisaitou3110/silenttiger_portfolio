@@ -1,5 +1,5 @@
 // src/components/rocket-game/constants.ts
-import { LevelConfig } from './types';
+import { LevelConfig } from '@/app/rocket-game/types';
 
 export const GROUND_Y = 350;
 export const LAUNCH_X = 50;

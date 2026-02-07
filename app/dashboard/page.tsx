@@ -1,6 +1,6 @@
 "use client";
 
-import NorthCountryDinerGame from './NorthCountryDinerGame';
+import NorthCountryDinerGame from '@/app/dashboard/NorthCountryDinerGame';
 export const dynamic = "force-dynamic";
 
 const DashboardPage = () => {

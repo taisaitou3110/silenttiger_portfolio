@@ -2,7 +2,7 @@
 'use server';
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { saveMealLog } from '../actions';
+import { saveMealLog } from '@/app/calorie/actions';
 import prisma from '@/lib/prisma'; // Import prisma
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
@@ -43,8 +43,6 @@ export async function saveCalorieLogFromText(prevState: any, formData: FormData)
 もし料理名が複数ある場合は、主となる料理をfoodNameとし、その他の料理はbreakdownに含めてください。
 不明な点があれば、具体的な質問をadviceに含めてください。
 例：「サラダの種類は何でしたか？」
-
-入力: "${foodDescription}"
 
 出力は必ず以下のJSON形式のみで返してください。
 {

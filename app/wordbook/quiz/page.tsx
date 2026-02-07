@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { getRandomWordsWithExamples } from "./actions";
+import { getRandomWordsWithExamples } from "@/app/wordbook/quiz/actions";
 
 interface QuizWord {
   id: string;
@@ -188,7 +188,7 @@ export default function QuizPage({ version }: QuizPageProps) {
             </p>
             <button
               onClick={restartQuiz}
-              className="bg-blue-600 text-white py-3 px-8 rounded-lg text-xl hover:bg-blue-700 transition mr-4"
+              className="mt-6 bg-blue-600 text-white py-3 px-8 rounded-lg text-xl hover:bg-blue-700 transition mr-4"
             >
               もう一度プレイ
             </button>

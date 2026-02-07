@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { format } from "date-fns";
-import { getDevelopmentLogs, createDevelopmentLog } from "./actions"; // createDevelopmentLog を追加
-import { DevlogForm } from "./DevlogForm";
+import { getDevelopmentLogs, createDevelopmentLog } from "@/app/devlog/actions"; // createDevelopmentLog を追加
+import { DevlogForm } from "@/app/devlog/DevlogForm";
 
 interface PageProps {
   searchParams: {
@@ -38,7 +38,6 @@ export default async function DevlogPage({ searchParams }: PageProps) {
                   <div className="flex justify-between items-center text-sm text-gray-500 mb-2">
                     <div>
                       <span>日付: {format(new Date(log.date), "yyyy年MM月dd日")}</span>
-                      <span className="hidden sm:block">記録日時: {format(new Date(log.createdAt), "yyyy年MM月dd日 HH:mm")}</span>
                     </div>
                     <Link href={`/devlog/edit/${log.id}`} className="text-sm text-blue-600 hover:underline">
                       編集

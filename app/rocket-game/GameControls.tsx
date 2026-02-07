@@ -33,51 +33,28 @@ export default function GameControls({
 }: GameControlsProps) {
   // コンポーネントのJSXを返します
   return (
-    <div style={{ background: 'rgba(34, 34, 34, 0.7)', padding: '15px', borderRadius: '12px' }}>
-      {/* グリッドレイアウトのコンテナで、各要素を中央揃えで配置します */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '15px', alignItems: 'center' }}>
+    <div className="bg-gray-800/70 p-4 rounded-xl sm:p-5">
+      <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-center sm:gap-6">
         {/* 圧力コントロールのコンテナです */}
-        <div style={{ maxWidth: '200px', margin: '0 auto', width: '100%' }}>
-          {/* 圧力のラベルです */}
-          <label style={{ display: 'block', color: '#0cf', marginBottom: '10px' }}>PRESSURE: {pressure.toFixed(2)} MPa</label>
-          {/* 圧力の入力スライダーです */}
-          <input type="range" min="0.1" max="2.0" step="0.01" value={pressure} onChange={e => setPressure(Number(e.target.value))} style={{ width: '100%' }} />
+        <div className="max-w-[200px] mx-auto w-full">
+          <label className="block text-[#0cf] mb-2 text-sm sm:text-base">PRESSURE: {pressure.toFixed(2)} MPa</label>
+          <input type="range" min="0.1" max="2.0" step="0.01" value={pressure} onChange={e => setPressure(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-[#0cf]" />
         </div>
 
         {/* 発射ボタンです */}
         <button 
-          // クリック時にonLaunch関数を呼び出します
           onClick={onLaunch} 
-          // 飛行中は無効になります
           disabled={isFlying} 
-          // ボタンのスタイルです
-          style={{ 
-            width: '80px', 
-            height: '80px', 
-            fontWeight: 'bold', 
-            background: isFlying ? '#444' : '#0cf', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '12px', 
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
+          className={`w-20 h-20 font-bold text-white rounded-xl cursor-pointer flex flex-col items-center justify-center transition-colors duration-200 min-h-[44px] ${isFlying ? 'bg-gray-600' : 'bg-[#0cf] hover:bg-sky-600 active:bg-sky-700'}`}
         >
-          {/* ロケットの絵文字です */}
-          <span style={{ fontSize: '24px' }}>🚀</span>
-          {/* "LAUNCH"のテキストです */}
-          <span style={{ fontSize: '12px', marginTop: '5px' }}>LAUNCH</span>
+          <span className="text-2xl">🚀</span>
+          <span className="text-xs mt-1">LAUNCH</span>
         </button>
 
         {/* 角度コントロールのコンテナです */}
-        <div style={{ maxWidth: '200px', margin: '0 auto', width: '100%' }}>
-          {/* 角度のラベルです */}
-          <label style={{ display: 'block', color: 'white', marginBottom: '10px' }}>ANGLE: {angle}°</label>
-          {/* 角度の入力スライダーです */}
-          <input type="range" min="0" max="90" value={angle} onChange={e => setAngle(Number(e.target.value))} style={{ width: '100%' }} />
+        <div className="max-w-[200px] mx-auto w-full">
+          <label className="block text-white mb-2 text-sm sm:text-base">ANGLE: {angle}°</label>
+          <input type="range" min="0" max="90" value={angle} onChange={e => setAngle(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-white" />
         </div>
       </div>
     </div>

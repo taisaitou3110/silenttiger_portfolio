@@ -2,7 +2,7 @@
 
 import { useContext } from 'react';
 import Link from 'next/link';
-import { FinancialContext, AppState, DetailItem, initialState } from '../contexts/FinancialContext';
+import { FinancialContext, AppState, DetailItem, initialState } from '@/app/contexts/FinancialContext';
 
 // --- ヘルパー関数 ---
 const formatCurrency = (value: number) => new Intl.NumberFormat('ja-JP').format(Math.round(value));

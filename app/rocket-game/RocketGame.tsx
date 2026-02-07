@@ -33,34 +33,7 @@ export default function RocketGame() {
   const contextRef = useRef<CanvasRenderingContext2D | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
-  // --- 描画コールバック ---
-  const draw = useCallback(() => {
-    const ctx = contextRef.current;
-    if (!ctx) return; // Always need context
-
-    if (level === 0 || !LEVEL_CONFIGS[level]) {
-      return; 
-    }
-    const currentLevelConfig = LEVEL_CONFIGS[level];
-
-    if (!rocket.current || !trail.current) {
-        return;
-    }
-
-    const scale = canvasSize.width / CANVAS_WIDTH;
-    drawScene(
-      ctx,
-      rocket.current,
-      currentLevelConfig,
-      trail.current,
-      pastTrails,
-      canvasSize.width,
-      canvasSize.height,
-      scale
-    );
-  }, [level, pastTrails, canvasSize]);
-
-  // --- 物理エンジン Hook の接続 ---
+    // --- 物理エンジン Hook の接続 ---
   const { rocket, trail, isFlying, launch, updatePhysics } = usePhysics(level, (msg, finalX, finalY) => {
     const distance = Math.round(finalX - LAUNCH_X);
     setResult({ msg, distance });
@@ -91,6 +64,36 @@ export default function RocketGame() {
     }
   }, setRealtimeStatus);
 
+
+  // --- 描画コールバック ---
+  console.log("Draw Function defined, isFlying:", isFlying);
+  const draw = useCallback(() => {
+    const ctx = contextRef.current;
+    if (!ctx) return;
+
+    if (level === 0 || !LEVEL_CONFIGS[level]) return;
+    const currentLevelConfig = LEVEL_CONFIGS[level];
+
+    if (!rocket.current || !trail.current) return;
+
+    const scale = canvasSize.width / CANVAS_WIDTH;
+    // for debug
+    console.log("Canvas Context:", ctx);
+    console.log("Scale:", scale);
+
+    drawScene(
+      ctx,
+      rocket.current,
+      currentLevelConfig,
+      trail.current,
+      pastTrails,
+      canvasSize.width,
+      canvasSize.height,
+      scale
+    );
+  }, [level, pastTrails, canvasSize]); // ✅ rocket, trail を削除
+
+
   // --- アニメーションループ ---
   useEffect(() => {
     if (!isFlying) return;
@@ -98,14 +101,15 @@ export default function RocketGame() {
     let animationFrameId: number;
     const animate = () => {
       const config = LEVEL_CONFIGS[level];
-      updatePhysics(config, 1.0, wind);
+      // ✅ 第1, 第2引数に rocket と trail を渡す
+      updatePhysics(rocket, trail, config, 1.0, wind);
       draw();
       animationFrameId = requestAnimationFrame(animate);
     };
     animationFrameId = requestAnimationFrame(animate);
 
     return () => cancelAnimationFrame(animationFrameId);
-  }, [isFlying, level, wind, updatePhysics, draw]);
+  }, [isFlying, level, wind, updatePhysics, draw, rocket, trail]); // ✅ 依存関係を整理
 
   // handleLaunch時に最新の圧力と角度を記録するためのref
   const currentPressure = useRef(pressure);
@@ -142,29 +146,38 @@ export default function RocketGame() {
     }
   }, [level]);
 
-  // --- 副作用: 初期描画 & リサイズ対応など ---
+// --- 副作用: 初期描画 & リサイズ対応 ---
+// 2026.2.7 ここ一回バグってロケット表示されなくなったところ。取扱注意
   useEffect(() => {
+    // Canvas要素がDOMに出現するまで待つためのチェック
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    contextRef.current = canvas.getContext('2d');
-    
+    if (!canvas) {
+      console.log("Canvas element not found yet...");
+      return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    contextRef.current = ctx;
+    console.log("Canvas Context Initialized:", ctx); // これが出るはず
+
     const handleResize = () => {
       if (canvasContainerRef.current) {
         const containerWidth = canvasContainerRef.current.clientWidth;
         const newHeight = containerWidth / (CANVAS_WIDTH / 400);
-        setCanvasSize({
-          width: containerWidth,
-          height: newHeight,
+        setCanvasSize(prev => {
+          if (prev.width === containerWidth && prev.height === newHeight) return prev;
+          return { width: containerWidth, height: newHeight };
         });
       }
     };
-
     window.addEventListener('resize', handleResize);
     handleResize();
 
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
-  
+    // 依存配列に canvasRef.current を入れることで、
+    // null から要素が入った瞬間に再実行されるようにします
+  }, [canvasRef.current]);
+
   // --- ハンドラ ---
   const handleLaunch = () => {
     if (isFlying) return;

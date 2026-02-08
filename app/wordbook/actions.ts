@@ -60,22 +60,49 @@ export async function generateWordSuggestions(term: string) {
   }
 }
 
-export async function saveWord(data: any) {
-  const word = await prisma.word.create({
-    data: {
-      term: data.term,
+export async function saveWord(data: {
+  term: string;
+  meaning: string;
+  phonetic?: string;
+  scene?: string;
+  examples: { text: string; collocation: string }[];
+}) {
+  const termLower = data.term.toLowerCase();
+
+  return await prisma.word.upsert({
+    where: {
+      term: termLower,
+    },
+    update: {
+      // 既存の単語がある場合、意味や発音を最新に更新しつつ、例文を追加
+      meaning: data.meaning,
+      phonetic: data.phonetic,
+      scene: data.scene, // 最新のシーンに上書き（または追記も可能）
+      examples: {
+        create: data.examples.map((ex) => ({
+          text: ex.text,
+          collocation: ex.collocation,
+        })),
+      },
+    },
+    create: {
+      // 新規登録の場合
+      term: termLower,
       meaning: data.meaning,
       phonetic: data.phonetic,
       scene: data.scene,
+      accuracy: 0.0,
+      easeFactor: 2.5,
+      interval: 0,
+      nextReview: new Date(),
       examples: {
-        create: data.examples.map((ex: any) => ({
+        create: data.examples.map((ex) => ({
           text: ex.text,
-          collocation: ex.collocation
-        }))
-      }
-    }
+          collocation: ex.collocation,
+        })),
+      },
+    },
   });
-  return word;
 }
 
 export async function getQuizWords(limit: number = 20) {
@@ -144,3 +171,59 @@ export async function addGold(amount: number) {
   });
 }
 
+// ヘルパー関数：指定したミリ秒待機する
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export async function analyzeBulkText(rawText: string, retryCount = 0): Promise<any> {
+  const modelName = process.env.GEMINI_TEXT_MODEL || "gemini-3-flash-preview";
+  const model = genAI.getGenerativeModel({ model: modelName });
+
+  const prompt = `
+    以下のテキストから英単語、意味、発音記号、実用的な例文3つを抽出し、JSON形式で出力してください。
+    【テキスト】: ${rawText}
+    【形式】: {"words": [{"term": "...", "meaning": "...", "phonetic": "...", "examples": [{"text": "...", "collocation": "..."}]}]}
+  `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const jsonMatch = response.text().match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("Invalid AI response");
+    return JSON.parse(jsonMatch[0]);
+
+  } catch (error: any) {
+    // 503エラー（Overloaded）かつ リトライが2回未満なら再試行
+    if (error.message?.includes("503") && retryCount < 2) {
+      console.log(`Model overloaded. Retrying... (${retryCount + 1})`);
+      await sleep(2000 * (retryCount + 1)); // 少し待ってからリトライ
+      return analyzeBulkText(rawText, retryCount + 1);
+    }
+    
+    // それでもダメならエラーを投げる
+    throw new Error("AIサーバーが混雑しています。少し時間を置いてから再度お試しください。");
+  }
+}
+
+// すべての単語を取得（一覧用）
+export async function getWords() {
+  return await prisma.word.findMany({
+    orderBy: { term: 'asc' }, // アルファベット順
+    include: {
+      _count: {
+        select: { examples: true } // 蓄積された例文の数
+      }
+    }
+  });
+}
+
+// 特定の単語を全例文込みで取得（詳細用）
+export async function getWordDetail(id: string) {
+  return await prisma.word.findUnique({
+    where: { id },
+    include: {
+      examples: {
+        orderBy: { createdAt: 'desc' } // 新しい例文が上
+      }
+    }
+  });
+}

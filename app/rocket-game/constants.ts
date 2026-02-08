@@ -15,7 +15,6 @@ export const LEVEL_CONFIGS: Record<number, LevelConfig> = {
   6: { name: "Lv.6: 抵抗と高台", targetX: 500, targetY: 150, drag: 0.0015, obstacle: false },
   7: { name: "Lv.7: 真夏の方程式（風あり）", targetX: 800, targetY: 350, drag: 0.0015, obstacle: false, hasWind: true, startHeight: 50 },
 };
-
 export const HINTS = {
   parabolic: "ヒント1: 放物運動の基本を理解しましょう。最高の飛距離は45度で得られます。",
   pressure: "ヒント2: 圧力が高いほど初速が上がります。",

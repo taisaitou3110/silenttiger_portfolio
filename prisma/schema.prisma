@@ -8,15 +8,60 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --- Knowledge Cosmos 用のモデル拡張 ---
+
 model Word {
-  id          String   @id @default(cuid())
-  term        String   @unique
-  description String
-  comments    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String       @id @default(cuid())
+  term            String       @unique
+  meaning         String       // 元の description を意味として使用
+  phonetic        String?      // 発音記号
+  scene           String?      // 出会ったシーン・書籍名（元 comments の役割）
+  
+  // エビングハウス忘却曲線ロジック用
+  accuracy        Float        @default(0.0) // 記憶割合%
+  easeFactor      Float        @default(2.5) // 難易度係数（初期値は定石の2.5）
+  interval        Int          @default(0)   // 次回までの日数
+  nextReview      DateTime     @default(now())
+  
+  // リレーション
+  examples        Example[]    // 1単語につき最大10個の例文
+  
+  // 自己参照リレーション（混同しやすい語）
+  // 多対多のリレーションとして定義
+  confusingWith   Word[]       @relation("Confusion")
+  confusedBy      Word[]       @relation("Confusion")
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }
 
+model Example {
+  id              String       @id @default(cuid())
+  text            String       // 例文
+  collocation     String?      // 抽出されたコロケーション部分
+  audioUrl        String?      // 自分の声の録音データURL
+  
+  wordId          String
+  word            Word         @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime     @default(now())
+}
+
+// --- 既存モデルへのゴールド追加 ---
+
+model UserSettings {
+  id              String       @id @default(cuid())
+  gold            Int          @default(0)   // ★他アプリ共通の持ちゴールド★
+  
+  // 以下、既存のカロリー管理用フィールド
+  targetCalories  Int          @default(2000)
+  weight          Float?
+  activityLevel   String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  calorieLogs     CalorieLog[]
+  customFoods     CustomFood[]
+}
 model CalorieLog {
   id          String   @id @default(cuid())
   date        DateTime @default(now())
@@ -27,17 +72,6 @@ model CalorieLog {
   inputSource String?  // 入力ソース (例: "voice", "photo", "text")
   userId      String?  // ユーザーID (UserSettingsと関連付ける場合)
   user        UserSettings? @relation(fields: [userId], references: [id])
-}
-
-model UserSettings {
-  id               String       @id @default(cuid())
-  targetCalories   Int          @default(2000)
-  weight           Float?
-  activityLevel    String?      // 例: "sedentary", "light", "moderate", "active"
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-  calorieLogs      CalorieLog[]
-  customFoods      CustomFood[]
 }
 
 model CustomFood {

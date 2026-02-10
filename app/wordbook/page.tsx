@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from "next/link";
 import { getDashboardData } from "./actions";
-import { GoldStatus } from "../components/GoldStatus";
+import { GoldStatus } from "@/components/GoldStatus";
 
 /**
  * 知識図鑑ダッシュボード (Wordbook Dashboard)

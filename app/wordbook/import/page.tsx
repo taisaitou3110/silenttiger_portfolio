@@ -10,8 +10,8 @@
 import React from 'react';
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getWordDetail, getDashboardData } from "@app/wordbook/actions";
-import { GoldStatus } from "../../../components/GoldStatus";
+import { getWordDetail, getDashboardData } from "@/app/wordbook/actions";
+import { GoldStatus } from "@/components/GoldStatus";
 
 export default async function WordDetailPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
   const resolvedParams = await params;

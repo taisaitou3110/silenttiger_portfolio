@@ -2,6 +2,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Jimp } from 'jimp';
+import { MESSAGE_MASTER } from '@/components/MessageMst';
 
 const MAX_BASE64_IMAGE_SIZE_BYTES = 3 * 1024 * 1024; // 3MB
 
@@ -10,13 +11,13 @@ async function processImage(base64EncodedImage: string, mimeType: string): Promi
   if (base64EncodedImage.startsWith('data:')) {
     const parts = base64EncodedImage.split(',');
     if (parts.length < 2 || !parts[1]) {
-      throw new Error('無効なData URI形式です。Base64データが見つかりません。');
+      throw new Error(MESSAGE_MASTER.ERROR.INVALID_DATA_URI);
     }
     pureBase64String = parts[1];
   }
 
   if (!pureBase64String) {
-    throw new Error('Base64データが空です。画像データを確認してください。');
+    throw new Error(MESSAGE_MASTER.ERROR.EMPTY_BASE64_DATA);
   }
 
   const buffer = Buffer.from(pureBase64String, 'base64');
@@ -37,7 +38,7 @@ async function processImage(base64EncodedImage: string, mimeType: string): Promi
   const finalPureBase64 = processedDataUri.split(',')[1];
 
   if (!finalPureBase64) {
-    throw new Error('処理後の画像からBase64データを抽出できませんでした。');
+    throw new Error(MESSAGE_MASTER.ERROR.BASE64_EXTRACTION_FAILED);
   }
   
   return finalPureBase64;
@@ -58,7 +59,7 @@ export async function getCalorieEstimation(
   mimeType: string
 ) {
   if (!process.env.GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY is not set in environment variables.');
+    throw new Error(MESSAGE_MASTER.ERROR.API_KEY_MISSING);
   }
 
   const model = genAI.getGenerativeModel({ model: process.env.GEMINI_VISION_MODEL || 'gemini-pro-vision' });
@@ -68,21 +69,13 @@ export async function getCalorieEstimation(
   try {
     processedBase64Image = await processImage(base64Image, mimeType);
   } catch (error: any) { // Explicitly type error as any to access properties
-    console.error("Image processing error:", error);
-    // Attempt to extract more specific error details
-    let errorMessage = '画像の処理中にエラーが発生しました。画像が破損しているか、サポートされていない形式です。';
-    if (error.message && typeof error.message === 'string') {
-      errorMessage += ` 詳細: ${error.message}`;
-    }
-    if (error.code && typeof error.code === 'string') { // Jimp might provide a code, though not always standardized
-      errorMessage += ` (コード: ${error.code})`;
-    }
-    throw new Error(errorMessage);
+    console.error("Image processing error:", error.message || error);
+    throw new Error(MESSAGE_MASTER.ERROR.IMAGE_PROCESSING_ERROR);
   }
 
   // Final size check after processing
   if (processedBase64Image.length > MAX_BASE64_IMAGE_SIZE_BYTES) {
-    throw new Error('画像サイズが大きすぎます。より小さい画像をアップロードしてください。');
+    throw new Error(MESSAGE_MASTER.ERROR.PAYLOAD_TOO_LARGE);
   }
   // --- End image processing and validation ---
 
@@ -123,16 +116,16 @@ export async function getCalorieEstimation(
 
     // 無料枠の制限（429エラー）の場合
     if (error.status === 429 || error.message?.includes('429')) {
-      throw new Error('【利用制限】現在リクエストが集中しています。1分ほど待ってから再度お試しください。');
+      throw new Error(MESSAGE_MASTER.ERROR.QUOTA_EXCEEDED);
     }
 
     // 画像サイズが大きすぎるエラー
     if (error.message?.includes('400') && error.message?.includes('Image size too large')) {
-      throw new Error('画像サイズが大きすぎます。システムによる自動縮小を試みましたが、対応できませんでした。');
+      throw new Error(MESSAGE_MASTER.ERROR.AUTO_RESIZE_FAILED);
     }
 
     // その他の一般的なエラー
-    throw new Error('AIによる解析中にエラーが発生しました。時間をおいて再度実行してください。');
+    throw new Error(MESSAGE_MASTER.ERROR.DEFAULT);
   }
 }
 

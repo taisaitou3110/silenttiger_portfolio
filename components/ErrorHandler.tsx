@@ -2,6 +2,7 @@
 
 import React from 'react';
 import MessageBox from '@/components/MessageBox'; // 既存の共通メッセージボックス
+import { MESSAGE_MASTER } from '@/components/MessageMst';
 // 他の既存コンポーネントもここでインポート
 // import LoadingSpinner from './LoadingSpinner'; 
 
@@ -13,16 +14,16 @@ export const getFriendlyErrorMessage = (error: any): string => {
   const message = error?.message || String(error);
 
   if (message.includes('timeout') || message.includes('timed out') || message.includes('digest')) {
-    return "サーバーとの通信がタイムアウトしました。画像サイズを小さくするか、時間を置いて再度お試しください。";
+    return MESSAGE_MASTER.ERROR.TIMEOUT;
   }
   if (message.includes('429') || message.includes('quota')) {
-    return "AIの利用制限に達しました。しばらくお待ちください。";
+    return MESSAGE_MASTER.ERROR.QUOTA_EXCEEDED;
   }
   if (message.includes('safety') || message.includes('blocked')) {
-    return "画像の解析が制限されました。別の画像でお試しください。";
+    return MESSAGE_MASTER.ERROR.IMAGE_SAFETY;
   }
   
-  return "予期せぬエラーが発生しました。トップページに戻るか、やり直してください。";
+  return MESSAGE_MASTER.ERROR.DEFAULT;
 };
 
 /**
@@ -41,7 +42,7 @@ export default function ErrorHandler({ error, onClose }: ErrorHandlerProps) {
   return (
     <MessageBox 
       status="error"
-      title="実行エラー"
+      title={MESSAGE_MASTER.ERROR.EXECUTION_ERROR_TITLE}
       description={message}
       onClose={onClose}
     />

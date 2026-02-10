@@ -1,6 +1,7 @@
 "use server";
 
 import { Jimp } from 'jimp';
+import { MESSAGE_MASTER } from '@/components/MessageMst';
 
 /**
  * 画像処理・圧縮の共通定数
@@ -24,13 +25,13 @@ export async function processImageForAI(
   if (base64EncodedImage.startsWith('data:')) {
     const parts = base64EncodedImage.split(',');
     if (parts.length < 2 || !parts[1]) {
-      throw new Error('Invalid Data URI format.');
+      throw new Error(MESSAGE_MASTER.ERROR.INVALID_DATA_URI);
     }
     pureBase64String = parts[1];
   }
 
   if (!pureBase64String) {
-    throw new Error('Base64 data is empty.');
+    throw new Error(MESSAGE_MASTER.ERROR.EMPTY_BASE64_DATA);
   }
 
   try {
@@ -56,17 +57,17 @@ export async function processImageForAI(
     const finalPureBase64 = processedDataUri.split(',')[1];
 
     if (!finalPureBase64) {
-      throw new Error('Failed to extract base64 from processed image.');
+      throw new Error(MESSAGE_MASTER.ERROR.BASE64_EXTRACTION_FAILED);
     }
 
     // 4. 最終サイズチェック
     if (finalPureBase64.length > MAX_BASE64_IMAGE_SIZE_BYTES) {
-      throw new Error('Image remains too large after compression.');
+      throw new Error(MESSAGE_MASTER.ERROR.AUTO_RESIZE_FAILED);
     }
     
     return finalPureBase64;
   } catch (error: any) {
-    console.error("Image processing core error:", error);
-    throw new Error(`画像処理に失敗しました: ${error.message || 'Unknown error'}`);
+    console.error("Image processing core error:", error.message || error);
+    throw new Error(MESSAGE_MASTER.ERROR.IMAGE_PROCESSING_ERROR);
   }
 }

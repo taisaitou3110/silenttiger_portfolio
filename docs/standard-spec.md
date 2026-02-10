@@ -47,6 +47,10 @@
 ### 4.2 Common Message Box Component
 * **Unified Interface**: `MessageBox` または `useMessage` を使用し、`window.alert` 等のネイティブ機能は使用禁止。
 * **Status Types**: 'success' | 'error' | 'warning' | 'info'
+### 4.3 Message Master (Mandatory):
+* Path: @/components/MessageMst.ts
+* Rule (JP): エラーメッセージは、直接ソースコードに書き込まず、必ず MESSAGE_MASTER から取得すること。
+* Rule (EN): Error Messages displayed to the user must be retrieved from MESSAGE_MASTER, not written directly into the source code.
 
 ## 5. Error Capturing & User Feedback / エラーキャプチャーとフィードバック
 

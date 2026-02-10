@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { MESSAGE_MASTER } from '@/components/MessageMst';
 
 // 単語の型定義
 interface Word {
@@ -210,8 +211,8 @@ const WordBook = () => {
                 onClick={() => handleDeleteWord(word.id)}
                 className="text-red-500 hover:text-red-700 font-medium ml-4 shrink-0"
               >
-                削除
-              </button>
+                {MESSAGE_MASTER.CmnBtn.DELETE_BUTTON}
+              </button> { /* 削除 */} 
             </div>
           ))
         ) : (

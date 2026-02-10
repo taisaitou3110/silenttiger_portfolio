@@ -227,3 +227,9 @@ export async function getWordDetail(id: string) {
     }
   });
 }
+
+export async function saveWords(words: any[]) {
+  const promises = words.map(word => saveWord(word));
+  await Promise.all(promises);
+  return { success: true, count: words.length };
+}

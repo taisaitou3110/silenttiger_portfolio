@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from "next/link";
-import { getWords, getDashboardData } from "../actions";
-import { GoldStatus } from "../../components/GoldStatus";
+import { getWords, getDashboardData } from "@/app/wordbook/actions";
+import { GoldStatus } from "@/components/GoldStatus";
 
 /**
  * 知識図鑑 一覧画面 (Encyclopedia List)

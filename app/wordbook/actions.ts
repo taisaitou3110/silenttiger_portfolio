@@ -218,11 +218,7 @@ export async function getWords() {
 
 // 特定の単語を全例文込みで取得（詳細用）
 export async function getWordDetail(id: string) {
-  // 1. idが存在するかチェック
-  if (!id) {
-    console.error("IDが指定されていません");
-    return null; // またはエラーを投げる
-  }
+  
   return await prisma.word.findUnique({
     where: { id },
     include: {

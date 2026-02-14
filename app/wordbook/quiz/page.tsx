@@ -15,6 +15,8 @@ export default function QuizPage() {
   const [userInput, setUserInput] = useState("");
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [similarityResult, setSimilarityResult] = useState<number | null>(null);
+  const [displayedExpectedAnswer, setDisplayedExpectedAnswer] = useState<string | null>(null);
+  const [displayedExampleSentence, setDisplayedExampleSentence] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [goldEarned, setGoldEarned] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -77,10 +79,13 @@ export default function QuizPage() {
 
     const currentWord = words[currentIndex];
     const similarity = getSimilarity(inputToVerify, currentWord.term);
-    const correct = similarity >= 0.6;
+    const correct = similarity >= 0.8; // Changed from 0.6 to 0.8
 
     setSimilarityResult(similarity);
     setIsCorrect(correct);
+    setDisplayedExpectedAnswer(currentWord.term);
+    // Ensure examples exist and pick the first one, or a fallback
+    setDisplayedExampleSentence(currentWord.examples && currentWord.examples.length > 0 ? currentWord.examples[0].text : "No example available.");
     
     if (correct) {
       const gain = similarity === 1 ? 30 : 10;
@@ -89,13 +94,15 @@ export default function QuizPage() {
     } else {
       await updateWordMastery(currentWord.id, false);
     }
+  };
 
-    setTimeout(() => {
-      setCurrentIndex(prev => prev + 1);
-      setUserInput("");
-      setIsCorrect(null);
-      setSimilarityResult(null);
-    }, 1500);
+  const handleNextWord = () => {
+    setCurrentIndex(prev => prev + 1);
+    setUserInput("");
+    setIsCorrect(null);
+    setSimilarityResult(null);
+    setDisplayedExpectedAnswer(null);
+    setDisplayedExampleSentence(null);
   };
 
   if (quizStatus === 'not-started') {
@@ -155,39 +162,68 @@ export default function QuizPage() {
 
         <div className="text-center relative">
           <h2 className="text-3xl font-bold max-w-sm px-4 leading-tight mb-4">{currentWord?.meaning}</h2>
-          {similarityResult !== null && (
-            <div className={`text-xl font-mono font-bold animate-bounce ${similarityResult >= 0.6 ? "text-green-500" : "text-red-500"}`}>MATCH: {Math.floor(similarityResult * 100)}%</div>
-          )}
         </div>
 
         <div className="w-full max-w-md px-4 flex flex-col items-center gap-6">
-          <form onSubmit={(e) => { e.preventDefault(); handleFinalSubmit(); }} className="w-full">
-            <input
-              ref={inputRef}
-              autoFocus
-              type="text"
-              inputMode="url"
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              className={`w-full bg-transparent border-b-2 text-center text-4xl outline-none transition-all duration-500 pb-2 ${isCorrect === true ? "border-green-500 text-green-500" : isCorrect === false ? "border-red-500 text-red-500" : "border-gray-800 focus:border-[#0cf]"}`}
-              placeholder="..."
-              autoComplete="off"
-            />
-          </form>
-
-          <div className="flex items-center justify-center gap-8 w-full pb-8">
-            <div className={`p-6 rounded-full transition-all duration-300 ${isListening ? "bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)] scale-110" : "bg-gray-900 text-gray-400"}`}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" /></svg>
+          {isCorrect !== null ? (
+            <div className="flex flex-col items-center gap-4 w-full">
+              <p className={`text-4xl font-bold ${isCorrect ? "text-green-500" : "text-red-500"}`}>
+                {isCorrect ? "正解！" : "不正解..."}
+              </p>
+              {similarityResult !== null && (
+                <div className={`text-xl font-mono font-bold ${isCorrect ? "text-green-500" : "text-red-500"}`}>
+                  MATCH: {Math.floor(similarityResult * 100)}%
+                </div>
+              )}
+              {displayedExpectedAnswer && (
+                <p className="text-xl text-gray-300">
+                  想定解: <span className="font-bold text-white">{displayedExpectedAnswer}</span>
+                </p>
+              )}
+              {displayedExampleSentence && (
+                <p className="text-lg text-gray-400 text-center">
+                  例文: <span className="italic">{displayedExampleSentence}</span>
+                </p>
+              )}
+              <button
+                onClick={handleNextWord}
+                className="mt-6 py-4 px-8 rounded-full font-black text-lg tracking-widest bg-[#0cf] text-black shadow-[0_0_20px_rgba(0,204,255,0.4)]"
+              >
+                NEXT
+              </button>
             </div>
+          ) : (
+            <>
+              <form onSubmit={(e) => { e.preventDefault(); handleFinalSubmit(); }} className="w-full">
+                <input
+                  ref={inputRef}
+                  autoFocus
+                  disabled={isCorrect !== null}
+                  type="text"
+                  inputMode="url"
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  className={`w-full bg-transparent border-b-2 text-center text-4xl outline-none transition-all duration-500 pb-2 ${isCorrect === true ? "border-green-500 text-green-500" : isCorrect === false ? "border-red-500 text-red-500" : "border-gray-800 focus:border-[#0cf]"}`}
+                  placeholder="..."
+                  autoComplete="off"
+                />
+              </form>
 
-            <button
-              onClick={() => handleFinalSubmit()}
-              disabled={!userInput || isCorrect !== null}
-              className={`flex-1 py-5 rounded-2xl font-black text-lg tracking-widest transition-all ${userInput && isCorrect === null ? "bg-[#0cf] text-black shadow-[0_0_20px_rgba(0,204,255,0.4)]" : "bg-gray-900 text-gray-700"}`}
-            >
-              SUBMIT
-            </button>
-          </div>
+              <div className="flex items-center justify-center gap-8 w-full pb-8">
+                <div className={`p-6 rounded-full transition-all duration-300 ${isListening ? "bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)] scale-110" : "bg-gray-900 text-gray-400"}`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" /></svg>
+                </div>
+
+                <button
+                  onClick={() => handleFinalSubmit()}
+                  disabled={!userInput || isCorrect !== null}
+                  className={`flex-1 py-5 rounded-2xl font-black text-lg tracking-widest transition-all ${userInput && isCorrect === null ? "bg-[#0cf] text-black shadow-[0_0_20px_rgba(0,204,255,0.4)]" : "bg-gray-900 text-gray-700"}`}
+                >
+                  SUBMIT
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </main>
     </div>

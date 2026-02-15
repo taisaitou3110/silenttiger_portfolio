@@ -1,7 +1,6 @@
 import React from 'react';
 import Link from "next/link";
 import { getDashboardData } from "./actions";
-import { GoldStatus } from "@/components/GoldStatus";
 
 /**
  * 知識図鑑ダッシュボード (Wordbook Dashboard)
@@ -21,8 +20,7 @@ export default async function WordbookDashboard() {
           <p className="text-[9px] text-gray-500 uppercase tracking-widest">Memory OS v1.0</p>
         </div>
         
-        {/* 共通コンポーネントによるゴールド表示 */}
-        <GoldStatus amount={data.gold} />
+
       </header>
 
       {/* メインコンテンツエリア */}

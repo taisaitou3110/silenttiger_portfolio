@@ -28,8 +28,8 @@ export const GoldStatus: React.FC<GoldStatusProps> = ({
   return (
     <div className={`
       inline-flex items-center gap-2 px-3 py-1.5 
-      bg-yellow-500/10 border border-yellow-500/20 
-      rounded-full backdrop-blur-sm
+      bg-gray-900/80 border border-gray-700 
+      rounded-full
       ${animate ? 'animate-bounce' : ''}
       ${className}
     `}>

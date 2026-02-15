@@ -3,17 +3,14 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getUserGoldData } from "@/lib/actions";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function getDashboardData() {
   const now = new Date();
   
-  // ユーザー設定の取得（存在しなければ作成）
-  let userSettings = await prisma.userSettings.findFirst();
-  if (!userSettings) {
-    userSettings = await prisma.userSettings.create({ data: { gold: 0 } });
-  }
+  const { gold } = await getUserGoldData();
 
   const reviewCount = await prisma.word.count({
     where: { nextReview: { lte: now } }
@@ -22,7 +19,7 @@ export async function getDashboardData() {
   const totalWords = await prisma.word.count();
 
   return {
-    gold: userSettings.gold,
+    gold,
     reviewCount,
     totalWords,
   };
@@ -155,21 +152,7 @@ export async function updateWordMastery(wordId: string, isCorrect: boolean) {
   });
 }
 
-export async function addGold(amount: number) {
-  // 最初のユーザー設定を取得（基本1つしかない想定）
-  const settings = await prisma.userSettings.findFirst();
-  
-  if (!settings) return;
 
-  return await prisma.userSettings.update({
-    where: { id: settings.id },
-    data: {
-      gold: {
-        increment: amount // 現在の値に加算
-      }
-    }
-  });
-}
 
 // ヘルパー関数：指定したミリ秒待機する
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
+import { addGold, decreaseGold } from '@/lib/actions';
 
 const CARD_TYPES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', 'JK'];
 
@@ -33,7 +34,7 @@ export function usePoker() {
     setUsedCards([]);
     setBet(0);
     setGameState('IDLE');
-    setMessage(`${ib}G はらって ゲームを はじめよう！`);
+    setMessage("ゲームを始める");
   }, [createFullDeck]);
 
   const pullCard = (currentDeck: string[]) => {
@@ -48,15 +49,16 @@ export function usePoker() {
     return card;
   };
 
-  const startNewHand = () => {
+  const startNewHand = async () => {
     if (gold < currentBetAmount) return;
     setGold(prev => prev - currentBetAmount);
+    await decreaseGold(currentBetAmount);
     const card = pullCard(deck);
     setCurrentCard(card);
     setUsedCards(prev => [...prev, card]);
     setBet(currentBetAmount);
     setGameState('PLAYING');
-    setMessage(`スライムは ${card} をだした！ 上か？下か？`);
+    setMessage(`ディーラーは ${card} をだした！ 上か？下か？`);
   };
 
   const handleGuess = (guess: 'HIGH' | 'LOW') => {
@@ -80,9 +82,10 @@ export function usePoker() {
     }
   };
 
-  const collect = () => {
+  const collect = async () => {
     const newTotal = gold + bet;
     setGold(newTotal);
+    await addGold(bet);
     setBet(0);
     if (newTotal >= 10000) {
       setGameState('CLEAR');

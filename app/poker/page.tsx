@@ -293,14 +293,45 @@ export default function PokerPage({ version }: PokerPageProps) {
   );
 }
 
+function getCardImagePath(value: string): string {
+  switch (value) {
+    case 'A': return '/images/card/card_club_01.png';
+    case '2': return '/images/card/card_club_02.png';
+    case '3': return '/images/card/card_club_03.png';
+    case '4': return '/images/card/card_club_04.png';
+    case '5': return '/images/card/card_club_05.png';
+    case '6': return '/images/card/card_club_06.png';
+    case '7': return '/images/card/card_club_07.png';
+    case '8': return '/images/card/card_club_08.png';
+    case '9': return '/images/card/card_club_09.png';
+    case '10': return '/images/card/card_club_10.png';
+    case 'J': return '/images/card/card_club_11.png';
+    case 'Q': return '/images/card/card_club_12.png';
+    case 'K': return '/images/card/card_club_13.png';
+    case 'JK': return '/images/card/card_club_joker.png'; // Assuming this exists for Joker
+    default: return '/images/card/card_back.png'; // Fallback for '?' or any unexpected value
+  }
+}
+
 function CardDisplay({ value, label }: { value: string, label: string }) {
-  const isBack = value === '?' || value === '';
-  const isJoker = value === 'JK';
+  const isBack = value === '?'; // Simplified from value === '?' || value === ''
+  const imageUrl = getCardImagePath(value);
+  const altText = isBack ? 'Card back' : `${value} card`;
+
   return (
     <div className="text-center">
       <div className="text-xs mb-2 text-gray-400 font-bold uppercase tracking-widest">{label}</div>
-      <div className={`w-24 h-36 md:w-32 md:h-48 rounded-xl flex items-center justify-center text-4xl md:text-5xl font-bold border-4 shadow-2xl transition-all duration-300 transform ${isBack ? 'bg-blue-700 border-white text-white' : 'bg-white text-black border-gray-400'} ${isJoker ? 'text-red-600 ring-4 ring-red-600' : ''}`}>
-        {value}
+      <div className={`relative w-24 h-36 md:w-32 md:h-48 rounded-xl border-4 shadow-2xl transition-all duration-300 transform
+        ${isBack ? 'border-white' : 'border-gray-400'}
+        ${value === 'JK' ? 'ring-4 ring-red-600' : ''}
+      `}>
+        <Image
+          src={imageUrl}
+          alt={altText}
+          layout="fill" // Use fill to make image fill the parent div
+          objectFit="contain" // Or 'cover' depending on desired crop
+          className="rounded-lg" // Apply rounded corners to the image
+        />
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from "next/link";
+import Image from 'next/image'; // Import Image
 import { getDashboardData } from "./actions";
 
 /**
@@ -12,9 +13,17 @@ export default async function WordbookDashboard() {
   const data = await getDashboardData();
 
   return (
-    <div className="flex flex-col h-screen bg-black text-white overflow-hidden touch-none overscroll-behavior-none font-sans">
+    <div className="relative flex flex-col h-screen text-white overflow-hidden touch-none overscroll-behavior-none font-sans">
+      <Image
+        src="/images/image_background_wordbook.png"
+        alt="Wordbook Background"
+        layout="fill"
+        objectFit="cover"
+        className="z-0"
+        priority
+      />
       {/* 共通ヘッダー：プロジェクト共通の GoldStatus コンポーネントを使用 */}
-      <header className="p-5 flex justify-between items-center border-b border-gray-800 bg-gray-900/20">
+      <header className="relative z-10 p-5 flex justify-between items-center border-b border-gray-800 bg-gray-900/20">
         <div>
           <h1 className="text-[#0cf] font-mono font-bold text-lg tracking-tighter uppercase">Knowledge Cosmos</h1>
           <p className="text-[9px] text-gray-500 uppercase tracking-widest">Memory OS v1.0</p>
@@ -24,7 +33,7 @@ export default async function WordbookDashboard() {
       </header>
 
       {/* メインコンテンツエリア */}
-      <main className="flex-1 p-5 flex flex-col max-w-md mx-auto w-full gap-4 overflow-y-auto">
+      <main className="relative z-10 flex-1 p-5 flex flex-col max-w-md mx-auto w-full gap-4 overflow-y-auto">
         
         {/* 統計サマリーカード */}
         <div className="grid grid-cols-2 gap-3">
@@ -48,10 +57,10 @@ export default async function WordbookDashboard() {
         {/* 2x2 メインメニュー */}
         <div className="grid grid-cols-2 gap-3">
           {/* AI相談 */}
-          <Link href="/wordbook/new" className="h-24 bg-[#0cf]/5 border border-[#0cf]/20 rounded-2xl flex items-center p-4 gap-3 active:scale-[0.97] transition-all group">
+          <Link href="/wordbook/new" className="h-24 bg-[#0cf]/70 border border-[#0cf]/80 rounded-2xl flex items-center p-4 gap-3 active:scale-[0.97] transition-all group">
             <div className="text-2xl bg-[#0cf]/10 w-12 h-12 flex items-center justify-center rounded-xl group-hover:bg-[#0cf]/20 transition-colors">✍️</div>
             <div className="flex flex-col text-left">
-              <span className="font-bold text-sm text-white">AI相談</span>
+              <span className="font-bold text-sm text-white">単語登録</span>
               <span className="text-[9px] text-gray-500 font-mono">NEW NODE</span>
             </div>
           </Link>
@@ -66,10 +75,10 @@ export default async function WordbookDashboard() {
           </Link>
 
           {/* 救出作戦 (クイズ) */}
-          <Link href="/wordbook/quiz" className="h-24 bg-red-900/10 border border-red-900/20 rounded-2xl flex items-center p-4 gap-3 active:scale-[0.97] transition-all">
+          <Link href="/wordbook/quiz" className="h-24 bg-red-900/70 border border-red-900/80 rounded-2xl flex items-center p-4 gap-3 active:scale-[0.97] transition-all">
             <div className="text-2xl bg-red-900/20 w-12 h-12 flex items-center justify-center rounded-xl animate-pulse text-red-500">⚡</div>
             <div className="flex flex-col text-left">
-              <span className="font-bold text-sm text-red-400">救出作戦</span>
+              <span className="font-bold text-sm text-red-400">本日の学習</span>
               <span className="text-[9px] text-red-900/40 font-mono uppercase tracking-tighter font-bold">Mission</span>
             </div>
           </Link>
@@ -78,7 +87,7 @@ export default async function WordbookDashboard() {
           <Link href="/wordbook/list" className="h-24 bg-gray-900/40 border border-gray-800 rounded-2xl flex items-center p-4 gap-3 active:scale-[0.97] transition-all text-white">
             <div className="text-2xl bg-gray-800 w-12 h-12 flex items-center justify-center rounded-xl">📚</div>
             <div className="flex flex-col text-left">
-              <span className="font-bold text-sm">知識図鑑</span>
+              <span className="font-bold text-sm">登録単語リスト</span>
               <span className="text-[9px] text-gray-500 font-mono uppercase tracking-tighter font-bold tracking-widest text-gray-400">Encyclopedia</span>
             </div>
           </Link>

@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { PropsWithChildren } from 'react';
 import { useFormStatus } from "react-dom";
 
 /**
@@ -12,7 +12,6 @@ import { useFormStatus } from "react-dom";
  */
 
 interface ActionButtonProps {
-  label: string;            // 通常時のテキスト
   loadingLabel?: string;    // 処理中のテキスト（省略時は "処理中..."）
   pending?: boolean;        // 手動でローディングを制御する場合に使用
   onClick?: () => void;     // クリックイベント
@@ -21,15 +20,15 @@ interface ActionButtonProps {
   variant?: "primary" | "danger" | "outline";
 }
 
-export const ActionButton: React.FC<ActionButtonProps> = ({
-  label,
+export const ActionButton = ({
+  children,
   loadingLabel = "処理中...",
   pending: manualPending,
   onClick,
   type = "submit",
   className = "",
   variant = "primary"
-}) => {
+}: PropsWithChildren<ActionButtonProps>) => {
   // フォーム内で使用されている場合、自動的に送信状態を取得
   const { pending: formPending } = useFormStatus();
   
@@ -56,7 +55,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
         <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
       )}
       <span>
-        {isPending ? loadingLabel : label}
+        {isPending ? loadingLabel : children}
       </span>
     </button>
   );

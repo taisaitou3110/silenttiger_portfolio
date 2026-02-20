@@ -13,12 +13,15 @@
     "@prisma/client": "^5.22.0",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
+    "html5-qrcode": "^2.3.8",
     "jimp": "^1.6.0",
+    "lucide-react": "^0.575.0",
     "next": "15.1.9",
     "react": "19.0.0",
     "react-dom": "19.0.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
     "@playwright/test": "^1.58.1",
     "@tailwindcss/postcss": "^4",
     "@types/better-sqlite3": "^7.6.13",
@@ -29,6 +32,7 @@
     "eslint-config-next": "15.1.9",
     "prisma": "^5.22.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "typescript-eslint": "^8.56.0"
   }
 }

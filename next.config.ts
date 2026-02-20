@@ -7,7 +7,17 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client"],
   env: {
     DATABASE_URL: process.env.DATABASE_URL || "",
-  }
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'books.google.com',
+        port: '',
+        pathname: '/books/content/**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

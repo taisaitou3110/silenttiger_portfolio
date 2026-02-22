@@ -22,6 +22,12 @@ export const ERROR_MESSAGES = {
     actionText: "戻る",
   },
 
+    VALIDATION_VOICE_REQUIRED: {
+    title: "音声が見つかりません",
+    description: "音声が聞き取れませんでした。もう一度お話しください",
+    actionText: "了解",
+  },
+
   // --- AI汎用エラー ---
 
     AI_RATE_LIMIT: {

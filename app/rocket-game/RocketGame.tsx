@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import { 
   LEVEL_CONFIGS, 
   LAUNCH_X, 
@@ -9,12 +11,13 @@ import {
   HINTS 
 } from '@/app/rocket-game/constants';
 import MessageBox from '@/components/MessageBox';
+import { GoldStatus } from '@/components/GoldStatus';
 import { drawScene } from '@/app/rocket-game/drawUtils';
 import { usePhysics } from '@/app/rocket-game/usePhysics';
 import GameControls from '@/app/rocket-game/GameControls';
 import { Point, Attempt } from '@/app/rocket-game/types';
 
-export default function RocketGame() {
+export default function RocketGame({ initialGold = 0 }: { initialGold?: number }) {
   // --- 基本ステート ---
   const [level, setLevel] = useState(0);
   const [pressure, setPressure] = useState(0.5);
@@ -67,7 +70,6 @@ export default function RocketGame() {
 
 
   // --- 描画コールバック ---
-  console.log("Draw Function defined, isFlying:", isFlying);
   const draw = useCallback(() => {
     const ctx = contextRef.current;
     if (!ctx) return;
@@ -78,9 +80,6 @@ export default function RocketGame() {
     if (!rocket.current || !trail.current) return;
 
     const scale = canvasSize.width / CANVAS_WIDTH;
-    // for debug
-    console.log("Canvas Context:", ctx);
-    console.log("Scale:", scale);
 
     drawScene(
       ctx,
@@ -92,7 +91,7 @@ export default function RocketGame() {
       canvasSize.height,
       scale
     );
-  }, [level, pastTrails, canvasSize]); // ✅ rocket, trail を削除
+  }, [level, pastTrails, canvasSize]);
 
 
   // --- アニメーションループ ---
@@ -102,7 +101,6 @@ export default function RocketGame() {
     let animationFrameId: number;
     const animate = () => {
       const config = LEVEL_CONFIGS[level];
-      // ✅ 第1, 第2引数に rocket と trail を渡す
       updatePhysics(rocket, trail, config, 1.0, wind);
       draw();
       animationFrameId = requestAnimationFrame(animate);
@@ -110,7 +108,7 @@ export default function RocketGame() {
     animationFrameId = requestAnimationFrame(animate);
 
     return () => cancelAnimationFrame(animationFrameId);
-  }, [isFlying, level, wind, updatePhysics, draw, rocket, trail]); // ✅ 依存関係を整理
+  }, [isFlying, level, wind, updatePhysics, draw, rocket, trail]);
 
   // handleLaunch時に最新の圧力と角度を記録するためのref
   const currentPressure = useRef(pressure);
@@ -148,18 +146,12 @@ export default function RocketGame() {
   }, [level]);
 
 // --- 副作用: 初期描画 & リサイズ対応 ---
-// 2026.2.7 ここ一回バグってロケット表示されなくなったところ。取扱注意
   useEffect(() => {
-    // Canvas要素がDOMに出現するまで待つためのチェック
     const canvas = canvasRef.current;
-    if (!canvas) {
-      console.log("Canvas element not found yet...");
-      return;
-    }
+    if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     contextRef.current = ctx;
-    console.log("Canvas Context Initialized:", ctx); // これが出るはず
 
     const handleResize = () => {
       if (canvasContainerRef.current) {
@@ -175,8 +167,6 @@ export default function RocketGame() {
     handleResize();
 
     return () => window.removeEventListener('resize', handleResize);
-    // 依存配列に canvasRef.current を入れることで、
-    // null から要素が入った瞬間に再実行されるようにします
   }, [canvasRef.current]);
 
   // --- ハンドラ ---
@@ -192,47 +182,69 @@ export default function RocketGame() {
     launch(pressure, angle, wind);
   };
 
-  // --- 表示: メニュー画面 ---
+  // --- 表示: メニュー画面 (AppPortal) ---
   if (level === 0) {
     return (
-      <div className="text-white p-12 text-center font-mono">
-        <h1 className="text-[#0cf] text-5xl mb-10 sm:text-6xl">真夏の方程式 ROCKET simulator v1.8</h1>
-        <div className="grid grid-cols-1 gap-5 max-w-4xl mx-auto sm:grid-cols-2 lg:grid-cols-3">
-          {Object.keys(LEVEL_CONFIGS).map((key) => {
-            if (Number(key) === 0) return null;
-            return (
-              <button 
-                key={key} 
-                onClick={() => setLevel(Number(key))} 
-                className="p-6 bg-[#222] text-[#0cf] border-2 border-[#0cf] rounded-xl text-lg cursor-pointer transition duration-200 hover:bg-[#333] active:bg-[#444] min-h-[44px]"
-              >
-                {LEVEL_CONFIGS[Number(key)].name}
-              </button>
-            );
-          })}
+      <div className="relative min-h-screen bg-black overflow-x-hidden" 
+           style={{backgroundImage: 'url("/images/image_background_rocket_menu.png")', backgroundSize: 'cover', backgroundPosition: 'center'}}>
+        {/* ナビゲーション (ポータルへ戻る) */}
+        <div className="absolute top-5 left-5 z-20">
+          <Link href="/" className="inline-flex items-center text-[#0cf] hover:text-[#0ef] font-medium transition-colors">
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            ポータルへ戻る
+          </Link>
+        </div>
+
+        {/* ゴールド表示 */}
+        <div className="absolute top-5 right-5 z-20">
+          <GoldStatus amount={initialGold} />
+        </div>
+
+        <div className="text-white p-12 text-center font-mono pt-24">
+          <h1 className="text-[#0cf] text-5xl mb-10 sm:text-6xl drop-shadow-[0_0_15px_#0cf]">真夏の方程式 ROCKET simulator v1.8</h1>
+          <div className="grid grid-cols-1 gap-5 max-w-4xl mx-auto sm:grid-cols-2 lg:grid-cols-3">
+            {Object.keys(LEVEL_CONFIGS).map((key) => {
+              if (Number(key) === 0) return null;
+              return (
+                <button 
+                  key={key} 
+                  onClick={() => setLevel(Number(key))} 
+                  className="p-6 bg-[#222]/80 text-[#0cf] border-2 border-[#0cf] rounded-xl text-lg cursor-pointer transition duration-200 hover:bg-[#333] active:bg-[#444] min-h-[44px] backdrop-blur-sm"
+                >
+                  {LEVEL_CONFIGS[Number(key)].name}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
   }
 
-  // --- 表示: ゲーム画面 ---
+  // --- 表示: ゲーム画面 (Play 画面) ---
   return (
-          <div className="text-center font-mono text-white bg-cover bg-fixed w-screen h-screen flex flex-col items-center justify-center relative p-5"
-            style={{backgroundImage: 'url("/images/image_background_rocket.png")'}}>
-            {/* MENU ボタン */}
-            <div className="absolute top-5 left-5 z-20">
-              <button onClick={() => setLevel(0)} className="bg-gray-700/70 text-white border border-gray-600 py-2 px-5 cursor-pointer rounded-md hover:bg-gray-600/70 active:bg-gray-800/70 min-h-[44px]">
-                MENU
-              </button>
-            </div>
-    
-            {/* レベルタイトル */}
-            <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20 bg-gray-800/70 p-3 px-6 rounded-xl border border-gray-600">
-              <h2 className="text-[#0cf] text-lg sm:text-xl m-0">{LEVEL_CONFIGS[level].name}</h2>
-            </div>
-    
-          <div className="flex justify-center gap-5 mx-auto flex-wrap w-full">
-            <div ref={canvasContainerRef} className="flex-1 basis-[600px] min-w-[300px] relative rounded-xl border-4 border-gray-700 overflow-hidden shadow-xl shadow-black/50">
+    <div className="text-center font-mono text-white bg-cover bg-fixed w-screen h-screen flex flex-col items-center justify-center relative p-5"
+      style={{backgroundImage: 'url("/images/image_background_rocket.png")'}}>
+      {/* ナビゲーション (アプリポータルへ戻る) */}
+      <div className="absolute top-5 left-5 z-20">
+        <button onClick={() => setLevel(0)} className="inline-flex items-center bg-gray-700/70 text-white border border-gray-600 py-2 px-5 cursor-pointer rounded-md hover:bg-gray-600/70 active:bg-gray-800/70 min-h-[44px]">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          アプリポータルへ戻る
+        </button>
+      </div>
+
+      {/* ゴールド表示 (常時表示) */}
+      <div className="absolute top-5 right-5 z-20">
+        <GoldStatus amount={initialGold} />
+      </div>
+
+      {/* レベルタイトル */}
+      <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20 bg-gray-800/70 p-3 px-6 rounded-xl border border-gray-600">
+        <h2 className="text-[#0cf] text-lg sm:text-xl m-0">{LEVEL_CONFIGS[level].name}</h2>
+      </div>
+
+      <div className="flex justify-center gap-5 mx-auto flex-wrap w-full">
+        <div ref={canvasContainerRef} className="flex-1 basis-[600px] min-w-[300px] relative rounded-xl border-4 border-gray-700 overflow-hidden shadow-xl shadow-black/50">
           <canvas 
             ref={canvasRef} 
             width={canvasSize.width} 
@@ -250,9 +262,7 @@ export default function RocketGame() {
 
           {/* 結果オーバーレイ */}
           {result && !isFlying && (
-            <div 
-              className="absolute inset-0 w-full h-full bg-black/70 flex justify-center items-center z-10" 
-            >
+            <div className="absolute inset-0 w-full h-full bg-black/70 flex justify-center items-center z-10">
               <div className="text-center bg-gray-800/90 p-6 rounded-xl shadow-lg shadow-black/50">
                 <h2 className={result.msg.includes('GOAL') ? 'text-green-400 text-lg m-0' : 'text-yellow-300 text-lg m-0'}>{result.msg}</h2>
                 <p className="text-white text-2xl mt-1 mb-0">飛距離: {result.distance}m</p>
@@ -302,34 +312,21 @@ export default function RocketGame() {
           )}
         </div>
       </div>
-{/*
-      {hint && (
-        <div className="bg-yellow-100/90 text-black p-3 rounded-lg mt-4 w-full shadow-lg shadow-black/30 text-sm sm:text-base">
-          <strong>ヒント:</strong> {hint}
-        </div>
-      )}
 
-      */}
       {hint && !isFlying && (
-  <MessageBox 
-    status="warning"
-    title="博士のアドバイス"
-    description={hint}
-    onClose={() => setHint(null)}
-    // ✅ ここで「おすすめセット」のロジックを渡す
-    actionButton={{
-      label: "おすすめの値をセットする",
-      onClick: () => {
-        const config = LEVEL_CONFIGS[level];
-/*         if (config.recommended) {
-          setAngle(config.recommended.angle);
-          setPressure(config.recommended.pressure);
-        } */
-        setHint(null);
-      }
-    }}
-  />
-)}
+        <MessageBox 
+          status="warning"
+          title="博士のアドバイス"
+          description={hint}
+          onClose={() => setHint(null)}
+          actionButton={{
+            label: "おすすめの値をセットする",
+            onClick: () => {
+              setHint(null);
+            }
+          }}
+        />
+      )}
 
       {/* 操作パネル (外部コンポーネント) */}
       <div className="w-full mt-4">

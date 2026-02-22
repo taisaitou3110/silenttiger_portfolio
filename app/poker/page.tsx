@@ -1,6 +1,8 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image'; // Import Image component
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import { usePoker } from '@/app/poker/usePoker';
 import { GoldStatus } from '@/components/GoldStatus';
 import { addAchiever, getAchievers } from '@/app/poker/actions';
@@ -103,6 +105,18 @@ export default function PokerPage({ version }: PokerPageProps) {
           className="z-0"
           priority
         />
+        {/* Navigation */}
+        <div className="absolute top-5 left-5 z-20">
+          <Link href="/" className="inline-flex items-center text-white/80 hover:text-white font-medium transition-colors">
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            ポータルへ戻る
+          </Link>
+        </div>
+        {/* Gold Status */}
+        <div className="absolute top-5 right-5 z-20">
+          <GoldStatus amount={userGold} />
+        </div>
+
         <div className="relative z-10 w-full max-w-lg text-center p-4">
           <div className="border-4 border-white p-6 bg-blue-900/70 shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg mb-8 backdrop-blur-sm">
             <h1 className="text-2xl font-bold mb-4">ハイ＆ロー ポーカー <span className="text-sm font-normal text-gray-400 ml-2">v{version}</span></h1>
@@ -151,6 +165,18 @@ export default function PokerPage({ version }: PokerPageProps) {
           className="z-0"
           priority
         />
+        {/* Navigation */}
+        <div className="absolute top-5 left-5 z-20">
+          <Link href="/" className="inline-flex items-center text-white/80 hover:text-white font-medium transition-colors">
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            アプリポータルへ戻る
+          </Link>
+        </div>
+        {/* Gold Status */}
+        <div className="absolute top-5 right-5 z-20">
+          <GoldStatus amount={gold} />
+        </div>
+
       <div className="relative z-10 flex flex-col lg:flex-row gap-6 justify-center items-start max-w-7xl mx-auto backdrop-blur-sm bg-black/50 p-6 rounded-lg">
         <div className="w-full lg:w-2/3">
           <div className="border-4 border-white p-4 mb-4 bg-blue-900/70 shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg">
@@ -177,7 +203,9 @@ export default function PokerPage({ version }: PokerPageProps) {
             {(gameState === 'IDLE' || gameState === 'LOSE') && gold >= currentBetAmount && (
               <>
                 <MenuButton onClick={startNewHand}>ぼうけんに でる ({currentBetAmount}G)</MenuButton>
-                <MenuButton onClick={() => window.location.href = '/'}>ゲームを やめる</MenuButton>
+                <Link href="/" passHref legacyBehavior>
+                  <MenuButton onClick={() => {}}>ゲームを やめる</MenuButton>
+                </Link>
               </>
             )}
 

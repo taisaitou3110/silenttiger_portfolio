@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import LoadingButton from '@/components/LoadingButton';
 import { addQuickLog, copyPreviousDayLogs } from '@/app/calorie/actions';
 import ErrorHandler from '@/components/ErrorHandler';
@@ -81,10 +82,18 @@ export default function CalorieDashboard({
   frequentMeals: any[];
 }) {
   return (
-    <main className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">カロリー記録アプリ - ダッシュボード <span className="text-sm font-normal text-gray-500 ml-2">v{version}</span></h1>
-      
-      <div className="flex flex-wrap gap-4 mb-8">
+    <div className="min-h-screen bg-slate-50">
+      <main className="p-4 sm:p-8 max-w-4xl mx-auto">
+        <div className="mb-6">
+          <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            ポータルへ戻る
+          </Link>
+        </div>
+
+        <h1 className="text-3xl font-bold mb-8">カロリー記録アプリ - ダッシュボード <span className="text-sm font-normal text-gray-500 ml-2">v{version}</span></h1>
+        
+        <div className="flex flex-wrap gap-4 mb-8">
         <div className="flex-1 bg-white rounded-lg shadow-md p-6 min-w-[300px]">
           <h2 className="text-2xl font-semibold mb-4">本日のカロリー</h2>
           <p className="text-xl">登録済みカロリー: <span className="font-bold text-blue-600">{todaysCalories} kcal</span></p>
@@ -157,5 +166,6 @@ export default function CalorieDashboard({
         <CopyLogsForm />
       </div>
     </main>
+    </div>
   );
 }

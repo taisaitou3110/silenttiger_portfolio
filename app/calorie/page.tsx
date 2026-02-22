@@ -1,5 +1,4 @@
 import prisma from '@/lib/prisma';
-import Link from 'next/link';
 import versionData from '@/app/version.json';
 import CalorieDashboard from '@/app/calorie/CalorieDashboard';
 

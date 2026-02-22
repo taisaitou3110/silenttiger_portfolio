@@ -1,7 +1,10 @@
 import React from 'react';
 import Link from "next/link";
 import Image from 'next/image'; // Import Image
+import { ArrowLeft } from 'lucide-react';
 import { getDashboardData } from "./actions";
+import { GoldStatus } from '@/components/GoldStatus';
+import { getUserGoldData } from '@/lib/actions';
 
 /**
  * 知識図鑑ダッシュボード (Wordbook Dashboard)
@@ -11,6 +14,7 @@ import { getDashboardData } from "./actions";
 export default async function WordbookDashboard() {
   // サーバーアクションから最新の統計データを取得
   const data = await getDashboardData();
+  const { gold } = await getUserGoldData();
 
   return (
     <div className="relative flex flex-col h-screen text-white overflow-hidden touch-none overscroll-behavior-none font-sans">
@@ -24,12 +28,19 @@ export default async function WordbookDashboard() {
       />
       {/* 共通ヘッダー：プロジェクト共通の GoldStatus コンポーネントを使用 */}
       <header className="relative z-10 p-5 flex justify-between items-center border-b border-gray-800 bg-gray-900/20">
-        <div>
-          <h1 className="text-[#0cf] font-mono font-bold text-lg tracking-tighter uppercase">Knowledge Cosmos</h1>
-          <p className="text-[9px] text-gray-500 uppercase tracking-widest">Memory OS v1.0</p>
+        <div className="flex items-center gap-4">
+          <Link href="/" className="inline-flex items-center text-[#0cf] hover:text-[#0ef] font-medium transition-colors">
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            <span className="text-sm">ポータルへ戻る</span>
+          </Link>
+          <div className="hidden sm:block h-8 w-[1px] bg-gray-800 mx-2" />
+          <div className="hidden sm:block">
+            <h1 className="text-[#0cf] font-mono font-bold text-lg tracking-tighter uppercase leading-none">Knowledge Cosmos</h1>
+            <p className="text-[9px] text-gray-500 uppercase tracking-widest mt-1">Memory OS v1.0</p>
+          </div>
         </div>
         
-
+        <GoldStatus amount={gold} />
       </header>
 
       {/* メインコンテンツエリア */}

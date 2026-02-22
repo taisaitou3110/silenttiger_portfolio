@@ -8,6 +8,7 @@ import { saveMealLog } from '@/app/calorie/actions';
 // ✅ 修正後（標準仕様 6.3：エイリアス強制）
 import ErrorHandler from '@/components/ErrorHandler';
 import MessageBox from '@/components/MessageBox';
+import { IMAGE_CONFIG } from '@/constants/config';
 
 export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate' | 'train' }) {
   const router = useRouter();
@@ -26,14 +27,14 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
       setError(null);
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
-        setError('対応していない画像形式です。JPEG, PNG, WebP形式の画像をアップロードしてください。');
+        setError('VALIDATION_IMAGE_TYPE');
         setImage(null);
         setImagePreview(null);
         return;
       }
-      const MAX_CLIENT_SIDE_FILE_SIZE_BYTES = 3 * 1024 * 1024; // 3MB
-      if (file.size > MAX_CLIENT_SIDE_FILE_SIZE_BYTES) {
-        setError(`ファイルサイズが大きすぎます（最大${MAX_CLIENT_SIDE_FILE_SIZE_BYTES / (1024 * 1024)}MB）。画像を圧縮するか、より小さいファイルをアップロードしてください。`);
+
+      if (file.size > IMAGE_CONFIG.MAX_FILE_SIZE_BYTES) {
+        setError({message:`VALIDATION_IMAGE_SIZE` });
         setImage(null);
         setImagePreview(null);
         return;
@@ -51,7 +52,7 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
     setEstimation(null);
 
     if (!image) {
-      setError('画像をアップロードしてください。');
+      setError({ message: 'VALIDATION_IMAGE_REQUIRED' });
       setLoading(false);
       return;
     }
@@ -77,7 +78,7 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
 
   const handleRegisterMeal = async () => {
     if (!estimation) {
-      setError('推定結果がありません。');
+      setError({ message: 'VALIDATION_MISSING_ESTIMATION' });
       return;
     }
     setIsRegistering(true);
@@ -96,7 +97,9 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
       setEstimation(null);
     } catch (err: any) {
       console.error("Error saving meal:", err);
-      setError(err);
+      // 💡 汎用的な「データ保存失敗」コードを使用
+      const errorToSet = err.message ? err : { message: 'DATA_SAVE_FAILED' };
+      setError(errorToSet);
     } finally {
       setIsRegistering(false);
     }
@@ -128,7 +131,7 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
                   <img src={imagePreview} alt="Preview" className="mx-auto h-48 w-full object-contain" />
                   {image && (
                     <p className="text-sm text-gray-500 mt-2">
-                      ファイルサイズ: {(image.size / (1024 * 1024)).toFixed(2)} MB (タイプ: {image.type})
+                      ファイルサイズ: {(image.size / IMAGE_CONFIG.BYTES_PER_MB).toFixed(2)} MB (タイプ: {image.type})
                     </p>
                   )}
                 </>

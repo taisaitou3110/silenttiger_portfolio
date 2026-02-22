@@ -1,7 +1,7 @@
 // app/bookshelf/scan/page.tsx
 "use client";
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import CameraView from '@/app/bookshelf/components/CameraView';
 import MessageBox from '@/components/MessageBox';
@@ -14,20 +14,24 @@ const ScanPage = () => {
   const [cameraAccessError, setCameraAccessError] = useState<string | null>(null);
   const [isbnInput, setIsbnInput] = useState('');
   const [isScanning, setIsScanning] = useState(false);
+  const isNavigatingRef = useRef(false);
 
-  const handleScanSuccess = (decodedText: string) => {
+  const handleScanSuccess = useCallback((decodedText: string) => {
+    if (isNavigatingRef.current) return;
+    
+    isNavigatingRef.current = true;
     setIsScanning(false);
     router.push(`/bookshelf/book/${decodedText}`);
-  };
+  }, [router]);
 
-  const handleScanFailure = (errorMessage: string) => {
+  const handleScanFailure = useCallback((errorMessage: string) => {
     if (errorMessage.includes("NotAllowedError") || errorMessage.includes("NotFoundError")) {
       setCameraAccessError(`カメラへのアクセスがブロックされました。ブラウザの設定を確認してください。`);
       setIsScanning(false);
     } else {
       console.warn("Transient scan error:", errorMessage);
     }
-  };
+  }, []);
   
   const handleManualSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -38,8 +42,15 @@ const ScanPage = () => {
       setError('有効なISBNコード（10桁または13桁の半角数字）を入力してください。');
       return;
     }
+    
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
     router.push(`/bookshelf/book/${isbnInput}`);
   };
+
+  const handleScanStop = useCallback(() => {
+    setIsScanning(false);
+  }, []);
 
   const displayMessage = cameraAccessError
     ? "カメラが利用できません。\nブラウザの設定でカメラへのアクセスを許可してください。"
@@ -68,7 +79,7 @@ const ScanPage = () => {
               isScanning={isScanning}
               onScanSuccess={handleScanSuccess}
               onScanFailure={handleScanFailure}
-              onScanStop={() => setIsScanning(false)}
+              onScanStop={handleScanStop}
             />
           </div>
         )}

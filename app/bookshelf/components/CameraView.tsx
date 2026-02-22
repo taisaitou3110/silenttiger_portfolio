@@ -15,15 +15,15 @@ const qrcodeRegionId = "html5qr-code-full-region";
 
 const CameraView = ({ isScanning, onScanSuccess, onScanFailure, onScanStop }: CameraViewProps) => {
   const html5QrcodeRef = useRef<Html5Qrcode | null>(null);
+  const isTransitioningRef = useRef(false);
 
   useEffect(() => {
     if (!html5QrcodeRef.current) {
-      // verbose: false をコンストラクタの第二引数に渡す
       html5QrcodeRef.current = new Html5Qrcode(qrcodeRegionId, false);
     }
     const html5Qrcode = html5QrcodeRef.current;
 
-    const successCallback: QrCodeSuccessCallback = (decodedText, _result) => {
+    const successCallback: QrCodeSuccessCallback = (decodedText) => {
       onScanSuccess(decodedText);
     };
 
@@ -31,39 +31,66 @@ const CameraView = ({ isScanning, onScanSuccess, onScanFailure, onScanStop }: Ca
       onScanFailure(errorMessage);
     };
 
+    const startScanning = async () => {
+      if (isTransitioningRef.current) return;
+      isTransitioningRef.current = true;
+      try {
+        await html5Qrcode.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 150 },
+            formatsToSupport: [10 /* EAN_13 */],
+          },
+          successCallback,
+          errorCallback
+        );
+      } catch (err) {
+        onScanFailure(err instanceof Error ? err.message : String(err));
+      } finally {
+        isTransitioningRef.current = false;
+      }
+    };
+
+    const stopScanning = async () => {
+      if (isTransitioningRef.current) return;
+      if (!html5Qrcode.isScanning) return;
+
+      isTransitioningRef.current = true;
+      try {
+        await html5Qrcode.stop();
+        onScanStop();
+      } catch (err) {
+        console.error("Failed to stop scanning.", err);
+      } finally {
+        isTransitioningRef.current = false;
+      }
+    };
+
     if (isScanning) {
-      html5Qrcode.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 150 },
-          formatsToSupport: [10 /* EAN_13 */],
-        },
-        successCallback,
-        errorCallback
-      ).catch(err => {
-        onScanFailure(err.toString());
-      });
+      if (!html5Qrcode.isScanning) {
+        startScanning();
+      }
     } else {
       if (html5Qrcode.isScanning) {
-        html5Qrcode.stop().then(() => {
-          onScanStop();
-        }).catch(err => {
-          console.error("Failed to stop scanning.", err);
-        });
+        stopScanning();
       }
     }
 
     return () => {
+      // Cleanup on unmount
       if (html5Qrcode && html5Qrcode.isScanning) {
-        html5Qrcode.stop().catch(err => {
-            console.error("Failed to stop scanning on unmount.", err);
-        });
+        // We can't await here easily, but we can try to stop it
+        if (!isTransitioningRef.current) {
+            isTransitioningRef.current = true;
+            html5Qrcode.stop()
+                .catch(err => console.error("Failed to stop scanning on unmount.", err))
+                .finally(() => { isTransitioningRef.current = false; });
+        }
       }
     };
   }, [isScanning, onScanSuccess, onScanFailure, onScanStop]);
 
-  // カメラ映像が表示される<video>要素のために、コンテナに最小の高さを設定
   return <div id={qrcodeRegionId} style={{ minHeight: '300px' }} />;
 };
 

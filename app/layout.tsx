@@ -4,7 +4,7 @@ import "./globals.css";
 import { GameProvider } from "@/app/contexts/GameContext";
 import EnvBadge from "@/components/EnvBadge";
 
-import { GlobalGoldDisplay } from "@/components/GlobalGoldDisplay";
+// import { GlobalGoldDisplay } from "@/components/GlobalGoldDisplay";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,7 +33,7 @@ export default function RootLayout({
       >
         <GameProvider>{children}</GameProvider>
         <EnvBadge />
-        <GlobalGoldDisplay />
+        {/* <GlobalGoldDisplay /> */}
       </body>
     </html>
   );

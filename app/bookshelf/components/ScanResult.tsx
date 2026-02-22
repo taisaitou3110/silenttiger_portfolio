@@ -1,15 +1,11 @@
 // app/bookshelf/components/ScanResult.tsx
 "use client";
 
-import { useEffect } from 'react';
-import { Book, LibraryStatus } from '@/app/bookshelf/utils/type';
-import { addBook } from '@/app/bookshelf/utils/localStorage';
+import { LibraryStatus } from '@/app/bookshelf/utils/type';
 import { Circle, Library, XCircle, CheckCircle, HelpCircle, ArrowUpCircle } from 'lucide-react';
 
 interface ScanResultProps {
   libraryStatuses: LibraryStatus[];
-  isLoading: boolean;
-  book: Book;
 }
 
 const StatusIcon = ({ status }: { status: LibraryStatus['status'] }) => {
@@ -29,29 +25,7 @@ const StatusIcon = ({ status }: { status: LibraryStatus['status'] }) => {
   }
 };
 
-const ScanResult = ({ libraryStatuses, isLoading, book }: ScanResultProps) => {
-  useEffect(() => {
-    if (book && book.isbn) {
-      addBook(book);
-    }
-  }, [book]);
-  
-  if (isLoading) {
-    return (
-      <div className="w-full max-w-md p-4">
-        <h3 className="text-lg font-semibold mb-2">図書館の状況</h3>
-        <div className="space-y-2">
-          {[...Array(2)].map((_, i) => (
-            <div key={i} className="flex items-center justify-between p-3 bg-gray-100 rounded-lg animate-pulse">
-              <div className="h-4 bg-gray-300 rounded w-1/3"></div>
-              <div className="h-4 bg-gray-300 rounded w-1/4"></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
+const ScanResult = ({ libraryStatuses }: ScanResultProps) => {
   return (
     <div className="w-full max-w-md p-4">
       <h3 className="text-lg font-semibold mb-2">図書館の状況</h3>

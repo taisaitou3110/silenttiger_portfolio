@@ -110,6 +110,44 @@
 ### 10.2 Interaction
 * **Confirmation**: 削除時は即時実行せず、必ず `FFMessageBox` 等で確認を挟むこと。
 
+### 11. React Hooks & State Management / Reactフック・状態管理標準
+## 11.1 Rules of Hooks (フックの絶対原則)
+Rule (JP): 「フックの呼び出し順序」を固定するため、以下の構造を厳守すること。
+Top Level Hooks: useState, useEffect, useMemo 等をコンポーネントの冒頭に記述する。
+Early Returns: loading や error による条件分岐リターンは、必ず全てのフック呼び出しよりも後に記述すること。
+Main Render: 正常系の JSX を最後に記述する。
+Rule (EN): Strictly follow the Rules of Hooks to ensure consistent calling order.
+Place all hooks at the top of the component.
+Execute conditional early returns (e.g., loading, error) only after all hook declarations.
+
+## 11.2 State Management Policy (状態管理方針)
+Rule (JP): コンポーネント内の useState は最小限に留める。
+Calculated Values: 他の State から計算可能な値（例：氏名から生成するフルネーム）は State に入れず、レンダリング時に計算すること。
+Prop Mirroring: 親から受け取った Props をそのまま useState の初期値に設定しない（同期ズレ防止）。
+Rule (EN): Minimize useState usage. Avoid storing values that can be derived from existing state or props.
+
+ルール: ページ遷移（router.push）や重要な状態更新を伴うイベントハンドラーでは、必ず isPending または isNavigating フラグを用いて、重複実行をガードすること。
+
+## 11.3 Guest Mode & Persistence Strategy (ゲストモードと保存の切り分け)
+Concept: 「まず試す（Guest）」から「保存する（User）」への段階的移行を支援する。
+
+Guest Mode:
+ログイン前はブラウザの localStorage または Session に一時保存する。
+個人情報（Gmail, 図書館ID等）を要求しない。
+Login Mode:
+ユーザー登録（名前・アイコン選択）後、localStorage のデータを Prisma を通じて DB へ一括移行する。
+図書館パスワード等の機密情報は、必ず可逆的な暗号化（AES-256等）を施し、環境変数に秘匿された鍵を用いて管理すること。
+
+### 12. Logic Separation (ロジックの分離)
+## 12.1 Client vs Server Component
+Rule (JP): 可能な限りサーバーコンポーネントを基本とし、"use client" を付与するファイルは「ボタン操作」や「State」が必要な最小単位に限定すること。
+Rule (EN): Use Server Components as the default. Limit "use client" to the smallest possible unit that requires interactivity or state.
+
+## 12.2 Action Separation
+Rule (JP): API通信（Google Books API等）、スクレイピング、複雑なデータ加工ロジックはコンポーネント内に直接書かず、必ず actions.ts または utils/ フォルダへ分離すること。
+Rule (EN): Separate business logic (API calls, data processing) from UI components into actions.ts or utils/.
+
+
 ---
 作成日: 2024-xx-xx
 バージョン: v1.4.0 (Full Standard Integrated)

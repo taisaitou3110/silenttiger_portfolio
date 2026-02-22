@@ -39,6 +39,12 @@ const apps: { name: string; description: string; path: string; versionKey: AppKe
     versionKey: 'pencil',
   },
   {
+    name: '蔵書マネージャー (ISBNスキャン)',
+    description: 'ISBNをスキャンして書籍の詳細情報を取得し、近隣の図書館での貸出状況を確認できます。',
+    path: '/bookshelf/scan',
+    versionKey: 'bookshelf',
+  },
+  {
     name: 'フィードバック掲示板',
     description: 'ご意見・ご要望をお寄せください。',
     path: '/feedback',

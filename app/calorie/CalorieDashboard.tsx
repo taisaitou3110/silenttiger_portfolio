@@ -3,10 +3,13 @@
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, HelpCircle } from 'lucide-react';
 import LoadingButton from '@/components/LoadingButton';
 import { addQuickLog, copyPreviousDayLogs } from '@/app/calorie/actions';
 import ErrorHandler from '@/components/ErrorHandler';
+import { WelcomeGuide } from '@/components/Navigation/WelcomeGuide';
+import { GUIDE_CONTENTS } from '@/constants/guideContents';
+import { useSessionFirstTime } from '@/hooks/useSessionFirstTime';
 
 // Wrapper component for the QuickLog form to manage its own state
 function QuickLogForm({ meal }: { meal: { foodName: string; calories: number } }) {
@@ -81,14 +84,24 @@ export default function CalorieDashboard({
   todaysCaloriesLogs: any[];
   frequentMeals: any[];
 }) {
+  // ガイド表示の管理
+  const { isOpen: isGuideOpen, markAsSeen, showAgain } = useSessionFirstTime('has_seen_calorie_guide');
+
   return (
     <div className="min-h-screen bg-slate-50">
       <main className="p-4 sm:p-8 max-w-4xl mx-auto">
-        <div className="mb-6">
-          <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors">
+        <div className="mb-6 flex gap-2">
+          <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors bg-white p-2 px-4 rounded-full border border-gray-200 shadow-sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
             ポータルへ戻る
           </Link>
+          <button 
+            onClick={showAgain}
+            className="p-2 bg-white text-gray-500 rounded-full border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors"
+            title="使いかたを表示"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </button>
         </div>
 
         <h1 className="text-3xl font-bold mb-8">カロリー記録アプリ - ダッシュボード <span className="text-sm font-normal text-gray-500 ml-2">v{version}</span></h1>
@@ -166,6 +179,12 @@ export default function CalorieDashboard({
         <CopyLogsForm />
       </div>
     </main>
+
+    <WelcomeGuide 
+      isOpen={isGuideOpen} 
+      onClose={markAsSeen} 
+      content={GUIDE_CONTENTS.CALORIE_APP} 
+    />
     </div>
   );
 }

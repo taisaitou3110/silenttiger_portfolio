@@ -1,4 +1,5 @@
-// hooks/useSessionFirstTime.ts
+"use client";
+
 import { useState, useEffect } from 'react';
 
 export const useSessionFirstTime = (key: string) => {

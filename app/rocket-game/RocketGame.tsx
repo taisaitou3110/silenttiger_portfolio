@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, HelpCircle } from 'lucide-react';
 import { 
   LEVEL_CONFIGS, 
   LAUNCH_X, 
@@ -12,6 +12,9 @@ import {
 } from '@/app/rocket-game/constants';
 import MessageBox from '@/components/MessageBox';
 import { GoldStatus } from '@/components/GoldStatus';
+import { WelcomeGuide } from '@/components/Navigation/WelcomeGuide';
+import { GUIDE_CONTENTS } from '@/constants/guideContents';
+import { useSessionFirstTime } from '@/hooks/useSessionFirstTime';
 import { drawScene } from '@/app/rocket-game/drawUtils';
 import { usePhysics } from '@/app/rocket-game/usePhysics';
 import GameControls from '@/app/rocket-game/GameControls';
@@ -31,6 +34,8 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
   const [hint, setHint] = useState<string | null>(null); // ヒントメッセージ
   const [canvasSize, setCanvasSize] = useState({ width: CANVAS_WIDTH, height: 400 });
 
+  // ガイド表示の管理
+  const { isOpen: isGuideOpen, markAsSeen, showAgain } = useSessionFirstTime('has_seen_rocket_guide');
 
   // --- 参照 (DOM & データ) ---
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -188,11 +193,18 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
       <div className="relative min-h-screen bg-black overflow-x-hidden" 
            style={{backgroundImage: 'url("/images/image_background_rocket_menu.png")', backgroundSize: 'cover', backgroundPosition: 'center'}}>
         {/* ナビゲーション (ポータルへ戻る) */}
-        <div className="absolute top-5 left-5 z-20">
-          <Link href="/" className="inline-flex items-center text-[#0cf] hover:text-[#0ef] font-medium transition-colors">
+        <div className="absolute top-5 left-5 z-20 flex gap-2">
+          <Link href="/" className="inline-flex items-center text-[#0cf] hover:text-[#0ef] font-medium transition-colors bg-black/40 p-2 px-4 rounded-full border border-[#0cf]/30">
             <ArrowLeft className="w-5 h-5 mr-2" />
             ポータルへ戻る
           </Link>
+          <button 
+            onClick={showAgain}
+            className="p-2 bg-black/40 text-[#0cf] rounded-full border border-[#0cf]/30 hover:bg-[#0cf]/20 transition-colors"
+            title="使いかたを表示"
+          >
+            <HelpCircle className="w-6 h-6" />
+          </button>
         </div>
 
         {/* ゴールド表示 */}
@@ -217,6 +229,12 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
             })}
           </div>
         </div>
+
+        <WelcomeGuide 
+          isOpen={isGuideOpen} 
+          onClose={markAsSeen} 
+          content={GUIDE_CONTENTS.ROCKET_SIMULATOR} 
+        />
       </div>
     );
   }
@@ -226,10 +244,17 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
     <div className="text-center font-mono text-white bg-cover bg-fixed w-screen h-screen flex flex-col items-center justify-center relative p-5"
       style={{backgroundImage: 'url("/images/image_background_rocket.png")'}}>
       {/* ナビゲーション (アプリポータルへ戻る) */}
-      <div className="absolute top-5 left-5 z-20">
+      <div className="absolute top-5 left-5 z-20 flex gap-2">
         <button onClick={() => setLevel(0)} className="inline-flex items-center bg-gray-700/70 text-white border border-gray-600 py-2 px-5 cursor-pointer rounded-md hover:bg-gray-600/70 active:bg-gray-800/70 min-h-[44px]">
           <ArrowLeft className="w-4 h-4 mr-2" />
           アプリポータルへ戻る
+        </button>
+        <button 
+          onClick={showAgain}
+          className="p-2 bg-gray-700/70 text-white border border-gray-600 rounded-md hover:bg-gray-600/70 active:bg-gray-800/70 min-h-[44px]"
+          title="使いかたを表示"
+        >
+          <HelpCircle className="w-6 h-6" />
         </button>
       </div>
 
@@ -341,6 +366,12 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
           wind={wind}
         />
       </div>
+
+      <WelcomeGuide 
+        isOpen={isGuideOpen} 
+        onClose={markAsSeen} 
+        content={GUIDE_CONTENTS.ROCKET_SIMULATOR} 
+      />
     </div>
   );
 }

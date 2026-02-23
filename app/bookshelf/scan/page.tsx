@@ -88,7 +88,7 @@ const ScanPage = () => {
 <header className="p-4 sm:p-6 flex justify-between items-center bg-white border-b border-gray-200">
   <div className="flex items-center gap-4"> {/* gapで戻るボタンとの間隔を調整 */}
     <Link 
-      href="/bookshelf" 
+      href="/" 
       className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors"
     >
       <ArrowLeft className="w-5 h-5 mr-2" />

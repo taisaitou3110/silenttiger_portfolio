@@ -2,9 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image'; // Import Image component
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, HelpCircle } from 'lucide-react';
 import { usePoker } from '@/app/poker/usePoker';
 import { GoldStatus } from '@/components/GoldStatus';
+import { WelcomeGuide } from '@/components/Navigation/WelcomeGuide';
+import { GUIDE_CONTENTS } from '@/constants/guideContents';
+import { useSessionFirstTime } from '@/hooks/useSessionFirstTime';
 import { addAchiever, getAchievers } from '@/app/poker/actions';
 import { getUserGoldData, addGold } from '@/lib/actions';
 
@@ -34,6 +37,9 @@ export default function PokerPage({ version }: PokerPageProps) {
     startNewHand, handleGuess, collect, continueGame, fullReset, CARD_TYPES,
     initializeGame, currentBetAmount
   } = usePoker();
+
+  // ガイド表示の管理
+  const { isOpen: isGuideOpen, markAsSeen, showAgain } = useSessionFirstTime('has_seen_poker_guide');
 
   const [achievers, setAchievers] = useState<Achiever[]>([]);
   const [achieverNameInput, setAchieverNameInput] = useState('');
@@ -106,11 +112,18 @@ export default function PokerPage({ version }: PokerPageProps) {
           priority
         />
         {/* Navigation */}
-        <div className="absolute top-5 left-5 z-20">
-          <Link href="/" className="inline-flex items-center text-white/80 hover:text-white font-medium transition-colors">
+        <div className="absolute top-5 left-5 z-20 flex gap-2">
+          <Link href="/" className="inline-flex items-center text-white/80 hover:text-white font-medium transition-colors bg-blue-900/40 p-2 px-4 rounded-lg border border-white/20">
             <ArrowLeft className="w-5 h-5 mr-2" />
             ポータルへ戻る
           </Link>
+          <button 
+            onClick={showAgain}
+            className="p-2 bg-blue-900/40 text-white/80 rounded-lg border border-white/20 hover:bg-blue-800/60 transition-colors"
+            title="使いかたを表示"
+          >
+            <HelpCircle className="w-6 h-6" />
+          </button>
         </div>
         {/* Gold Status */}
         <div className="absolute top-5 right-5 z-20">
@@ -150,6 +163,12 @@ export default function PokerPage({ version }: PokerPageProps) {
             <MenuButton onClick={() => window.location.href = '/'}>トップにもどる</MenuButton>
           </div>
         </div>
+
+        <WelcomeGuide 
+          isOpen={isGuideOpen} 
+          onClose={markAsSeen} 
+          content={GUIDE_CONTENTS.POKER_GAME} 
+        />
       </div>
     );
   }
@@ -166,11 +185,18 @@ export default function PokerPage({ version }: PokerPageProps) {
           priority
         />
         {/* Navigation */}
-        <div className="absolute top-5 left-5 z-20">
-          <Link href="/" className="inline-flex items-center text-white/80 hover:text-white font-medium transition-colors">
+        <div className="absolute top-5 left-5 z-20 flex gap-2">
+          <Link href="/" className="inline-flex items-center text-white/80 hover:text-white font-medium transition-colors bg-blue-900/40 p-2 px-4 rounded-lg border border-white/20">
             <ArrowLeft className="w-5 h-5 mr-2" />
             アプリポータルへ戻る
           </Link>
+          <button 
+            onClick={showAgain}
+            className="p-2 bg-blue-900/40 text-white/80 rounded-lg border border-white/20 hover:bg-blue-800/60 transition-colors"
+            title="使いかたを表示"
+          >
+            <HelpCircle className="w-6 h-6" />
+          </button>
         </div>
         {/* Gold Status */}
         <div className="absolute top-5 right-5 z-20">
@@ -317,6 +343,12 @@ export default function PokerPage({ version }: PokerPageProps) {
           </div>
         </div>
       </div>
+
+      <WelcomeGuide 
+        isOpen={isGuideOpen} 
+        onClose={markAsSeen} 
+        content={GUIDE_CONTENTS.POKER_GAME} 
+      />
     </div>
   );
 }

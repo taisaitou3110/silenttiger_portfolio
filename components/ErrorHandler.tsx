@@ -31,7 +31,7 @@ export const getFriendlyErrorMessage = (error: any): string => {
  */
 interface ErrorHandlerProps {
   error: any;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 export default function ErrorHandler({ error, onClose }: ErrorHandlerProps) {

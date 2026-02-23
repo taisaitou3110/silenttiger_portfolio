@@ -7,10 +7,12 @@ import { X } from 'lucide-react'; // 閉じるボタン用のアイコン
 // 💡 第11章の標準に合わせた型定義
 export interface GuideContent {
   title: string;
+  tagline?: string; // キャッチコピー
   overview: string;
   howTo: string[];
   techStack: string[];
   image?: string; // オプションのイラスト画像
+  path?: string; // ポータルからの遷移パス
 }
 
 interface WelcomeGuideProps {

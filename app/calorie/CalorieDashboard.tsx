@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft, HelpCircle } from 'lucide-react';
 import LoadingButton from '@/components/LoadingButton';
 import { addQuickLog, copyPreviousDayLogs } from '@/app/calorie/actions';
@@ -88,8 +89,15 @@ export default function CalorieDashboard({
   const { isOpen: isGuideOpen, markAsSeen, showAgain } = useSessionFirstTime('has_seen_calorie_guide');
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <main className="p-4 sm:p-8 max-w-4xl mx-auto">
+    <div className="relative min-h-screen bg-slate-50 overflow-x-hidden">
+      <Image
+        src="/images/toppage_wheel_labo.png"
+        alt="Background"
+        fill
+        className="object-cover z-0 opacity-10"
+        priority
+      />
+      <main className="relative z-10 p-4 sm:p-8 max-w-4xl mx-auto">
         <div className="mb-6 flex gap-2">
           <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors bg-white p-2 px-4 rounded-full border border-gray-200 shadow-sm">
             <ArrowLeft className="w-4 h-4 mr-2" />

@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import Image from 'next/image';
 import { X } from 'lucide-react'; // 閉じるボタン用のアイコン
 
 // 💡 第11章の標準に合わせた型定義
@@ -9,6 +10,7 @@ export interface GuideContent {
   overview: string;
   howTo: string[];
   techStack: string[];
+  image?: string; // オプションのイラスト画像
 }
 
 interface WelcomeGuideProps {
@@ -26,19 +28,47 @@ export const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ content, isOpen, onC
       {/* 💡 9.0章：正方形のウィンドウ (aspect-square) */}
       <div className="bg-white w-full max-w-md aspect-square rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
         
-        {/* ヘッダー */}
-        <header className="relative p-5 border-b bg-gray-50 flex items-center justify-center">
-          <h2 className="font-bold text-xl text-gray-800">{content.title}</h2>
-          <button 
-            onClick={onClose}
-            className="absolute right-4 p-2 text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </header>
+        {/* ヘッダー画像エリア（存在する場合） */}
+        {content.image && (
+          <div className="relative w-full h-40 shrink-0">
+            <Image
+              src={content.image}
+              alt={content.title}
+              fill
+              className="object-cover"
+            />
+            {/* グラデーションオーバーレイ：下部の白背景に滑らかに繋げる */}
+            <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
+            
+            {/* 閉じるボタン（画像の上に重ねる） */}
+            <button 
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors backdrop-blur-md z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
+        {/* ヘッダー（画像がない場合のフォールバック） */}
+        {!content.image && (
+          <header className="relative p-5 border-b bg-gray-50 flex items-center justify-center">
+            <h2 className="font-bold text-xl text-gray-800">{content.title}</h2>
+            <button 
+              onClick={onClose}
+              className="absolute right-4 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </header>
+        )}
 
         {/* スクロール可能なボディ */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {content.image && (
+            <h2 className="font-bold text-xl text-gray-800 text-center mb-4">{content.title}</h2>
+          )}
+          
           <section>
             <h3 className="font-bold text-indigo-600 mb-2">概要</h3>
             <p className="text-gray-600 text-sm leading-relaxed">

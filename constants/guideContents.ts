@@ -22,6 +22,7 @@ export const GUIDE_CONTENTS: Record<string, GuideContent> = {
       "失敗した場合は「試行履歴」を参考にパラメーターを微調整して再挑戦しましょう。"
     ],
     techStack: ["Next.js", "HTML5 Canvas", "Physics Engine (Custom TS)"],
+    image: "/images/image_background_rocket_menu.png",
   },
   POKER_GAME: {
     title: "ハイ＆ロー ポーカーの使い方",
@@ -34,6 +35,7 @@ export const GUIDE_CONTENTS: Record<string, GuideContent> = {
       "見事10,000Gに到達すれば、ランキングに名前を刻むことができます。"
     ],
     techStack: ["Next.js", "React Hooks", "Prisma", "Lucide React"],
+    image: "/images/image_background_poker.png",
   },
   CALORIE_APP: {
     title: "カロリー記録アプリの使い方",
@@ -56,6 +58,7 @@ export const GUIDE_CONTENTS: Record<string, GuideContent> = {
       "「一括読込 (Bulk)」を利用して、大量のデータを一度にインポートすることも可能です。"
     ],
     techStack: ["Next.js", "Prisma", "忘却曲線アルゴリズム", "Tailwind CSS"],
+    image: "/images/image_background_wordbook.png",
   },
   // 他のアプリもここに追加していく
 } as const;

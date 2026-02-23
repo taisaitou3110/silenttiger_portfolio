@@ -108,7 +108,7 @@ export default function PokerPage({ version }: PokerPageProps) {
           alt="ポーカー背景"
           layout="fill"
           objectFit="cover"
-          className="z-0"
+          className="z-0 opacity-10"
           priority
         />
         {/* Navigation */}
@@ -181,7 +181,7 @@ export default function PokerPage({ version }: PokerPageProps) {
           alt="ポーカー背景"
           layout="fill"
           objectFit="cover"
-          className="z-0"
+          className="z-0 opacity-10"
           priority
         />
         {/* Navigation */}

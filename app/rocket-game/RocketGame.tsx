@@ -190,8 +190,11 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
   // --- 表示: メニュー画面 (AppPortal) ---
   if (level === 0) {
     return (
-      <div className="relative min-h-screen bg-black overflow-x-hidden" 
+      <div className="relative min-h-screen bg-black overflow-x-hidden flex flex-col items-center justify-center p-5" 
            style={{backgroundImage: 'url("/images/image_background_rocket_menu.png")', backgroundSize: 'cover', backgroundPosition: 'center'}}>
+        {/* 背景の透明度調整用オーバーレイ */}
+        <div className="absolute inset-0 bg-black/90 z-0" />
+        
         {/* ナビゲーション (ポータルへ戻る) */}
         <div className="absolute top-5 left-5 z-20 flex gap-2">
           <Link href="/" className="inline-flex items-center text-[#0cf] hover:text-[#0ef] font-medium transition-colors bg-black/40 p-2 px-4 rounded-full border border-[#0cf]/30">
@@ -212,7 +215,7 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
           <GoldStatus amount={initialGold} />
         </div>
 
-        <div className="text-white p-12 text-center font-mono pt-24">
+        <div className="relative z-10 text-white p-12 text-center font-mono">
           <h1 className="text-[#0cf] text-5xl mb-10 sm:text-6xl drop-shadow-[0_0_15px_#0cf]">真夏の方程式 ROCKET simulator v1.8</h1>
           <div className="grid grid-cols-1 gap-5 max-w-4xl mx-auto sm:grid-cols-2 lg:grid-cols-3">
             {Object.keys(LEVEL_CONFIGS).map((key) => {
@@ -243,6 +246,9 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
   return (
     <div className="text-center font-mono text-white bg-cover bg-fixed w-screen h-screen flex flex-col items-center justify-center relative p-5"
       style={{backgroundImage: 'url("/images/image_background_rocket.png")'}}>
+      {/* 背景の透明度調整用オーバーレイ */}
+      <div className="absolute inset-0 bg-black/90 z-0" />
+
       {/* ナビゲーション (アプリポータルへ戻る) */}
       <div className="absolute top-5 left-5 z-20 flex gap-2">
         <button onClick={() => setLevel(0)} className="inline-flex items-center bg-gray-700/70 text-white border border-gray-600 py-2 px-5 cursor-pointer rounded-md hover:bg-gray-600/70 active:bg-gray-800/70 min-h-[44px]">
@@ -268,7 +274,7 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
         <h2 className="text-[#0cf] text-lg sm:text-xl m-0">{LEVEL_CONFIGS[level].name}</h2>
       </div>
 
-      <div className="flex justify-center gap-5 mx-auto flex-wrap w-full">
+      <div className="relative z-10 flex justify-center gap-5 mx-auto flex-wrap w-full">
         <div ref={canvasContainerRef} className="flex-1 basis-[600px] min-w-[300px] relative rounded-xl border-4 border-gray-700 overflow-hidden shadow-xl shadow-black/50">
           <canvas 
             ref={canvasRef} 
@@ -354,7 +360,7 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
       )}
 
       {/* 操作パネル (外部コンポーネント) */}
-      <div className="w-full mt-4">
+      <div className="relative z-10 w-full mt-4">
         <GameControls 
           pressure={pressure} 
           setPressure={setPressure} 

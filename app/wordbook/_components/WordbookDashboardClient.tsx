@@ -26,7 +26,7 @@ export default function WordbookDashboardClient({ data, gold }: WordbookDashboar
         src="/images/image_background_wordbook.png"
         alt="Wordbook Background"
         fill
-        className="object-cover z-0"
+        className="object-cover z-0 opacity-10"
         priority
       />
       

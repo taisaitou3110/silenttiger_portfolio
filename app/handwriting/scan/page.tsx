@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Camera, Upload, Loader2, AlertCircle, ChevronLeft } from 'lucide-react';
@@ -10,10 +10,11 @@ import { IMAGE_CONFIG } from '@/constants/config';
 import { analyzeHandwriting } from '../actions';
 import { processHandwritingImage } from '@/components/imageProcessor';
 
-export default function ScanPage() {
+function ScanContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const docType = searchParams.get('type') || 'general';
+  const profileId = searchParams.get('profileId') || undefined;
 
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -33,7 +34,6 @@ export default function ScanPage() {
       }
 
       // 2. ブラウザでの読み込み上限 (10MB)
-      // 生の画像が10MBを超えるとメモリ負荷が高いため、ここで一度ガード
       const BROWSER_LIMIT = 10 * 1024 * 1024; 
       if (file.size > BROWSER_LIMIT) {
         setError({ message: 'VALIDATION_IMAGE_SIZE' }); 
@@ -53,24 +53,22 @@ export default function ScanPage() {
     setError(null);
 
     try {
-      // 3. 画像の前処理（モノクロ化 & 軽量化）
-      // 手書き文字解析のため、白黒データにしてから送信
+      // 3. 画像の前処理
       const { base64, size } = await processHandwritingImage(image);
       
-      // 4. スリム化した後の最終チェック (標準仕様の3MB制限)
+      // 4. スリム化した後の最終チェック
       if (size > IMAGE_CONFIG.MAX_FILE_SIZE_BYTES) {
         setError({ message: 'VALIDATION_IMAGE_SIZE' });
         setLoading(false);
         return;
       }
 
-      console.log(`Original size: ${(image.size / 1024).toFixed(1)}KB, Processed size: ${(size / 1024).toFixed(1)}KB`);
-
-      // AI解析実行
-      const rawResult = await analyzeHandwriting(base64, "image/jpeg", docType);
+      // AI解析実行 (profileId を渡す)
+      const rawResult = await analyzeHandwriting(base64, "image/jpeg", docType, profileId);
       
       sessionStorage.setItem('lastScanResult', JSON.stringify({
         docType,
+        profileId,
         result: rawResult,
         image: base64
       }));
@@ -78,7 +76,6 @@ export default function ScanPage() {
       router.push('/handwriting/correction');
     } catch (err: any) {
       console.error("Analysis Error:", err);
-      // AI側の制限（サイズ超過等）をキャッチ
       if (err.message?.includes("Payload Too Large")) {
         setError({ message: 'VALIDATION_IMAGE_SIZE' });
       } else {
@@ -158,5 +155,17 @@ export default function ScanPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ScanPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-[#0cf] animate-spin" />
+      </div>
+    }>
+      <ScanContent />
+    </Suspense>
   );
 }

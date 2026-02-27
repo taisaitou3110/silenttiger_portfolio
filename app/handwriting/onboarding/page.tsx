@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft, Camera, CheckCircle2, AlertCircle, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 import { getTrainingTemplates, updateProfileTrainingLevel, analyzeHandwriting, saveHandwritingData } from '../actions';
 
-export default function TrainingOnboardingPage() {
+function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const profileId = searchParams.get('profileId');
@@ -194,10 +194,22 @@ export default function TrainingOnboardingPage() {
         <div className="mt-12 flex items-center gap-4 p-4 bg-gray-900/20 rounded-2xl border border-white/5">
            <AlertCircle className="w-5 h-5 text-gray-600 shrink-0" />
            <p className="text-[10px] text-gray-500 leading-tight">
-             トレーニング中に収集されたデータは、あなた専用の筆跡プロファイル ${profileId.slice(0, 8)} の精度向上にのみ使用されます。
+             トレーニング中に収集されたデータは、あなた専用の筆跡プロファイル ${profileId ? profileId.slice(0, 8) : ''} の精度向上にのみ使用されます。
            </p>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TrainingOnboardingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-[#0cf] animate-spin" />
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
   );
 }

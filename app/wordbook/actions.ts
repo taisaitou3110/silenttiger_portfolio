@@ -217,3 +217,5 @@ export async function saveWords(words: any[]) {
   await Promise.all(promises);
   return { success: true, count: words.length };
 }
+
+export { addGold } from "@/lib/actions";

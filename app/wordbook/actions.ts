@@ -218,4 +218,13 @@ export async function saveWords(words: any[]) {
   return { success: true, count: words.length };
 }
 
-export { addGold } from "@/lib/actions";
+// 修正後
+import { addGold as addGoldAction } from "@/lib/actions";
+
+/**
+ * addGold を Server Action としてラップして再エクスポート
+ * Restパラメータを使用して、元の関数にすべての引数を正しく渡す
+ */
+export async function addGold(...args: Parameters<typeof addGoldAction>) {
+  return await addGoldAction(...args);
+}

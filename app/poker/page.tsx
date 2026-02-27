@@ -15,7 +15,7 @@ interface Achiever {
   id: string;
   name: string;
   finalGold: number;
-  achievedAt: string;
+  achievedAt: Date | string;
 }
 
 interface PokerPageProps {
@@ -228,7 +228,7 @@ export default function PokerPage({ version }: PokerPageProps) {
           <div className="space-y-3 max-w-sm mx-auto">
             {(gameState === 'IDLE' || gameState === 'LOSE') && gold >= currentBetAmount && (
               <>
-                <MenuButton onClick={startNewHand}>ぼうけんに でる ({currentBetAmount}G)</MenuButton>
+                <MenuButton onClick={startNewHand}>ゲームをを始める ({currentBetAmount}G)</MenuButton>
                 <Link href="/" passHref legacyBehavior>
                   <MenuButton onClick={() => {}}>ゲームを やめる</MenuButton>
                 </Link>
@@ -397,13 +397,23 @@ function CardDisplay({ value, label }: { value: string, label: string }) {
   );
 }
 
-function MenuButton({ children, onClick, highlight = false }: { children: React.ReactNode, onClick: () => void, highlight?: boolean }) {
+function MenuButton({ children, onClick, highlight = false, disabled = false }: { children: React.ReactNode, onClick: () => void, highlight?: boolean, disabled?: boolean }) {
   return (
     <button 
       onClick={onClick} 
-      className={`w-full text-left px-6 py-4 border-2 border-transparent hover:border-white group flex items-center transition-all duration-75 bg-blue-900/40 hover:bg-blue-800 rounded-lg ${highlight ? 'text-yellow-400' : 'text-white'}`}
+      disabled={disabled}
+      className={`w-full text-left px-6 py-4 border-2 border-transparent group flex items-center transition-all duration-75 rounded-lg
+        ${disabled 
+          ? 'bg-gray-800/20 text-gray-500 cursor-not-allowed border-gray-700/30' 
+          : `hover:border-white bg-blue-900/40 hover:bg-blue-800 cursor-pointer ${highlight ? 'text-yellow-400' : 'text-white'}`
+        }
+      `}
     >
-      <span className="opacity-0 group-hover:opacity-100 mr-3 font-bold text-2xl transition-transform transform translate-x-[-4px] group-hover:translate-x-0">➤</span>
+      <span className={`mr-3 font-bold text-2xl transition-transform transform translate-x-[-4px] group-hover:translate-x-0
+        ${disabled ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}
+      `}>
+        ➤
+      </span>
       <span className="text-xl font-bold tracking-tight">{children}</span>
     </button>
   );

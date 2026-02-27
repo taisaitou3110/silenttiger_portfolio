@@ -41,16 +41,24 @@ export function usePoker() {
     return newDeck.sort(() => Math.random() - 0.5);
   }, []);
 
-  const initializeGame = useCallback((sg: number, ib: number) => {
+  const initializeGame = useCallback(async (sg: number, ib: number) => {
     setStartGold(sg);
-    setGold(sg);
+    // 初回の賭け金を即座に引く
+    const initialGold = sg - ib;
+    setGold(initialGold);
+    await decreaseGold(ib); // DB側のゴールドも減らす
+
     setCurrentBetAmount(ib);
-    setDeck(createFullDeck());
-    setUsedCards([]);
-    setBet(0);
-    setGameState('IDLE');
-    setMessage("ゲームを始める");
-    playSound(cardTurnSound); // Play sound here
+    const newDeck = createFullDeck();
+    const card = newDeck.pop()!; // 1枚目を引く
+    
+    setDeck(newDeck);
+    setUsedCards([card]);
+    setCurrentCard(card);
+    setBet(ib);
+    setGameState('PLAYING');
+    setMessage(`ディーラーは ${card} をだした！ 上か？下か？`);
+    playSound(cardTurnSound);
   }, [createFullDeck, playSound, cardTurnSound]);
 
   const pullCard = (currentDeck: string[]) => {
@@ -97,7 +105,7 @@ export function usePoker() {
     } else {
       setBet(0);
       setGameState('LOSE');
-      setMessage(`残念！ 全てを失った… (${newCard} だった！)`);
+      setMessage(`残念！ 全てを失った…`);
       playSound(wrongSound); // Play sound here
     }
   }, [deck, pullCard, setNextCard, setUsedCards, playSound, cardTurnSound, currentCard, bet, setBet, setGameState, setMessage, correctSound, wrongSound]);

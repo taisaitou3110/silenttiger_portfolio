@@ -61,6 +61,27 @@ model UserSettings {
   updatedAt       DateTime     @updatedAt
   calorieLogs     CalorieLog[]
   customFoods     CustomFood[]
+  books           Book[]
+  trainingPools   TrainingPool[]
+  userProfiles    UserProfile[]
+}
+
+model Book {
+  id              String       @id @default(cuid())
+  title           String
+  authors         String?
+  isbn            String?      // ISBN-10 or ISBN-13
+  thumbnail       String?
+  utilizationDate DateTime?    // 図書館での利用日
+  status          String       @default("COMPLETED") // COMPLETED, etc.
+  
+  userId          String?
+  user            UserSettings? @relation(fields: [userId], references: [id])
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([userId, isbn])
 }
 model CalorieLog {
   id          String   @id @default(cuid())
@@ -111,5 +132,87 @@ model DevelopmentLog {
   progress    String   @db.VarChar(100)
   issues      String   @db.VarChar(400)
   attachment  String?
+  createdAt   DateTime @default(now())
+}
+
+// --- Handwriting & Business Logic ---
+
+model UserProfile {
+  id                String   @id @default(cuid())
+  displayName       String
+  penType           String?  // ボールペン, 万年筆, 筆ペン等
+  trainingLevel     Int      @default(0) // 1〜5のステップ
+  lastTrainedAt     DateTime @updatedAt
+  trainingPool      TrainingPool[]
+  
+  settingsId        String?
+  settings          UserSettings? @relation(fields: [settingsId], references: [id])
+
+  createdAt         DateTime @default(now())
+}
+
+model TrainingTemplate {
+  id                String   @id @default(cuid())
+  step              Int      // 1〜5
+  category          String   // 例: "数字と記号"
+  targetText        String   // 例: "0123456789/¥"
+  description       String   // ユーザーへの指示文
+}
+
+model TrainingPool {
+  id            String   @id @default(cuid())
+  profileId     String
+  profile       UserProfile @relation(fields: [profileId], references: [id])
+  imagePatch    String   // 切り出し画像 (Base64 or URL)
+  correctLabel  String   // 正解の文字
+  confidence    Float    // AIがその時どのくらい自信がなかったか
+  createdAt     DateTime @default(now())
+
+  // 互換性のための古いフィールド (移行用)
+  userId        String?
+  user          UserSettings? @relation(fields: [userId], references: [id])
+}
+
+model Customer {
+  id          String   @id @default(cuid())
+  name        String
+  tel         String?
+  zipCode     String?
+  address     String?
+  
+  requirements Requirement[]
+  orders       Order[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([name, tel]) // 氏名＋電話番号で名寄せ
+}
+
+model Requirement {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  receivedAt  DateTime @default(now())
+  content     String   // 相談・連絡内容
+  
+  createdAt   DateTime @default(now())
+}
+
+model Order {
+  id          Int      @id @default(autoincrement())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  orderDate   DateTime @default(now())
+  itemName    String
+  quantity    Float    // 数値型
+  price       Float    // 数値型
+  
+  createdAt   DateTime @default(now())
+}
+
+model GeneralNote {
+  id          String   @id @default(cuid())
+  rawText     String
   createdAt   DateTime @default(now())
 }

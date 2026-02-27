@@ -73,7 +73,7 @@ export const MESSAGE_MASTER = {
     GUESS_PROMPT: "スライムは {card} をだした！ 上か？下か？",
     DRAW_MESSAGE: "引き分けだ！ {card} のまま やり直し！",
     WIN_MESSAGE: "当たり！ 配当が {payout}G になった！",
-    LOSE_MESSAGE: "残念！ 全てを失った… ({card} だった！)",
+    LOSE_MESSAGE: "ざんねんでした！ 全てを失った… ",
     GOAL_ACHIEVED_MESSAGE: "10000G 到達！ おめでとう！ お前の完全勝利だ！",
     COLLECT_MESSAGE: "{bet}G 獲得！ 次はどうする？",
     NEXT_GUESS_PROMPT: "{card} より 上か？下か？",

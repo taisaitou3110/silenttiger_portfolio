@@ -95,5 +95,18 @@ export const GUIDE_CONTENTS: Record<string, GuideContent> = {
     image: "/images/toppage_wheel_labo.png",
     path: "/feedback",
   },
-
+  HANDWRITING_OCR: {
+    title: "手書きビジネス支援",
+    tagline: "あなたの筆跡をAIが学習。書類を構造化データへ。",
+    overview: "ビジネス電話、発注書、一般メモなどの手書き書類をAIが解析し、顧客管理や注文データとして自動保存。使うほどにあなたの筆跡（クセ）に最適化されます。",
+    howTo: [
+      "「スキャン開始」から書類タイプを選択し、画像をアップロードまたはカメラで撮影します。",
+      "AIが解析した結果を確認し、自信度が低い項目を「Correction UI」で修正します。",
+      "修正内容は「Training Pool」に保存され、次回の認識精度向上に活用されます。",
+      "「データ閲覧」から、蓄積された顧客、要件、発注履歴を一元管理できます。"
+    ],
+    techStack: ["Next.js", "Gemini 1.5 Flash (Vision)", "Prisma", "Zod", "Tailwind CSS"],
+    image: "/images/toppage_wheel_labo.png",
+    path: "/handwriting",
+  },
 } as const;

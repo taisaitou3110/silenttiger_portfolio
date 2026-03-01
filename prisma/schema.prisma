@@ -1,4 +1,3 @@
-// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,217 +7,190 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- Knowledge Cosmos 用のモデル拡張 ---
-
 model Word {
-  id              String       @id @default(cuid())
-  term            String       @unique
-  meaning         String       // 元の description を意味として使用
-  phonetic        String?      // 発音記号
-  scene           String?      // 出会ったシーン・書籍名（元 comments の役割）
-  
-  // エビングハウス忘却曲線ロジック用
-  accuracy        Float        @default(0.0) // 記憶割合%
-  easeFactor      Float        @default(2.5) // 難易度係数（初期値は定石の2.5）
-  interval        Int          @default(0)   // 次回までの日数
-  nextReview      DateTime     @default(now())
-  
-  // リレーション
-  examples        Example[]    // 1単語につき最大10個の例文
-  
-  // 自己参照リレーション（混同しやすい語）
-  // 多対多のリレーションとして定義
-  confusingWith   Word[]       @relation("Confusion")
-  confusedBy      Word[]       @relation("Confusion")
-
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id         String    @id @default(cuid())
+  term       String    @unique
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  accuracy   Float     @default(0.0)
+  easeFactor Float     @default(2.5)
+  interval   Int       @default(0)
+  meaning    String
+  nextReview DateTime  @default(now())
+  phonetic   String?
+  scene      String?
+  examples   Example[]
+  Word_A     Word[]    @relation("Confusion")
+  Word_B     Word[]    @relation("Confusion")
 }
 
 model Example {
-  id              String       @id @default(cuid())
-  text            String       // 例文
-  collocation     String?      // 抽出されたコロケーション部分
-  audioUrl        String?      // 自分の声の録音データURL
-  
-  wordId          String
-  word            Word         @relation(fields: [wordId], references: [id], onDelete: Cascade)
-  
-  createdAt       DateTime     @default(now())
+  id          String   @id @default(cuid())
+  text        String
+  collocation String?
+  audioUrl    String?
+  wordId      String
+  createdAt   DateTime @default(now())
+  word        Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
 }
 
-// --- 既存モデルへのゴールド追加 ---
-
 model UserSettings {
-  id              String       @id @default(cuid())
-  gold            Int          @default(0)   // ★他アプリ共通の持ちゴールド★
-  
-  // 以下、既存のカロリー管理用フィールド
-  targetCalories  Int          @default(2000)
-  weight          Float?
-  activityLevel   String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  calorieLogs     CalorieLog[]
-  customFoods     CustomFood[]
-  books           Book[]
-  trainingPools   TrainingPool[]
-  userProfiles    UserProfile[]
+  id             String         @id @default(cuid())
+  targetCalories Int            @default(2000)
+  weight         Float?
+  activityLevel  String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  gold           Int            @default(0)
+  books          Book[]
+  calorieLogs    CalorieLog[]
+  customFoods    CustomFood[]
+  trainingPools  TrainingPool[]
+  userProfiles   UserProfile[]
 }
 
 model Book {
-  id              String       @id @default(cuid())
+  id              String        @id @default(cuid())
   title           String
   authors         String?
-  isbn            String?      // ISBN-10 or ISBN-13
+  isbn            String?
   thumbnail       String?
-  utilizationDate DateTime?    // 図書館での利用日
-  status          String       @default("COMPLETED") // COMPLETED, etc.
-  
+  utilizationDate DateTime?
+  status          String        @default("COMPLETED")
   userId          String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
   user            UserSettings? @relation(fields: [userId], references: [id])
-
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
 
   @@unique([userId, isbn])
 }
+
 model CalorieLog {
-  id          String   @id @default(cuid())
-  date        DateTime @default(now())
+  id          String        @id @default(cuid())
+  date        DateTime      @default(now())
   foodName    String
   calories    Int
-  imagePath   String?  // 画像を保存する場合
-  advice      String?  // Geminiからの削り出し助言
-  inputSource String?  // 入力ソース (例: "voice", "photo", "text")
-  userId      String?  // ユーザーID (UserSettingsと関連付ける場合)
+  imagePath   String?
+  advice      String?
+  inputSource String?
+  userId      String?
   user        UserSettings? @relation(fields: [userId], references: [id])
 }
 
 model CustomFood {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  calories  Int
-  userId    String?  // ユーザーID (UserSettingsと関連付ける場合)
-  user      UserSettings? @relation(fields: [userId], references: [id])
+  id       String        @id @default(cuid())
+  name     String        @unique
+  calories Int
+  userId   String?
+  user     UserSettings? @relation(fields: [userId], references: [id])
 }
 
 model FoodPreset {
-  id        String @id @default(cuid())
-  name      String @unique
-  calories  Int
+  id       String @id @default(cuid())
+  name     String @unique
+  calories Int
 }
 
 model PokerAchiever {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  achievedAt  DateTime  @default(now())
-  finalGold   Int
+  id         String   @id @default(cuid())
+  name       String   @unique
+  achievedAt DateTime @default(now())
+  finalGold  Int
 }
 
 model Feedback {
-  id        Int      @id @default(autoincrement()) // 通し番号
+  id        Int      @id @default(autoincrement())
   name      String   @default("匿名")
-  category  String   // 全般、ポーカー等
+  category  String
   content   String   @db.VarChar(100)
-  reply     String?  // あなたの返信用
+  reply     String?
   createdAt DateTime @default(now())
 }
 
 model DevelopmentLog {
-  id          Int      @id @default(autoincrement())
-  date        DateTime
-  title       String   @db.VarChar(30)
-  progress    String   @db.VarChar(100)
-  issues      String   @db.VarChar(400)
-  attachment  String?
-  createdAt   DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  date       DateTime
+  title      String   @db.VarChar(30)
+  progress   String   @db.VarChar(100)
+  issues     String   @db.VarChar(400)
+  attachment String?
+  createdAt  DateTime @default(now())
 }
 
-// --- Handwriting & Business Logic ---
-
 model UserProfile {
-  id                String   @id @default(cuid())
-  displayName       String
-
-  // --- 文体学習用フィールド ---
-  styleInstruction  String?  @db.Text   // Geminiが生成した文体抽出結果（プロンプト用）
-  learningLevel     Int      @default(0) // 学習済みデータ量に基づくLv（1〜5）
-  lastAnalyzedAt    DateTime?           // 最後に文体分析を行った日時
-
-  penType           String?  // ボールペン, 万年筆, 筆ペン等
-  trainingLevel     Int      @default(0) // 1〜5のステップ
-  lastTrainedAt     DateTime @updatedAt
-  trainingPool      TrainingPool[]
+  id               String         @id @default(cuid())
+  displayName      String
+  penType          String?
+  trainingLevel    Int            @default(0)
+  lastTrainedAt    DateTime       @updatedAt
+  settingsId       String?
+  createdAt        DateTime       @default(now())
   
-  settingsId        String?
-  settings          UserSettings? @relation(fields: [settingsId], references: [id])
+  // --- 文体学習用フィールド (再定義) ---
+  styleInstruction String?        @db.Text
+  learningLevel    Int            @default(0)
+  lastAnalyzedAt   DateTime?
 
-  createdAt         DateTime @default(now())
+  trainingPool     TrainingPool[]
+  settings         UserSettings?  @relation(fields: [settingsId], references: [id])
 }
 
 model TrainingTemplate {
-  id                String   @id @default(cuid())
-  step              Int      // 1〜5
-  category          String   // 例: "数字と記号"
-  targetText        String   // 例: "0123456789/¥"
-  description       String   // ユーザーへの指示文
+  id          String @id @default(cuid())
+  step        Int
+  category    String
+  targetText  String
+  description String
 }
 
 model TrainingPool {
-  id            String   @id @default(cuid())
-  profileId     String
-  profile       UserProfile @relation(fields: [profileId], references: [id])
-  imagePatch    String   // 切り出し画像 (Base64 or URL)
-  correctLabel  String   // 正解の文字
-  confidence    Float    // AIがその時どのくらい自信がなかったか
-  createdAt     DateTime @default(now())
-
-  // 互換性のための古いフィールド (移行用)
-  userId        String?
-  user          UserSettings? @relation(fields: [userId], references: [id])
+  id           String        @id @default(cuid())
+  userId       String?
+  imagePatch   String
+  correctLabel String
+  confidence   Float
+  createdAt    DateTime      @default(now())
+  profileId    String
+  profile      UserProfile   @relation(fields: [profileId], references: [id])
+  user         UserSettings? @relation(fields: [userId], references: [id])
 }
 
 model Customer {
-  id          String   @id @default(cuid())
-  name        String
-  tel         String?
-  zipCode     String?
-  address     String?
-  
-  requirements Requirement[]
+  id           String        @id @default(cuid())
+  name         String
+  tel          String?
+  zipCode      String?
+  address      String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   orders       Order[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  requirements Requirement[]
 
-  @@unique([name, tel]) // 氏名＋電話番号で名寄せ
+  @@unique([name, tel])
 }
 
 model Requirement {
-  id          String   @id @default(cuid())
-  customerId  String
-  customer    Customer @relation(fields: [customerId], references: [id])
-  receivedAt  DateTime @default(now())
-  content     String   // 相談・連絡内容
-  
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  customerId String
+  receivedAt DateTime @default(now())
+  content    String
+  createdAt  DateTime @default(now())
+  customer   Customer @relation(fields: [customerId], references: [id])
 }
 
 model Order {
-  id          Int      @id @default(autoincrement())
-  customerId  String
-  customer    Customer @relation(fields: [customerId], references: [id])
-  orderDate   DateTime @default(now())
-  itemName    String
-  quantity    Float    // 数値型
-  price       Float    // 数値型
-  
-  createdAt   DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  customerId String
+  orderDate  DateTime @default(now())
+  itemName   String
+  quantity   Float
+  price      Float
+  createdAt  DateTime @default(now())
+  customer   Customer @relation(fields: [customerId], references: [id])
 }
 
 model GeneralNote {
-  id          String   @id @default(cuid())
-  rawText     String
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  rawText   String
+  createdAt DateTime @default(now())
 }

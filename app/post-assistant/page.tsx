@@ -1,12 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { analyzeUserStyle, generateSnsPost, getUserProfiles, ensureUserProfile } from './actions';
-import { UserProfile } from '@prisma/client';
-import { Loader2, Sparkles, PenLine, BookOpen, Save, History } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { analyzeUserStyle, generateSnsPost, getUserProfiles, ensureUserProfile, uploadAndAnalyzeStyle } from './actions';
+import { UserProfile as PrismaUserProfile } from '@prisma/client';
+import { Loader2, Sparkles, PenLine, BookOpen, Save, History, FileUp, FileText } from 'lucide-react';
+
+// Prismaの型が更新されない場合のための拡張定義
+interface ExtendedUserProfile extends PrismaUserProfile {
+  styleInstruction?: string | null;
+  learningLevel?: number;
+  lastAnalyzedAt?: Date | null;
+}
 
 export default function PostAssistantPage() {
-  const [profiles, setProfiles] = useState<UserProfile[]>([]);
+  const [profiles, setProfiles] = useState<ExtendedUserProfile[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<string>('');
   const [pastArticles, setPastArticles] = useState('');
   const [topic, setTopic] = useState('');
@@ -14,11 +21,12 @@ export default function PostAssistantPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [message, setMessage] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function init() {
       await ensureUserProfile();
-      const data = await getUserProfiles();
+      const data = await getUserProfiles() as ExtendedUserProfile[];
       setProfiles(data);
       if (data.length > 0) {
         setSelectedProfileId(data[0].id);
@@ -38,14 +46,45 @@ export default function PostAssistantPage() {
       const result = await analyzeUserStyle(selectedProfileId, pastArticles);
       if (result.success) {
         setMessage('文体分析が完了しました！');
-        // Refresh profile data to see updated level
         const data = await getUserProfiles();
         setProfiles(data);
+      } else {
+        alert(result.error || '文体分析に失敗しました');
       }
     } catch (error: any) {
-      alert(error.message);
+      console.error("Client Error:", error);
+      alert('通信エラーが発生しました。時間を置いて再度お試しください。');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedProfileId) return;
+
+    setIsAnalyzing(true);
+    setMessage(`ファイルを処理中: ${file.name}...`);
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('userId', selectedProfileId);
+
+    try {
+      const result = await uploadAndAnalyzeStyle(formData);
+      if (result.success) {
+        setMessage(`「${file.name}」の分析が完了しました！`);
+        const data = await getUserProfiles();
+        setProfiles(data);
+      } else {
+        alert(result.error || 'ファイルの分析に失敗しました');
+      }
+    } catch (error: any) {
+      console.error("File Upload Error:", error);
+      alert('ファイル処理中にエラーが発生しました。');
+    } finally {
+      setIsAnalyzing(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -58,11 +97,14 @@ export default function PostAssistantPage() {
     setGeneratedPost('');
     try {
       const result = await generateSnsPost(selectedProfileId, topic);
-      if (result.success) {
+      if (result.success && result.content) {
         setGeneratedPost(result.content);
+      } else {
+        alert(result.error || '記事の生成に失敗しました');
       }
     } catch (error: any) {
-      alert(error.message);
+      console.error("Client Error:", error);
+      alert('通信エラーが発生しました。時間を置いて再度お試しください。');
     } finally {
       setIsGenerating(false);
     }
@@ -130,12 +172,38 @@ export default function PostAssistantPage() {
             </div>
             <div className="bg-white/5 border border-white/10 rounded-3xl p-8 space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-400">過去の記事（テキストを貼り付け）</label>
+                <label className="text-sm font-bold text-gray-400">過去の記事（テキスト貼り付け または ファイル）</label>
+                
+                {/* File Upload Area */}
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full border-2 border-dashed border-white/10 hover:border-blue-500/50 rounded-xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all bg-white/5 hover:bg-blue-500/5"
+                >
+                  <FileUp className="w-8 h-8 text-blue-500" />
+                  <div className="text-center">
+                    <p className="text-sm font-bold">ファイルをアップロード</p>
+                    <p className="text-[10px] text-gray-500 uppercase mt-1">PDF, XML (note export), TXT</p>
+                  </div>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    className="hidden" 
+                    accept=".pdf,.xml,.txt"
+                  />
+                </div>
+
+                <div className="relative py-4 flex items-center">
+                  <div className="flex-grow border-t border-white/10"></div>
+                  <span className="flex-shrink mx-4 text-[10px] font-bold text-gray-600 uppercase">OR</span>
+                  <div className="flex-grow border-t border-white/10"></div>
+                </div>
+
                 <textarea 
                   value={pastArticles}
                   onChange={(e) => setPastArticles(e.target.value)}
-                  placeholder="noteの過去記事や執筆したブログ記事を貼り付けてください（推奨：5,000字以上）"
-                  className="w-full h-64 bg-black/50 border border-white/10 rounded-xl p-4 text-sm leading-relaxed focus:border-blue-500 outline-none transition-colors"
+                  placeholder="noteの過去記事や執筆したブログ記事を貼り付けてください"
+                  className="w-full h-48 bg-black/50 border border-white/10 rounded-xl p-4 text-sm leading-relaxed focus:border-blue-500 outline-none transition-colors"
                 />
               </div>
               <button 
@@ -146,10 +214,15 @@ export default function PostAssistantPage() {
                 {isAnalyzing ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> 分析中...</>
                 ) : (
-                  <><Save className="w-5 h-5" /> 文体を蒸留する</>
+                  <><Save className="w-5 h-5" /> 貼り付けたテキストを分析</>
                 )}
               </button>
-              {message && <div className="text-center text-blue-400 text-sm font-medium">{message}</div>}
+              {message && (
+                <div className="flex items-center justify-center gap-2 text-blue-400 text-sm font-medium animate-pulse">
+                   <FileText className="w-4 h-4" />
+                   {message}
+                </div>
+              )}
             </div>
           </section>
 

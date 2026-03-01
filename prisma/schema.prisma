@@ -140,6 +140,12 @@ model DevelopmentLog {
 model UserProfile {
   id                String   @id @default(cuid())
   displayName       String
+
+  // --- 文体学習用フィールド ---
+  styleInstruction  String?  @db.Text   // Geminiが生成した文体抽出結果（プロンプト用）
+  learningLevel     Int      @default(0) // 学習済みデータ量に基づくLv（1〜5）
+  lastAnalyzedAt    DateTime?           // 最後に文体分析を行った日時
+
   penType           String?  // ボールペン, 万年筆, 筆ペン等
   trainingLevel     Int      @default(0) // 1〜5のステップ
   lastTrainedAt     DateTime @updatedAt

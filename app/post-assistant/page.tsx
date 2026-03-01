@@ -1,0 +1,218 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { analyzeUserStyle, generateSnsPost, getUserProfiles, ensureUserProfile } from './actions';
+import { UserProfile } from '@prisma/client';
+import { Loader2, Sparkles, PenLine, BookOpen, Save, History } from 'lucide-react';
+
+export default function PostAssistantPage() {
+  const [profiles, setProfiles] = useState<UserProfile[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState<string>('');
+  const [pastArticles, setPastArticles] = useState('');
+  const [topic, setTopic] = useState('');
+  const [generatedPost, setGeneratedPost] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    async function init() {
+      await ensureUserProfile();
+      const data = await getUserProfiles();
+      setProfiles(data);
+      if (data.length > 0) {
+        setSelectedProfileId(data[0].id);
+      }
+    }
+    init();
+  }, []);
+
+  const handleAnalyze = async () => {
+    if (!selectedProfileId || !pastArticles) {
+      alert('ユーザーと過去の記事を入力してください');
+      return;
+    }
+    setIsAnalyzing(true);
+    setMessage('');
+    try {
+      const result = await analyzeUserStyle(selectedProfileId, pastArticles);
+      if (result.success) {
+        setMessage('文体分析が完了しました！');
+        // Refresh profile data to see updated level
+        const data = await getUserProfiles();
+        setProfiles(data);
+      }
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleGenerate = async () => {
+    if (!selectedProfileId || !topic) {
+      alert('ユーザーとネタを入力してください');
+      return;
+    }
+    setIsGenerating(true);
+    setGeneratedPost('');
+    try {
+      const result = await generateSnsPost(selectedProfileId, topic);
+      if (result.success) {
+        setGeneratedPost(result.content);
+      }
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const selectedProfile = profiles.find(p => p.id === selectedProfileId);
+
+  return (
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-12 font-sans">
+      <div className="max-w-5xl mx-auto space-y-12">
+        {/* Header */}
+        <header className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Sparkles className="text-white w-6 h-6" />
+            </div>
+            <h1 className="text-3xl font-black tracking-tight uppercase">SNS Posting Assistant <span className="text-blue-500">Phase 1</span></h1>
+          </div>
+          <p className="text-gray-400 max-w-2xl leading-relaxed">
+            過去の執筆データからあなたの「文体」を蒸留し、AIがあなたらしいnote記事を代筆します。
+          </p>
+        </header>
+
+        {/* User Status */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-2">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Selected Profile</div>
+            <select 
+              value={selectedProfileId} 
+              onChange={(e) => setSelectedProfileId(e.target.value)}
+              className="w-full bg-transparent border-none text-xl font-bold focus:ring-0 cursor-pointer"
+            >
+              {profiles.map(p => (
+                <option key={p.id} value={p.id} className="bg-black">{p.displayName}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-2">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Style Learning Level</div>
+            <div className="flex items-end gap-2">
+              <span className="text-3xl font-black text-blue-500">Lv.{selectedProfile?.learningLevel || 0}</span>
+              <div className="flex gap-0.5 mb-1.5">
+                {[1,2,3,4,5].map(lv => (
+                  <div key={lv} className={`w-3 h-1.5 rounded-full ${lv <= (selectedProfile?.learningLevel || 0) ? 'bg-blue-500' : 'bg-white/10'}`} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-2">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Last Analyzed</div>
+            <div className="text-lg font-medium text-gray-300">
+              {selectedProfile?.lastAnalyzedAt ? new Date(selectedProfile.lastAnalyzedAt).toLocaleDateString() : 'Never'}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          {/* Section 1: Style Analysis */}
+          <section className="space-y-6">
+            <div className="flex items-center gap-2 text-blue-400">
+              <BookOpen className="w-5 h-5" />
+              <h2 className="text-xl font-bold uppercase tracking-wide">1. 文体学習 (Analyzer)</h2>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-400">過去の記事（テキストを貼り付け）</label>
+                <textarea 
+                  value={pastArticles}
+                  onChange={(e) => setPastArticles(e.target.value)}
+                  placeholder="noteの過去記事や執筆したブログ記事を貼り付けてください（推奨：5,000字以上）"
+                  className="w-full h-64 bg-black/50 border border-white/10 rounded-xl p-4 text-sm leading-relaxed focus:border-blue-500 outline-none transition-colors"
+                />
+              </div>
+              <button 
+                onClick={handleAnalyze}
+                disabled={isAnalyzing}
+                className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:text-blue-300 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              >
+                {isAnalyzing ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> 分析中...</>
+                ) : (
+                  <><Save className="w-5 h-5" /> 文体を蒸留する</>
+                )}
+              </button>
+              {message && <div className="text-center text-blue-400 text-sm font-medium">{message}</div>}
+            </div>
+          </section>
+
+          {/* Section 2: Post Generation */}
+          <section className="space-y-6">
+            <div className="flex items-center gap-2 text-emerald-400">
+              <PenLine className="w-5 h-5" />
+              <h2 className="text-xl font-bold uppercase tracking-wide">2. 記事作成 (Generator)</h2>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-400">記事のネタ（議論ログ、箇条書きメモ等）</label>
+                <textarea 
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder="今日あった出来事や、書きたいテーマの断片を入力してください"
+                  className="w-full h-64 bg-black/50 border border-white/10 rounded-xl p-4 text-sm leading-relaxed focus:border-emerald-500 outline-none transition-colors"
+                />
+              </div>
+              <button 
+                onClick={handleGenerate}
+                disabled={isGenerating || !selectedProfile?.styleInstruction}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 disabled:text-emerald-300 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              >
+                {isGenerating ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> 執筆中...</>
+                ) : (
+                  <><Sparkles className="w-5 h-5" /> 記事を生成する</>
+                )}
+              </button>
+              {!selectedProfile?.styleInstruction && (
+                <p className="text-center text-amber-500 text-xs font-bold uppercase tracking-wider">
+                  先に文体分析を行ってください
+                </p>
+              )}
+            </div>
+          </section>
+        </div>
+
+        {/* Output Section */}
+        {generatedPost && (
+          <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-blue-400">
+                <History className="w-5 h-5" />
+                <h2 className="text-xl font-bold uppercase tracking-wide">生成されたドラフト</h2>
+              </div>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(generatedPost);
+                  alert('クリップボードにコピーしました');
+                }}
+                className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors"
+              >
+                Copy to Clipboard
+              </button>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-8 md:p-12 prose prose-invert max-w-none whitespace-pre-wrap leading-loose text-gray-200">
+              {generatedPost}
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
+  );
+}

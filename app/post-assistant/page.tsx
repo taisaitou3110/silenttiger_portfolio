@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { analyzeUserStyle, generateSnsPost, getUserProfiles, ensureUserProfile, uploadAndAnalyzeStyle } from './actions';
+import Link from 'next/link';
+import { analyzeUserStyle, generateSnsPost, getUserProfiles, ensureUserProfile, uploadAndAnalyzeStyle, createUserProfile } from './actions';
 import { UserProfile as PrismaUserProfile } from '@prisma/client';
 import { Loader2, Sparkles, PenLine, BookOpen, Save, History, FileUp, FileText } from 'lucide-react';
+import ProfileSelector from '@/components/ProfileSelector';
 
 // Prismaの型が更新されない場合のための拡張定義
 interface ExtendedUserProfile extends PrismaUserProfile {
@@ -14,40 +16,66 @@ interface ExtendedUserProfile extends PrismaUserProfile {
 
 export default function PostAssistantPage() {
   const [profiles, setProfiles] = useState<ExtendedUserProfile[]>([]);
-  const [selectedProfileId, setSelectedProfileId] = useState<string>('');
+  const [activeProfile, setActiveProfile] = useState<ExtendedUserProfile | null>(null);
   const [pastArticles, setPastArticles] = useState('');
   const [topic, setTopic] = useState('');
   const [generatedPost, setGeneratedPost] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function init() {
       await ensureUserProfile();
-      const data = await getUserProfiles() as ExtendedUserProfile[];
-      setProfiles(data);
-      if (data.length > 0) {
-        setSelectedProfileId(data[0].id);
+      const res = await getUserProfiles() as ExtendedUserProfile[];
+      setProfiles(res);
+      
+      const savedId = localStorage.getItem('post_assistant_active_profile_id');
+      if (savedId) {
+        const active = res.find((p: any) => p.id === savedId);
+        if (active) setActiveProfile(active);
+      } else if (res.length > 0) {
+        setActiveProfile(res[0]);
+        localStorage.setItem('post_assistant_active_profile_id', res[0].id);
       }
+      setLoading(false);
     }
     init();
   }, []);
 
+  const handleCreateProfile = async (displayName: string) => {
+    const res = await createUserProfile(displayName);
+    const updatedProfiles = [...profiles, res as ExtendedUserProfile];
+    setProfiles(updatedProfiles);
+    setActiveProfile(res as ExtendedUserProfile);
+    localStorage.setItem('post_assistant_active_profile_id', res.id);
+    return res;
+  };
+
+  const handleSwitchProfile = (profile: ExtendedUserProfile) => {
+    setActiveProfile(profile);
+    localStorage.setItem('post_assistant_active_profile_id', profile.id);
+    setGeneratedPost('');
+    setMessage('');
+  };
+
   const handleAnalyze = async () => {
-    if (!selectedProfileId || !pastArticles) {
-      alert('ユーザーと過去の記事を入力してください');
+    if (!activeProfile || !pastArticles) {
+      alert('過去の記事を入力してください');
       return;
     }
     setIsAnalyzing(true);
     setMessage('');
     try {
-      const result = await analyzeUserStyle(selectedProfileId, pastArticles);
+      const result = await analyzeUserStyle(activeProfile.id, pastArticles);
       if (result.success) {
         setMessage('文体分析が完了しました！');
-        const data = await getUserProfiles();
+        const data = await getUserProfiles() as ExtendedUserProfile[];
         setProfiles(data);
+        const updated = data.find(p => p.id === activeProfile.id);
+        if (updated) setActiveProfile(updated);
       } else {
         alert(result.error || '文体分析に失敗しました');
       }
@@ -61,21 +89,23 @@ export default function PostAssistantPage() {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !selectedProfileId) return;
+    if (!file || !activeProfile) return;
 
     setIsAnalyzing(true);
     setMessage(`ファイルを処理中: ${file.name}...`);
     
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('userId', selectedProfileId);
+    formData.append('userId', activeProfile.id);
 
     try {
       const result = await uploadAndAnalyzeStyle(formData);
       if (result.success) {
         setMessage(`「${file.name}」の分析が完了しました！`);
-        const data = await getUserProfiles();
+        const data = await getUserProfiles() as ExtendedUserProfile[];
         setProfiles(data);
+        const updated = data.find(p => p.id === activeProfile.id);
+        if (updated) setActiveProfile(updated);
       } else {
         alert(result.error || 'ファイルの分析に失敗しました');
       }
@@ -89,14 +119,14 @@ export default function PostAssistantPage() {
   };
 
   const handleGenerate = async () => {
-    if (!selectedProfileId || !topic) {
-      alert('ユーザーとネタを入力してください');
+    if (!activeProfile || !topic) {
+      alert('ネタを入力してください');
       return;
     }
     setIsGenerating(true);
     setGeneratedPost('');
     try {
-      const result = await generateSnsPost(selectedProfileId, topic);
+      const result = await generateSnsPost(activeProfile.id, topic);
       if (result.success && result.content) {
         setGeneratedPost(result.content);
       } else {
@@ -110,15 +140,32 @@ export default function PostAssistantPage() {
     }
   };
 
-  const selectedProfile = profiles.find(p => p.id === selectedProfileId);
+  if (loading) return (
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="animate-pulse text-blue-500 font-mono tracking-[0.5em]">SYSTEM INITIALIZING...</div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-12 font-sans">
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-12 font-sans selection:bg-blue-500/30">
       <div className="max-w-5xl mx-auto space-y-12">
         {/* Header */}
-        <header className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+        <header className="animate-in fade-in slide-in-from-top duration-700">
+          <div className="flex justify-between items-start mb-8">
+            <Link href="/" className="text-blue-500 text-sm font-bold tracking-widest uppercase hover:opacity-80 transition-opacity">
+              ← Back to Gateway
+            </Link>
+            
+            <ProfileSelector 
+              profiles={profiles}
+              activeProfile={activeProfile}
+              onSwitch={handleSwitchProfile}
+              onCreate={handleCreateProfile}
+            />
+          </div>
+
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.3)]">
               <Sparkles className="text-white w-6 h-6" />
             </div>
             <h1 className="text-3xl font-black tracking-tight uppercase">SNS Posting Assistant <span className="text-blue-500">Phase 1</span></h1>
@@ -128,28 +175,15 @@ export default function PostAssistantPage() {
           </p>
         </header>
 
-        {/* User Status */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-2">
-            <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Selected Profile</div>
-            <select 
-              value={selectedProfileId} 
-              onChange={(e) => setSelectedProfileId(e.target.value)}
-              className="w-full bg-transparent border-none text-xl font-bold focus:ring-0 cursor-pointer"
-            >
-              {profiles.map(p => (
-                <option key={p.id} value={p.id} className="bg-black">{p.displayName}</option>
-              ))}
-            </select>
-          </div>
-          
+        {/* User Status Bar */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-2">
             <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Style Learning Level</div>
             <div className="flex items-end gap-2">
-              <span className="text-3xl font-black text-blue-500">Lv.{selectedProfile?.learningLevel || 0}</span>
+              <span className="text-3xl font-black text-blue-500">Lv.{activeProfile?.learningLevel || 0}</span>
               <div className="flex gap-0.5 mb-1.5">
                 {[1,2,3,4,5].map(lv => (
-                  <div key={lv} className={`w-3 h-1.5 rounded-full ${lv <= (selectedProfile?.learningLevel || 0) ? 'bg-blue-500' : 'bg-white/10'}`} />
+                  <div key={lv} className={`w-3 h-1.5 rounded-full ${lv <= (activeProfile?.learningLevel || 0) ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-white/10'}`} />
                 ))}
               </div>
             </div>
@@ -158,7 +192,7 @@ export default function PostAssistantPage() {
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-2">
             <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Last Analyzed</div>
             <div className="text-lg font-medium text-gray-300">
-              {selectedProfile?.lastAnalyzedAt ? new Date(selectedProfile.lastAnalyzedAt).toLocaleDateString() : 'Never'}
+              {activeProfile?.lastAnalyzedAt ? new Date(activeProfile.lastAnalyzedAt).toLocaleDateString() : 'No analysis data'}
             </div>
           </div>
         </div>
@@ -202,23 +236,23 @@ export default function PostAssistantPage() {
                 <textarea 
                   value={pastArticles}
                   onChange={(e) => setPastArticles(e.target.value)}
-                  placeholder="noteの過去記事や執筆したブログ記事を貼り付けてください"
+                  placeholder={`${activeProfile?.displayName || 'ユーザー'}さんの過去記事を貼り付けてください`}
                   className="w-full h-48 bg-black/50 border border-white/10 rounded-xl p-4 text-sm leading-relaxed focus:border-blue-500 outline-none transition-colors"
                 />
               </div>
               <button 
                 onClick={handleAnalyze}
                 disabled={isAnalyzing}
-                className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:text-blue-300 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:text-blue-300 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20"
               >
                 {isAnalyzing ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> 分析中...</>
                 ) : (
-                  <><Save className="w-5 h-5" /> 貼り付けたテキストを分析</>
+                  <><Save className="w-5 h-5" /> 文体を蒸留する</>
                 )}
               </button>
               {message && (
-                <div className="flex items-center justify-center gap-2 text-blue-400 text-sm font-medium animate-pulse">
+                <div className="flex items-center justify-center gap-2 text-blue-400 text-sm font-medium animate-pulse bg-blue-500/5 py-2 rounded-lg">
                    <FileText className="w-4 h-4" />
                    {message}
                 </div>
@@ -244,8 +278,8 @@ export default function PostAssistantPage() {
               </div>
               <button 
                 onClick={handleGenerate}
-                disabled={isGenerating || !selectedProfile?.styleInstruction}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 disabled:text-emerald-300 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                disabled={isGenerating || !activeProfile?.styleInstruction}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 disabled:text-emerald-300 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-emerald-600/20"
               >
                 {isGenerating ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> 執筆中...</>
@@ -253,8 +287,8 @@ export default function PostAssistantPage() {
                   <><Sparkles className="w-5 h-5" /> 記事を生成する</>
                 )}
               </button>
-              {!selectedProfile?.styleInstruction && (
-                <p className="text-center text-amber-500 text-xs font-bold uppercase tracking-wider">
+              {!activeProfile?.styleInstruction && (
+                <p className="text-center text-amber-500 text-xs font-bold uppercase tracking-wider bg-amber-500/5 py-2 rounded-lg">
                   先に文体分析を行ってください
                 </p>
               )}
@@ -275,7 +309,7 @@ export default function PostAssistantPage() {
                   navigator.clipboard.writeText(generatedPost);
                   alert('クリップボードにコピーしました');
                 }}
-                className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors"
+                className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors px-3 py-1 bg-white/5 rounded-full"
               >
                 Copy to Clipboard
               </button>

@@ -193,6 +193,20 @@ export async function getUserProfiles() {
   });
 }
 
+export async function createUserProfile(displayName: string) {
+  const count = await prisma.userProfile.count();
+  if (count >= 10) throw new Error("ユーザー数は最大10名までです。");
+
+  const profile = await prisma.userProfile.create({
+    data: {
+      displayName,
+      trainingLevel: 0
+    }
+  });
+  revalidatePath("/post-assistant");
+  return profile;
+}
+
 export async function ensureUserProfile() {
   let profile = await prisma.userProfile.findFirst();
   if (!profile) {

@@ -1,126 +1,113 @@
-import FeedbackPage from '@/app/feedback/page';
 import { GuideContent } from '@/components/Navigation/WelcomeGuide';
 
-// ✅ 型を GuideContent に指定することで、page.tsx 側での赤線を消します
-export const GUIDE_CONTENTS: Record<string, GuideContent> = {
-  BOOKSHELF_SCAN: {
-    title: "本棚スキャナー",
-    tagline: "背表紙を撮るだけで、あなたの本棚をデジタル化。",
-    overview: "背表紙を撮影するだけで、蔵書を自動的にリスト化します。タイトルや著者名の入力をAIが代行し、蔵書管理を効率化します。",
-    howTo: [
-      "カメラのアイコンをタップして本棚を撮影してください。",
-      "AIがタイトルと著者を抽出します。",
-      "抽出結果を確認して保存ボタンを押してください。"
-    ],
-    techStack: ["Next.js", "Gemini 1.5 Flash", "Prisma"],
-    image: "/images/image_background_bookshelf.jpg",
-    path: "/bookshelf/scan",
-  },
+// グループの定義（UIでの表示順やラベルに使用）
+export const GUIDE_GROUPS = {
+  BUSINESS_UTILITY: "Business & Productivity",
+  LIFE_LOG: "Personal Life Log",
+  ENTERTAINMENT: "Play & Simulation",
+  COMMUNITY: "Community & Dev",
+} as const;
+
+export const GUIDE_CONTENTS: Record<string, GuideContent & { group: keyof typeof GUIDE_GROUPS }> = {
+  // --- ENTERTAINMENT ---
   ROCKET_SIMULATOR: {
+    group: "ENTERTAINMENT",
     title: "ロケット・シミュレーター",
     tagline: "物理演算で解き明かす、飛距離の正体。",
-    overview: "映画「真夏の方程式」からインスパイアした物理演算を用いたペットボトルロケットの発射シミュレーターです。圧力と角度を調整し、障害物を避けてゴールを目指します。",
+    overview: "映画「真夏の方方程式」からインスパイアした物理演算を用いたペットボトルロケットの発射シミュレーターです。",
     howTo: [
       "レベルを選択してシミュレーターを起動してください。",
       "スライダーで「圧力」と「角度」を調整します。",
-      "発射ボタンを押し、リアルタイムの高度・速度・軌道を確認してください。",
-      "失敗した場合は「試行履歴」を参考にパラメーターを微調整して再挑戦しましょう。"
+      "発射ボタンを押し、リアルタイムの高度・速度・軌道を確認してください。"
     ],
-    techStack: ["Next.js", "HTML5 Canvas", "Physics Engine (Custom TS)"],
+    techStack: ["Next.js", "HTML5 Canvas", "Physics Engine"],
     image: "/images/image_background_rocket_menu.png",
     path: "/rocket-game",
   },
   POKER_GAME: {
+    group: "ENTERTAINMENT",
     title: "ハイ＆ロー ポーカー",
     tagline: "運と記憶が交差する、究極の二択。",
-    overview: "トランプの次の一枚が、今のカードより「高い」か「低い」かを当てるシンプルながら戦略的なゲームです。手持ちのゴールドを増やし、10,000G達成を目指しましょう！",
-    howTo: [
-      "まずは掛け金を選択してゲームを開始してください。",
-      "現在のカードに対し、次に出るカードが『HIGH(上)』か『LOW(下)』かを予想します。",
-      "的中すれば配当が倍増！さらにダブルアップに挑むか、ゴールドを回収（コレクト）するか選択できます。",
-      "「でたカード記録」をチェックし、山札に残っているカードの傾向を読むのが攻略の鍵です。",
-      "見事10,000Gに到達すれば、ランキングに名前を刻むことができます。"
-    ],
-    techStack: ["Next.js", "React Hooks", "Prisma", "Lucide React"],
+    overview: "トランプの次の一枚を当てる、シンプルながら戦略的なゲームです。",
+    howTo: ["掛け金を選択", "HIGH or LOWを予想", "ダブルアップに挑戦"],
+    techStack: ["Next.js", "React Hooks", "Prisma"],
     image: "/images/image_background_poker.png",
     path: "/poker",
   },
+
+  // --- LIFE_LOG ---
+  BOOKSHELF_SCAN: {
+    group: "LIFE_LOG",
+    title: "本棚スキャナー",
+    tagline: "背表紙を撮るだけで、あなたの本棚をデジタル化。",
+    overview: "背表紙を撮影するだけで、蔵書を自動的にリスト化します。",
+    howTo: ["カメラで撮影", "AIがタイトルを抽出", "保存して管理"],
+    techStack: ["Next.js", "Gemini 1.5 Flash", "Prisma"],
+    image: "/images/image_background_bookshelf.jpg",
+    path: "/bookshelf/scan",
+  },
   CALORIE_APP: {
+    group: "LIFE_LOG",
     title: "カロリー記録アプリ",
     tagline: "AIが食事を見守る、新しい健康習慣。",
-    overview: "食事の写真を撮るだけでAIがカロリーを自動推定。テキストや音声での入力にも対応し、日々の健康管理をスマートにサポートします。",
-    howTo: [
-      "ダッシュボードから「写真」「テキスト」「音声」のいずれかの入力方法を選択します。",
-      "写真を撮るか、食事内容を入力・発話してください。",
-      "AIが即座にメニュー名とカロリーを推定し、健康へのアドバイスを表示します。",
-      "登録されたデータはダッシュボードで確認でき、目標達成までの残りカロリーがリアルタイムに計算されます。"
-    ],
-    techStack: ["Next.js", "Gemini 1.5 Flash (Vision/Audio)", "Prisma", "Tailwind CSS"],
+    overview: "写真、テキスト、音声からAIがカロリーを自動推定します。",
+    howTo: ["入力方法を選択", "食事内容を提示", "AIのアドバイスを確認"],
+    techStack: ["Next.js", "Gemini 1.5 Flash", "Prisma"],
     image: "/images/toppage_wheel_labo.png",
     path: "/calorie",
   },
   WORDBOOK: {
+    group: "LIFE_LOG",
     title: "知識図鑑 Knowledge Cosmos",
     tagline: "忘却を克服し、知識を星のように繋ぐ。",
-    overview: "宇宙に星を散りばめるように、学習した知識を『ノード』として記録。エビングハウスの忘却曲線ロジックに基づき、最適なタイミングで復習を促すパーソナル・ナレッジ・マネジメント・システムです。",
-    howTo: [
-      "「単語登録」から新しい知識を宇宙（データベース）に保存します。",
-      "「本日の学習 (Mission)」で、記憶が薄れかけているノードを復習し、定着させます。",
-      "「登録単語リスト (Encyclopedia)」では、これまでに構築した全ネットワークを閲覧できます。",
-      "「一括読込 (Bulk)」を利用して、大量のデータを一度にインポートすることも可能です。"
-    ],
-    techStack: ["Next.js", "Prisma", "忘却曲線アルゴリズム", "Tailwind CSS"],
+    overview: "エビングハウスの忘却曲線に基づいたパーソナル・ナレッジ管理システム。",
+    howTo: ["知識をノードとして保存", "忘却曲線に基づき復習", "全ネットワークを閲覧"],
+    techStack: ["Next.js", "Prisma", "忘却曲線アルゴリズム"],
     image: "/images/image_background_wordbook.png",
     path: "/wordbook",
   },
-    POST_ASSISTANT: {
+
+  // --- BUSINESS_UTILITY ---
+  POST_ASSISTANT: {
+    group: "BUSINESS_UTILITY",
     title: "SNS投稿支援",
     tagline: "メモ書きやアイデアから素早く投稿まで！",
-    overview: "まずあなたの過去の文章から、個別の文体を学習させます。ある程度のレベルになったら、投稿したいアイデアやメモ書きを読み込ませてください。現在はnoteに最適化した設定になっています。",
-    howTo: [
-      "過去の記事（テキストまたはPDF/XML等）をアップロードし、「文体を蒸留する」を実行します。",
-      "AIがあなたの文体、語彙、構成の癖を解析し、プロフィールに保存します。",
-      "「記事作成」セクションに、新しく書きたい記事のネタや箇条書きメモを入力します。",
-      "「記事を生成する」をクリックすると、あなたの文体を再現したドラフトが生成されます。"
-    ],
-    techStack: ["Next.js", "Gemini 1.5 Flash", "Prisma", "Tailwind CSS"],
+    overview: "過去の文章から文体を学習し、メモから投稿案を生成します。",
+    howTo: ["文体をアップロード", "ネタやメモを入力", "ドラフトを生成"],
+    techStack: ["Next.js", "Gemini 1.5 Flash", "Prisma"],
     image: "/images/image_background_post-assistance.jpg",
     path: "/post-assistant",
   },
+  HANDWRITING_OCR: {
+    group: "BUSINESS_UTILITY",
+    title: "手書きビジネス支援",
+    tagline: "あなたの筆跡をAIが学習。書類を構造化データへ。",
+    overview: "手書き書類をAIが解析し、顧客管理や注文データとして保存。使うほど精度が向上します。",
+    howTo: ["書類を撮影", "AI解析結果の修正", "データの蓄積と閲覧"],
+    techStack: ["Next.js", "Gemini 1.5 Flash (Vision)", "Prisma"],
+    image: "/images/image_background_handwriting.png",
+    path: "/handwriting",
+  },
+
+  // --- COMMUNITY ---
   DEVELOP_DIARY: {
+    group: "COMMUNITY",
     title: "開発日記",
-    tagline: "",
-    overview: "",
-    howTo: [
-      "開発者の開発日記です",
-        ],
+    tagline: "プロジェクトの歩み",
+    overview: "開発者の試行錯誤を記録したログです。",
+    howTo: ["記事を選択して読む"],
     techStack: [],
     image: "/images/toppage_wheel_labo.png",
     path: "/devlog",
   },
-    FEEDBACK_BOARD: {
+  FEEDBACK_BOARD: {
+    group: "COMMUNITY",
     title: "掲示板",
-    tagline: "ご意見ご感想など残してくださるとありがたいです",
-    overview: "",
-    howTo: [
-      "最低限の掲示板です",
-        ],
-    techStack: [],
+    tagline: "ご意見をお聞かせください",
+    overview: "ユーザーの皆様との対話のための掲示板です。",
+    howTo: ["スレッドを作成", "コメントを投稿"],
+    techStack: ["Prisma"],
     image: "/images/toppage_wheel_labo.png",
     path: "/feedback",
-  },
-  HANDWRITING_OCR: {
-    title: "手書きビジネス支援",
-    tagline: "あなたの筆跡をAIが学習。書類を構造化データへ。",
-    overview: "ビジネス電話、発注書、一般メモなどの手書き書類をAIが解析し、顧客管理や注文データとして自動保存。使うほどにあなたの筆跡（クセ）に最適化されます。",
-    howTo: [
-      "「スキャン開始」から書類タイプを選択し、画像をアップロードまたはカメラで撮影します。",
-      "AIが解析した結果を確認し、自信度が低い項目を「Correction UI」で修正します。",
-      "修正内容は「Training Pool」に保存され、次回の認識精度向上に活用されます。",
-      "「データ閲覧」から、蓄積された顧客、要件、発注履歴を一元管理できます。"
-    ],
-    techStack: ["Next.js", "Gemini 1.5 Flash (Vision)", "Prisma", "Zod", "Tailwind CSS"],
-    image: "/images/image_background_handwriting.png",
-    path: "/handwriting",
   },
 } as const;

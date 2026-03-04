@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { analyzeUserStyle, generateSnsPost, getUserProfiles, ensureUserProfile, uploadAndAnalyzeStyle, createUserProfile } from './actions';
+import { getUserProfiles, ensureUserProfile, uploadAndAnalyzeStyle, createUserProfile } from './actions';
 import { UserProfile as PrismaUserProfile } from '@prisma/client';
-import { Loader2, Sparkles, PenLine, BookOpen, Save, History, FileUp, FileText, ArrowLeft, HelpCircle } from 'lucide-react';
+import { Loader2, Sparkles, PenLine, BookOpen, Save, History, FileUp, FileText, ArrowLeft, HelpCircle, Code } from 'lucide-react';
 import ProfileSelector from '@/components/ProfileSelector';
 import { WelcomeGuide } from '@/components/Navigation/WelcomeGuide';
 import { GUIDE_CONTENTS } from '@/constants/guideContents';
 import { useSessionFirstTime } from '@/hooks/useSessionFirstTime';
+import { AIProcessOverlay, AIMetrics } from '@/components/AI/AIProcessOverlay';
 
 // Prismaの型が更新されない場合のための拡張定義
 interface ExtendedUserProfile extends PrismaUserProfile {
@@ -24,11 +25,23 @@ export default function PostAssistantPage() {
   const [pastArticles, setPastArticles] = useState('');
   const [topic, setTopic] = useState('');
   const [generatedPost, setGeneratedPost] = useState('');
+  const [thoughtText, setThoughtText] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showStylePreview, setShowStylePreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // メトリクス状態
+  const [aiMetrics, setAiMetrics] = useState<AIMetrics>({
+    input_tokens: 0,
+    thought_seconds: 0,
+    current_tps: 0,
+    total_latency: 0,
+    status: 'idle',
+    debug_log: '',
+  });
 
   useEffect(() => {
     async function init() {
@@ -63,29 +76,132 @@ export default function PostAssistantPage() {
     localStorage.setItem('post_assistant_active_profile_id', profile.id);
     setGeneratedPost('');
     setMessage('');
+    setAiMetrics(prev => ({ ...prev, status: 'idle' }));
   };
 
-  const handleAnalyze = async () => {
+  const handleAnalyzeStreaming = async () => {
     if (!activeProfile || !pastArticles) {
       alert('過去の記事を入力してください');
       return;
     }
+
     setIsAnalyzing(true);
+    setThoughtText('');
     setMessage('');
+    
+    const startTime = Date.now();
+    let firstChunkTime = 0;
+    let thoughtStartTime = 0;
+    let tokensGenerated = 0;
+    let fullStyleInstruction = "";
+    let fullThoughts = "";
+
+    setAiMetrics({
+      input_tokens: 0,
+      thought_seconds: 0,
+      current_tps: 0,
+      total_latency: 0,
+      status: 'transfer',
+      debug_log: 'Starting style distillation...',
+    });
+
     try {
-      const result = await analyzeUserStyle(activeProfile.id, pastArticles);
-      if (result.success) {
-        setMessage('文体分析が完了しました！');
-        const data = await getUserProfiles() as ExtendedUserProfile[];
-        setProfiles(data);
-        const updated = data.find(p => p.id === activeProfile.id);
-        if (updated) setActiveProfile(updated);
-      } else {
-        alert(result.error || '文体分析に失敗しました');
+      const response = await fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: activeProfile.id,
+          pastArticles
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to start analysis');
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('ReadableStream not supported');
+
+      const decoder = new TextDecoder();
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n').filter(l => l.trim());
+
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line);
+
+            if (data.type === 'event' && data.data === 'first_chunk') {
+              firstChunkTime = Date.now();
+              const latency = (firstChunkTime - startTime) / 1000;
+              setAiMetrics(prev => ({ 
+                ...prev, 
+                total_latency: latency,
+                status: 'thinking',
+                debug_log: 'Analyzing core patterns...'
+              }));
+              thoughtStartTime = Date.now();
+            }
+
+            if (data.type === 'chunk') {
+              if (data.thought) {
+                fullThoughts += data.thought;
+                setThoughtText(fullThoughts);
+                const thinkingTime = (Date.now() - thoughtStartTime) / 1000;
+                setAiMetrics(prev => ({ 
+                  ...prev, 
+                  thought_seconds: thinkingTime,
+                }));
+              }
+
+              if (data.text) {
+                if (aiMetrics.status !== 'generating') {
+                  setAiMetrics(prev => ({ 
+                    ...prev, 
+                    status: 'generating',
+                    debug_log: 'Formulating instruction...'
+                  }));
+                }
+                fullStyleInstruction += data.text;
+                
+                // TPS計算
+                tokensGenerated += data.text.length * 0.75;
+                const timeFromFirst = (Date.now() - firstChunkTime) / 1000;
+                const tps = timeFromFirst > 0 ? tokensGenerated / timeFromFirst : 0;
+                
+                setAiMetrics(prev => ({ 
+                  ...prev, 
+                  current_tps: tps
+                }));
+              }
+            }
+
+            if (data.type === 'done') {
+              setAiMetrics(prev => ({ 
+                ...prev, 
+                status: 'completed',
+                input_tokens: data.usage?.promptTokenCount || 0,
+                debug_log: 'Style analysis successful'
+              }));
+              
+              setMessage('文体分析が完了しました。最新の指示書が生成されました。');
+              setActiveProfile(prev => prev ? ({ ...prev, styleInstruction: fullStyleInstruction }) : null);
+            }
+
+            if (data.type === 'error') {
+              throw new Error(data.message);
+            }
+          } catch (e) {
+            console.error("Parse Error:", e);
+          }
+        }
       }
     } catch (error: any) {
-      console.error("Client Error:", error);
-      alert('通信エラーが発生しました。時間を置いて再度お試しください。');
+      console.error("Analysis Streaming Error:", error);
+      setAiMetrics(prev => ({ ...prev, status: 'error', debug_log: error.message }));
+      alert('分析中にエラーが発生しました。');
     } finally {
       setIsAnalyzing(false);
     }
@@ -122,23 +238,119 @@ export default function PostAssistantPage() {
     }
   };
 
-  const handleGenerate = async () => {
+  const handleGenerateStreaming = async () => {
     if (!activeProfile || !topic) {
       alert('ネタを入力してください');
       return;
     }
+
     setIsGenerating(true);
     setGeneratedPost('');
+    setThoughtText('');
+    
+    const startTime = Date.now();
+    let firstChunkTime = 0;
+    let thoughtStartTime = 0;
+    let tokensGenerated = 0;
+    let fullText = "";
+    let fullThoughts = "";
+
+    setAiMetrics({
+      input_tokens: 0,
+      thought_seconds: 0,
+      current_tps: 0,
+      total_latency: 0,
+      status: 'transfer',
+      debug_log: 'Initializing generator...',
+    });
+
     try {
-      const result = await generateSnsPost(activeProfile.id, topic);
-      if (result.success && result.content) {
-        setGeneratedPost(result.content);
-      } else {
-        alert(result.error || '記事の生成に失敗しました');
+      const response = await fetch('/api/ai/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: activeProfile.id,
+          topic,
+          styleInstruction: activeProfile.styleInstruction
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to start generation');
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('ReadableStream not supported');
+
+      const decoder = new TextDecoder();
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n').filter(l => l.trim());
+
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line);
+
+            if (data.type === 'event' && data.data === 'first_chunk') {
+              firstChunkTime = Date.now();
+              const latency = (firstChunkTime - startTime) / 1000;
+              setAiMetrics(prev => ({ 
+                ...prev, 
+                total_latency: latency,
+                status: 'thinking',
+                debug_log: 'Applying style rules...'
+              }));
+              thoughtStartTime = Date.now();
+            }
+
+            if (data.type === 'chunk') {
+              if (data.thought) {
+                fullThoughts += data.thought;
+                setThoughtText(fullThoughts);
+                const thinkingTime = (Date.now() - thoughtStartTime) / 1000;
+                setAiMetrics(prev => ({ ...prev, thought_seconds: thinkingTime }));
+              }
+
+              if (data.text) {
+                if (aiMetrics.status !== 'generating') {
+                  setAiMetrics(prev => ({ 
+                    ...prev, 
+                    status: 'generating',
+                    debug_log: 'Generating note content...'
+                  }));
+                }
+                fullText += data.text;
+                setGeneratedPost(fullText);
+                
+                tokensGenerated += data.text.length * 0.75;
+                const timeFromFirst = (Date.now() - (firstChunkTime || startTime)) / 1000;
+                const tps = timeFromFirst > 0 ? tokensGenerated / timeFromFirst : 0;
+                
+                setAiMetrics(prev => ({ ...prev, current_tps: tps }));
+              }
+            }
+
+            if (data.type === 'done') {
+              setAiMetrics(prev => ({ 
+                ...prev, 
+                status: 'completed',
+                input_tokens: data.usage?.promptTokenCount || 0,
+                debug_log: 'Generation finished'
+              }));
+            }
+
+            if (data.type === 'error') throw new Error(data.message);
+          } catch (e) {
+            console.error("Parse Error:", e);
+          }
+        }
       }
     } catch (error: any) {
-      console.error("Client Error:", error);
-      alert('通信エラーが発生しました。時間を置いて再度お試しください。');
+      console.error("Streaming Error:", error);
+      setAiMetrics(prev => ({ ...prev, status: 'error', debug_log: error.message }));
+      alert('通信エラーが発生しました。');
     } finally {
       setIsGenerating(false);
     }
@@ -157,6 +369,9 @@ export default function PostAssistantPage() {
         isOpen={isOpen} 
         onClose={markAsSeen} 
       />
+
+      {/* AI Process Overlay (Floating Popup) */}
+      <AIProcessOverlay metrics={aiMetrics} thoughtText={thoughtText} />
 
       <div className="max-w-5xl mx-auto space-y-12">
         {/* Header */}
@@ -199,7 +414,17 @@ export default function PostAssistantPage() {
         {/* User Status Bar */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-2">
-            <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Style Learning Level</div>
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center justify-between">
+              Style Learning Level
+              {activeProfile?.styleInstruction && (
+                <button 
+                  onClick={() => setShowStylePreview(!showStylePreview)}
+                  className="text-[10px] text-blue-400 hover:underline"
+                >
+                  {showStylePreview ? 'Hide Style' : 'View Style'}
+                </button>
+              )}
+            </div>
             <div className="flex items-end gap-2">
               <span className="text-3xl font-black text-blue-500">Lv.{activeProfile?.learningLevel || 0}</span>
               <div className="flex gap-0.5 mb-1.5">
@@ -217,6 +442,18 @@ export default function PostAssistantPage() {
             </div>
           </div>
         </div>
+
+        {/* Style Preview Area */}
+        {showStylePreview && activeProfile?.styleInstruction && (
+          <div className="animate-in zoom-in duration-300 bg-blue-950/20 border border-blue-500/20 rounded-2xl p-6 relative">
+            <div className="absolute top-4 right-4 flex items-center gap-2 text-[10px] font-bold text-blue-400/50 uppercase">
+              <Code className="w-3 h-3" /> System Instruction
+            </div>
+            <div className="text-sm text-blue-300/80 italic font-mono leading-relaxed whitespace-pre-wrap">
+              {activeProfile.styleInstruction}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Section 1: Style Analysis */}
@@ -262,12 +499,12 @@ export default function PostAssistantPage() {
                 />
               </div>
               <button 
-                onClick={handleAnalyze}
+                onClick={handleAnalyzeStreaming}
                 disabled={isAnalyzing}
                 className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:text-blue-300 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20"
               >
                 {isAnalyzing ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> 分析中...</>
+                  <><Loader2 className="w-5 h-5 animate-spin" /> 蒸留中...</>
                 ) : (
                   <><Save className="w-5 h-5" /> 文体を蒸留する</>
                 )}
@@ -298,7 +535,7 @@ export default function PostAssistantPage() {
                 />
               </div>
               <button 
-                onClick={handleGenerate}
+                onClick={handleGenerateStreaming}
                 disabled={isGenerating || !activeProfile?.styleInstruction}
                 className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 disabled:text-emerald-300 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-emerald-600/20"
               >

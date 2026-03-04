@@ -34,9 +34,10 @@ export default function GlobalPortal() {
         {/* カード型グリッド (標準 9.1) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {apps.map((app, index) => (
-            <div 
+            <Link 
               key={app.title} 
-              className="group relative bg-gray-900/40 border border-white/10 rounded-3xl overflow-hidden hover:border-[#0cf]/50 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-[#0cf]/20 flex flex-col"
+              href={app.path || "/"}
+              className="group relative bg-gray-900/40 border border-white/10 rounded-3xl overflow-hidden hover:border-[#0cf]/50 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-[#0cf]/20 flex flex-col no-underline text-white"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               {/* カード画像エリア */}
@@ -52,26 +53,20 @@ export default function GlobalPortal() {
 
               {/* カードコンテンツ */}
               <div className="p-8 flex-1 flex flex-col">
-                <h2 className="text-2xl font-bold mb-2 group-hover:text-[#0cf] transition-colors">
-                  {app.title}
-                </h2>
+                <div className="flex justify-between items-start mb-2">
+                  <h2 className="text-2xl font-bold group-hover:text-[#0cf] transition-colors">
+                    {app.title}
+                  </h2>
+                  <ArrowRight className="w-6 h-6 text-white/20 group-hover:text-[#0cf] group-hover:translate-x-1 transition-all" />
+                </div>
                 <p className="text-[#0cf]/80 text-sm font-bold mb-4 tracking-tight">
                   {app.tagline}
                 </p>
-                <p className="text-gray-400 text-sm leading-relaxed mb-8 flex-1">
+                <p className="text-gray-400 text-sm leading-relaxed flex-1">
                   {app.overview}
                 </p>
-
-                {/* OPEN ボタン */}
-                <Link 
-                  href={app.path || "/"} 
-                  className="inline-flex items-center justify-center gap-2 w-full py-4 bg-white/5 hover:bg-[#0cf] text-white rounded-2xl font-bold transition-all duration-300 group/btn border border-white/10 hover:border-[#0cf] hover:shadow-lg hover:shadow-[#0cf]/40"
-                >
-                  OPEN APP
-                  <ArrowRight className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" />
-                </Link>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 

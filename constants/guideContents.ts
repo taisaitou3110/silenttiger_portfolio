@@ -13,7 +13,7 @@ export const GUIDE_CONTENTS: Record<string, GuideContent> = {
       "抽出結果を確認して保存ボタンを押してください。"
     ],
     techStack: ["Next.js", "Gemini 1.5 Flash", "Prisma"],
-    image: "/images/toppage_wheel_labo.png",
+    image: "/images/image_background_bookshelf.jpg",
     path: "/bookshelf/scan",
   },
   ROCKET_SIMULATOR: {
@@ -73,7 +73,21 @@ export const GUIDE_CONTENTS: Record<string, GuideContent> = {
     image: "/images/image_background_wordbook.png",
     path: "/wordbook",
   },
-    DEVELOP_DIARY: {
+    POST_ASSISTANT: {
+    title: "SNS投稿支援",
+    tagline: "メモ書きやアイデアから素早く投稿まで！",
+    overview: "まずあなたの過去の文章から、個別の文体を学習させます。ある程度のレベルになったら、投稿したいアイデアやメモ書きを読み込ませてください。現在はnoteに最適化した設定になっています。",
+    howTo: [
+      "過去の記事（テキストまたはPDF/XML等）をアップロードし、「文体を蒸留する」を実行します。",
+      "AIがあなたの文体、語彙、構成の癖を解析し、プロフィールに保存します。",
+      "「記事作成」セクションに、新しく書きたい記事のネタや箇条書きメモを入力します。",
+      "「記事を生成する」をクリックすると、あなたの文体を再現したドラフトが生成されます。"
+    ],
+    techStack: ["Next.js", "Gemini 1.5 Flash", "Prisma", "Tailwind CSS"],
+    image: "/images/image_background_post-assistance.jpg",
+    path: "/post-assistant",
+  },
+  DEVELOP_DIARY: {
     title: "開発日記",
     tagline: "",
     overview: "",
@@ -106,7 +120,7 @@ export const GUIDE_CONTENTS: Record<string, GuideContent> = {
       "「データ閲覧」から、蓄積された顧客、要件、発注履歴を一元管理できます。"
     ],
     techStack: ["Next.js", "Gemini 1.5 Flash (Vision)", "Prisma", "Zod", "Tailwind CSS"],
-    image: "/images/toppage_wheel_labo.png",
+    image: "/images/image_background_handwriting.png",
     path: "/handwriting",
   },
 } as const;

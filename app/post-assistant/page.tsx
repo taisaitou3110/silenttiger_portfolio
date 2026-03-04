@@ -4,8 +4,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { analyzeUserStyle, generateSnsPost, getUserProfiles, ensureUserProfile, uploadAndAnalyzeStyle, createUserProfile } from './actions';
 import { UserProfile as PrismaUserProfile } from '@prisma/client';
-import { Loader2, Sparkles, PenLine, BookOpen, Save, History, FileUp, FileText } from 'lucide-react';
+import { Loader2, Sparkles, PenLine, BookOpen, Save, History, FileUp, FileText, ArrowLeft, HelpCircle } from 'lucide-react';
 import ProfileSelector from '@/components/ProfileSelector';
+import { WelcomeGuide } from '@/components/Navigation/WelcomeGuide';
+import { GUIDE_CONTENTS } from '@/constants/guideContents';
+import { useSessionFirstTime } from '@/hooks/useSessionFirstTime';
 
 // Prismaの型が更新されない場合のための拡張定義
 interface ExtendedUserProfile extends PrismaUserProfile {
@@ -15,6 +18,7 @@ interface ExtendedUserProfile extends PrismaUserProfile {
 }
 
 export default function PostAssistantPage() {
+  const { isOpen, markAsSeen, showAgain } = useSessionFirstTime('post-assistant-guide');
   const [profiles, setProfiles] = useState<ExtendedUserProfile[]>([]);
   const [activeProfile, setActiveProfile] = useState<ExtendedUserProfile | null>(null);
   const [pastArticles, setPastArticles] = useState('');
@@ -148,13 +152,30 @@ export default function PostAssistantPage() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white p-6 md:p-12 font-sans selection:bg-blue-500/30">
+      <WelcomeGuide 
+        content={GUIDE_CONTENTS.POST_ASSISTANT} 
+        isOpen={isOpen} 
+        onClose={markAsSeen} 
+      />
+
       <div className="max-w-5xl mx-auto space-y-12">
         {/* Header */}
         <header className="animate-in fade-in slide-in-from-top duration-700">
           <div className="flex justify-between items-start mb-8">
-            <Link href="/" className="text-blue-500 text-sm font-bold tracking-widest uppercase hover:opacity-80 transition-opacity">
-              ← Back to Gateway
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link href="/" className="text-blue-500 text-sm font-bold tracking-widest uppercase hover:opacity-80 transition-opacity flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Back to Gateway
+              </Link>
+              
+              <button 
+                onClick={() => showAgain()}
+                className="text-xs text-gray-500 hover:text-blue-400 flex items-center gap-1 transition-colors border-l pl-4 border-white/10"
+              >
+                <HelpCircle className="w-4 h-4" />
+                使い方
+              </button>
+            </div>
             
             <ProfileSelector 
               profiles={profiles}

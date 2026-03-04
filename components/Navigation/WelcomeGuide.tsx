@@ -66,7 +66,7 @@ export const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ content, isOpen, onC
         )}
 
         {/* スクロール可能なボディ */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-scroll custom-scrollbar p-6 space-y-6">
           {content.image && (
             <h2 className="font-bold text-xl text-gray-800 text-center mb-4">{content.title}</h2>
           )}

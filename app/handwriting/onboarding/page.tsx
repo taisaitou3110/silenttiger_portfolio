@@ -180,6 +180,8 @@ function OnboardingContent() {
     <div className="min-h-screen bg-black flex items-center justify-center">
       <Loader2 className="w-8 h-8 text-[#0cf] animate-spin" />
     </div>
+  );
+
   return (
     <div className="min-h-screen bg-black text-white font-sans">
       <AIProcessOverlay 
@@ -190,20 +192,18 @@ function OnboardingContent() {
       />
 
       <div className="max-w-2xl mx-auto px-6 py-12">
-  ...
-          <header className="mb-12">
-            <Link href="/handwriting" className="flex items-center text-gray-500 hover:text-[#0cf] transition-colors mb-6 group">
-              <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-              <span className="text-sm font-bold uppercase tracking-widest">Quit Training</span>
-            </Link>
-  ...
+        <header className="mb-12">
+          <Link href="/handwriting" className="flex items-center text-gray-500 hover:text-[#0cf] transition-colors mb-6 group">
+            <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm font-bold uppercase tracking-widest">Quit Training</span>
+          </Link>
           <div className="flex items-center gap-3 mb-2">
             <div className="px-3 py-1 bg-[#0cf]/10 border border-[#0cf]/20 rounded-full text-[#0cf] text-[10px] font-black tracking-widest uppercase">
               Step {currentStepIdx + 1} / 5
             </div>
-            <h1 className="text-2xl font-black tracking-tighter">{currentTemplate.category}</h1>
+            <h1 className="text-2xl font-black tracking-tighter">{currentTemplate?.category}</h1>
           </div>
-          <p className="text-gray-400 text-sm">{currentTemplate.description}</p>
+          <p className="text-gray-400 text-sm">{currentTemplate?.description}</p>
         </header>
 
         {/* Progress Bar */}
@@ -222,7 +222,7 @@ function OnboardingContent() {
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#0cf]/30 to-transparent" />
             <div className="text-[10px] text-gray-500 font-mono uppercase tracking-[0.3em] mb-4">Target Text to Write</div>
             <div className="text-3xl md:text-4xl font-serif tracking-widest leading-relaxed text-gray-200 group-hover:text-white transition-colors">
-              {currentTemplate.targetText}
+              {currentTemplate?.targetText}
             </div>
           </div>
 

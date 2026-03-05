@@ -100,52 +100,61 @@ function OnboardingContent() {
           const lines = chunk.split('\n').filter(l => l.trim());
 
           for (const line of lines) {
+            let data;
             try {
-              const data = JSON.parse(line);
+              data = JSON.parse(line);
+            } catch (e) {
+              console.error("Chunk Parse Error:", e, line);
+              continue;
+            }
 
-              if (data.type === 'event' && data.data === 'first_chunk') {
-                firstChunkTime = Date.now();
-                const latency = (firstChunkTime - startTime) / 1000;
-                setAiMetrics(prev => ({ ...prev, total_latency: latency, status: 'thinking', debug_log: 'Cognitive analysis...' }));
-                thoughtStartTime = Date.now();
+            if (data.type === 'event' && data.data === 'first_chunk') {
+              firstChunkTime = Date.now();
+              const latency = (firstChunkTime - startTime) / 1000;
+              setAiMetrics(prev => ({ ...prev, total_latency: latency, status: 'thinking', debug_log: 'Cognitive analysis...' }));
+              thoughtStartTime = Date.now();
+            }
+
+            if (data.type === 'chunk') {
+              if (data.thought) {
+                fullThoughts += data.thought;
+                setThoughtText(fullThoughts);
+                const thinkingTime = (Date.now() - thoughtStartTime) / 1000;
+                setAiMetrics(prev => ({ ...prev, thought_seconds: thinkingTime }));
               }
-
-              if (data.type === 'chunk') {
-                if (data.thought) {
-                  fullThoughts += data.thought;
-                  setThoughtText(fullThoughts);
-                  const thinkingTime = (Date.now() - thoughtStartTime) / 1000;
-                  setAiMetrics(prev => ({ ...prev, thought_seconds: thinkingTime }));
+              if (data.text) {
+                if (aiMetrics.status !== 'generating') {
+                  setAiMetrics(prev => ({ ...prev, status: 'generating', debug_log: 'Decoding strokes...' }));
                 }
-                if (data.text) {
-                  if (aiMetrics.status !== 'generating') {
-                    setAiMetrics(prev => ({ ...prev, status: 'generating', debug_log: 'Decoding strokes...' }));
-                  }
-                  fullText += data.text;
-                  tokensGenerated += data.text.length * 0.75;
-                  const timeFromFirst = (Date.now() - firstChunkTime) / 1000;
-                  const tps = timeFromFirst > 0 ? tokensGenerated / timeFromFirst : 0;
-                  setAiMetrics(prev => ({ ...prev, current_tps: tps }));
-                }
+                fullText += data.text;
+                tokensGenerated += data.text.length * 0.75;
+                const timeFromFirst = (Date.now() - firstChunkTime) / 1000;
+                const tps = timeFromFirst > 0 ? tokensGenerated / timeFromFirst : 0;
+                setAiMetrics(prev => ({ ...prev, current_tps: tps }));
               }
+            }
 
-              if (data.type === 'done') {
-                setAiMetrics(prev => ({ ...prev, status: 'completed', input_tokens: data.usage?.promptTokenCount || 0, debug_log: 'Analysis complete' }));
-                
-                const jsonMatch = fullText.match(/\{[\s\S]*\}/);
-                if (!jsonMatch) throw new Error("JSON parse error");
-                const result = JSON.parse(jsonMatch[0]);
-                
-                setFeedback(`AI解析結果: "${result.rawText.slice(0, 30)}..." 
+            if (data.type === 'done') {
+              setAiMetrics(prev => ({ ...prev, status: 'completed', input_tokens: data.usage?.promptTokenCount || 0, debug_log: 'Analysis complete' }));
+              
+              const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+              if (!jsonMatch) throw new Error("JSON parse error");
+              const result = JSON.parse(jsonMatch[0]);
+              
+              setFeedback(`AI解析結果: "${result.rawText.slice(0, 30)}..." 
 あなたの筆跡は「${result.rawText.length > 5 ? '連筆が強い' : '一画一画が明瞭'}」な傾向があります。`);
-                setCorrection(result.rawText);
-              }
-            } catch (e) { console.error(e); }
+              setCorrection(result.rawText);
+            }
+
+            if (data.type === 'error') {
+              setAiMetrics(prev => ({ ...prev, status: 'error', debug_log: data.message }));
+              return;
+            }
           }
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        setAiMetrics(prev => ({ ...prev, status: 'error', debug_log: 'Analysis failed' }));
+        setAiMetrics(prev => ({ ...prev, status: 'error', debug_log: err.message }));
         setFeedback("解析に失敗しましたが、学習用データとして保存できます。");
       }
       setAnalyzing(false);

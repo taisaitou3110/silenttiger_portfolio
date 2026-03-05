@@ -115,57 +115,62 @@ export default function CalorieScanner({ mode = 'estimate' }: { mode?: 'estimate
         const lines = chunk.split('\n').filter(l => l.trim());
 
         for (const line of lines) {
+          let data;
           try {
-            const data = JSON.parse(line);
-
-            if (data.type === 'event' && data.data === 'first_chunk') {
-              firstChunkTime = Date.now();
-              const latency = (firstChunkTime - startTime) / 1000;
-              setAiMetrics(prev => ({ 
-                ...prev, 
-                total_latency: latency,
-                status: 'thinking',
-                debug_log: 'Analyzing nutrition...'
-              }));
-              thoughtStartTime = Date.now();
-            }
-
-            if (data.type === 'chunk') {
-              if (data.thought) {
-                fullThoughts += data.thought;
-                setThoughtText(fullThoughts);
-                const thinkingTime = (Date.now() - thoughtStartTime) / 1000;
-                setAiMetrics(prev => ({ ...prev, thought_seconds: thinkingTime }));
-              }
-
-              if (data.text) {
-                if (aiMetrics.status !== 'generating') {
-                  setAiMetrics(prev => ({ ...prev, status: 'generating', debug_log: 'Calculating calories...' }));
-                }
-                fullText += data.text;
-                tokensGenerated += data.text.length * 0.75;
-                const timeFromFirst = (Date.now() - firstChunkTime) / 1000;
-                const tps = timeFromFirst > 0 ? tokensGenerated / timeFromFirst : 0;
-                setAiMetrics(prev => ({ ...prev, current_tps: tps }));
-              }
-            }
-
-            if (data.type === 'done') {
-              setAiMetrics(prev => ({ 
-                ...prev, 
-                status: 'completed',
-                input_tokens: data.usage?.promptTokenCount || 0,
-                debug_log: 'Sync complete'
-              }));
-
-              const jsonMatch = fullText.match(/\{[\s\S]*\}/);
-              if (!jsonMatch) throw new Error("Result corrupted");
-              setEstimation(JSON.parse(jsonMatch[0]));
-            }
-
-            if (data.type === 'error') throw new Error(data.message);
+            data = JSON.parse(line);
           } catch (e) {
-            console.error("Parse Error:", e);
+            console.error("Chunk Parse Error:", e, line);
+            continue;
+          }
+
+          if (data.type === 'event' && data.data === 'first_chunk') {
+            firstChunkTime = Date.now();
+            const latency = (firstChunkTime - startTime) / 1000;
+            setAiMetrics(prev => ({ 
+              ...prev, 
+              total_latency: latency,
+              status: 'thinking',
+              debug_log: 'Analyzing nutrition...'
+            }));
+            thoughtStartTime = Date.now();
+          }
+
+          if (data.type === 'chunk') {
+            if (data.thought) {
+              fullThoughts += data.thought;
+              setThoughtText(fullThoughts);
+              const thinkingTime = (Date.now() - thoughtStartTime) / 1000;
+              setAiMetrics(prev => ({ ...prev, thought_seconds: thinkingTime }));
+            }
+
+            if (data.text) {
+              if (aiMetrics.status !== 'generating') {
+                setAiMetrics(prev => ({ ...prev, status: 'generating', debug_log: 'Calculating calories...' }));
+              }
+              fullText += data.text;
+              tokensGenerated += data.text.length * 0.75;
+              const timeFromFirst = (Date.now() - firstChunkTime) / 1000;
+              const tps = timeFromFirst > 0 ? tokensGenerated / timeFromFirst : 0;
+              setAiMetrics(prev => ({ ...prev, current_tps: tps }));
+            }
+          }
+
+          if (data.type === 'done') {
+            setAiMetrics(prev => ({ 
+              ...prev, 
+              status: 'completed',
+              input_tokens: data.usage?.promptTokenCount || 0,
+              debug_log: 'Sync complete'
+            }));
+
+            const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) throw new Error("Result corrupted");
+            setEstimation(JSON.parse(jsonMatch[0]));
+          }
+
+          if (data.type === 'error') {
+            setAiMetrics(prev => ({ ...prev, status: 'error', debug_log: data.message }));
+            return;
           }
         }
       }

@@ -60,7 +60,10 @@ export default function LibraryImportPage() {
         body: JSON.stringify({ text }),
       });
 
-      if (!response.ok) throw new Error('AI analysis failed');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `AI analysis failed (${response.status})`);
+      }
 
       const reader = response.body?.getReader();
       if (!reader) throw new Error('ReadableStream error');
@@ -76,44 +79,51 @@ export default function LibraryImportPage() {
         const lines = chunk.split('\n').filter(l => l.trim());
 
         for (const line of lines) {
+          let data;
           try {
-            const data = JSON.parse(line);
-
-            if (data.type === 'event' && data.data === 'first_chunk') {
-              firstChunkTime = Date.now();
-              const latency = (firstChunkTime - startTime) / 1000;
-              setAiMetrics(prev => ({ ...prev, total_latency: latency, status: 'thinking', debug_log: 'Analyzing text format...' }));
-              thoughtStartTime = Date.now();
-            }
-
-            if (data.type === 'chunk') {
-              if (data.thought) {
-                fullThoughts += data.thought;
-                setThoughtText(fullThoughts);
-                const thinkingTime = (Date.now() - thoughtStartTime) / 1000;
-                setAiMetrics(prev => ({ ...prev, thought_seconds: thinkingTime }));
-              }
-              if (data.text) {
-                if (aiMetrics.status !== 'generating') {
-                  setAiMetrics(prev => ({ ...prev, status: 'generating', debug_log: 'Extracting book data...' }));
-                }
-                fullText += data.text;
-                tokensGenerated += data.text.length * 0.75;
-                const timeFromFirst = (Date.now() - firstChunkTime) / 1000;
-                const tps = timeFromFirst > 0 ? tokensGenerated / timeFromFirst : 0;
-                setAiMetrics(prev => ({ ...prev, current_tps: tps }));
-              }
-            }
-
-            if (data.type === 'done') {
-              setAiMetrics(prev => ({ ...prev, status: 'completed', input_tokens: data.usage?.promptTokenCount || 0, debug_log: 'Extraction complete' }));
-              
-              const jsonMatch = fullText.match(/\[[\s\S]*\]/);
-              if (!jsonMatch) throw new Error("JSON parse error: Could not find valid array.");
-              parsedBooks = JSON.parse(jsonMatch[0]);
-            }
+            data = JSON.parse(line);
           } catch (e) {
-            console.error("Parse Error in stream:", e);
+            console.error("Chunk Parse Error:", e, line);
+            continue;
+          }
+
+          if (data.type === 'event' && data.data === 'first_chunk') {
+            firstChunkTime = Date.now();
+            const latency = (firstChunkTime - startTime) / 1000;
+            setAiMetrics(prev => ({ ...prev, total_latency: latency, status: 'thinking', debug_log: 'Analyzing text format...' }));
+            thoughtStartTime = Date.now();
+          }
+
+          if (data.type === 'chunk') {
+            if (data.thought) {
+              fullThoughts += data.thought;
+              setThoughtText(fullThoughts);
+              const thinkingTime = (Date.now() - thoughtStartTime) / 1000;
+              setAiMetrics(prev => ({ ...prev, thought_seconds: thinkingTime }));
+            }
+            if (data.text) {
+              if (aiMetrics.status !== 'generating') {
+                setAiMetrics(prev => ({ ...prev, status: 'generating', debug_log: 'Extracting book data...' }));
+              }
+              fullText += data.text;
+              tokensGenerated += data.text.length * 0.75;
+              const timeFromFirst = (Date.now() - firstChunkTime) / 1000;
+              const tps = timeFromFirst > 0 ? tokensGenerated / timeFromFirst : 0;
+              setAiMetrics(prev => ({ ...prev, current_tps: tps }));
+            }
+          }
+
+          if (data.type === 'done') {
+            setAiMetrics(prev => ({ ...prev, status: 'completed', input_tokens: data.usage?.promptTokenCount || 0, debug_log: 'Extraction complete' }));
+            
+            const jsonMatch = fullText.match(/\[[\s\S]*\]/);
+            if (!jsonMatch) throw new Error("JSON parse error: Could not find valid array.");
+            parsedBooks = JSON.parse(jsonMatch[0]);
+          }
+
+          if (data.type === 'error') {
+            setAiMetrics(prev => ({ ...prev, status: 'error', debug_log: data.message }));
+            return;
           }
         }
       }
@@ -128,7 +138,7 @@ export default function LibraryImportPage() {
 
     } catch (err: any) {
       console.error(err);
-      setAiMetrics(prev => ({ ...prev, status: 'error', debug_log: 'Process failed' }));
+      setAiMetrics(prev => ({ ...prev, status: 'error', debug_log: err.message }));
       setError(err.message || "予期せぬエラーが発生しました。");
     } finally {
       setIsImporting(false);

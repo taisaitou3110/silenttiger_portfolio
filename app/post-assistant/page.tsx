@@ -115,7 +115,10 @@ export default function PostAssistantPage() {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to start analysis');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Analysis failed (${response.status})`);
+      }
 
       const reader = response.body?.getReader();
       if (!reader) throw new Error('ReadableStream not supported');
@@ -130,78 +133,80 @@ export default function PostAssistantPage() {
         const lines = chunk.split('\n').filter(l => l.trim());
 
         for (const line of lines) {
+          let data;
           try {
-            const data = JSON.parse(line);
-
-            if (data.type === 'event' && data.data === 'first_chunk') {
-              firstChunkTime = Date.now();
-              const latency = (firstChunkTime - startTime) / 1000;
-              setAiMetrics(prev => ({ 
-                ...prev, 
-                total_latency: latency,
-                status: 'thinking',
-                debug_log: 'Analyzing core patterns...'
-              }));
-              thoughtStartTime = Date.now();
-            }
-
-            if (data.type === 'chunk') {
-              if (data.thought) {
-                fullThoughts += data.thought;
-                setThoughtText(fullThoughts);
-                const thinkingTime = (Date.now() - thoughtStartTime) / 1000;
-                setAiMetrics(prev => ({ 
-                  ...prev, 
-                  thought_seconds: thinkingTime,
-                }));
-              }
-
-              if (data.text) {
-                if (aiMetrics.status !== 'generating') {
-                  setAiMetrics(prev => ({ 
-                    ...prev, 
-                    status: 'generating',
-                    debug_log: 'Formulating instruction...'
-                  }));
-                }
-                fullStyleInstruction += data.text;
-                
-                // TPS計算
-                tokensGenerated += data.text.length * 0.75;
-                const timeFromFirst = (Date.now() - firstChunkTime) / 1000;
-                const tps = timeFromFirst > 0 ? tokensGenerated / timeFromFirst : 0;
-                
-                setAiMetrics(prev => ({ 
-                  ...prev, 
-                  current_tps: tps
-                }));
-              }
-            }
-
-            if (data.type === 'done') {
-              setAiMetrics(prev => ({ 
-                ...prev, 
-                status: 'completed',
-                input_tokens: data.usage?.promptTokenCount || 0,
-                debug_log: 'Style analysis successful'
-              }));
-              
-              setMessage('文体分析が完了しました。最新の指示書が生成されました。');
-              setActiveProfile(prev => prev ? ({ ...prev, styleInstruction: fullStyleInstruction }) : null);
-            }
-
-            if (data.type === 'error') {
-              throw new Error(data.message);
-            }
+            data = JSON.parse(line);
           } catch (e) {
-            console.error("Parse Error:", e);
+            console.error("Chunk Parse Error:", e, line);
+            continue;
+          }
+
+          if (data.type === 'event' && data.data === 'first_chunk') {
+            firstChunkTime = Date.now();
+            const latency = (firstChunkTime - startTime) / 1000;
+            setAiMetrics(prev => ({ 
+              ...prev, 
+              total_latency: latency,
+              status: 'thinking',
+              debug_log: 'Analyzing core patterns...'
+            }));
+            thoughtStartTime = Date.now();
+          }
+
+          if (data.type === 'chunk') {
+            if (data.thought) {
+              fullThoughts += data.thought;
+              setThoughtText(fullThoughts);
+              const thinkingTime = (Date.now() - thoughtStartTime) / 1000;
+              setAiMetrics(prev => ({ 
+                ...prev, 
+                thought_seconds: thinkingTime,
+              }));
+            }
+
+            if (data.text) {
+              if (aiMetrics.status !== 'generating') {
+                setAiMetrics(prev => ({ 
+                  ...prev, 
+                  status: 'generating',
+                  debug_log: 'Formulating instruction...'
+                }));
+              }
+              fullStyleInstruction += data.text;
+              
+              // TPS計算
+              tokensGenerated += data.text.length * 0.75;
+              const timeFromFirst = (Date.now() - firstChunkTime) / 1000;
+              const tps = timeFromFirst > 0 ? tokensGenerated / timeFromFirst : 0;
+              
+              setAiMetrics(prev => ({ 
+                ...prev, 
+                current_tps: tps
+              }));
+            }
+          }
+
+          if (data.type === 'done') {
+            setAiMetrics(prev => ({ 
+              ...prev, 
+              status: 'completed',
+              input_tokens: data.usage?.promptTokenCount || 0,
+              debug_log: 'Style analysis successful'
+            }));
+            
+            setMessage('文体分析が完了しました。最新の指示書が生成されました。');
+            setActiveProfile(prev => prev ? ({ ...prev, styleInstruction: fullStyleInstruction }) : null);
+          }
+
+          if (data.type === 'error') {
+            setAiMetrics(prev => ({ ...prev, status: 'error', debug_log: data.message }));
+            return;
           }
         }
       }
     } catch (error: any) {
-      console.error("Analysis Streaming Error:", error);
+      console.error("Analysis Error:", error);
       setAiMetrics(prev => ({ ...prev, status: 'error', debug_log: error.message }));
-      alert('分析中にエラーが発生しました。');
     } finally {
       setIsAnalyzing(false);
     }
@@ -275,7 +280,10 @@ export default function PostAssistantPage() {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to start generation');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to start generation (${response.status})`);
+      }
 
       const reader = response.body?.getReader();
       if (!reader) throw new Error('ReadableStream not supported');
@@ -290,67 +298,75 @@ export default function PostAssistantPage() {
         const lines = chunk.split('\n').filter(l => l.trim());
 
         for (const line of lines) {
+          let data;
           try {
-            const data = JSON.parse(line);
-
-            if (data.type === 'event' && data.data === 'first_chunk') {
-              firstChunkTime = Date.now();
-              const latency = (firstChunkTime - startTime) / 1000;
-              setAiMetrics(prev => ({ 
-                ...prev, 
-                total_latency: latency,
-                status: 'thinking',
-                debug_log: 'Applying style rules...'
-              }));
-              thoughtStartTime = Date.now();
-            }
-
-            if (data.type === 'chunk') {
-              if (data.thought) {
-                fullThoughts += data.thought;
-                setThoughtText(fullThoughts);
-                const thinkingTime = (Date.now() - thoughtStartTime) / 1000;
-                setAiMetrics(prev => ({ ...prev, thought_seconds: thinkingTime }));
-              }
-
-              if (data.text) {
-                if (aiMetrics.status !== 'generating') {
-                  setAiMetrics(prev => ({ 
-                    ...prev, 
-                    status: 'generating',
-                    debug_log: 'Generating note content...'
-                  }));
-                }
-                fullText += data.text;
-                setGeneratedPost(fullText);
-                
-                tokensGenerated += data.text.length * 0.75;
-                const timeFromFirst = (Date.now() - (firstChunkTime || startTime)) / 1000;
-                const tps = timeFromFirst > 0 ? tokensGenerated / timeFromFirst : 0;
-                
-                setAiMetrics(prev => ({ ...prev, current_tps: tps }));
-              }
-            }
-
-            if (data.type === 'done') {
-              setAiMetrics(prev => ({ 
-                ...prev, 
-                status: 'completed',
-                input_tokens: data.usage?.promptTokenCount || 0,
-                debug_log: 'Generation finished'
-              }));
-            }
-
-            if (data.type === 'error') throw new Error(data.message);
+            data = JSON.parse(line);
           } catch (e) {
-            console.error("Parse Error:", e);
+            console.error("Chunk Parse Error:", e, line);
+            continue;
+          }
+
+          if (data.type === 'event' && data.data === 'first_chunk') {
+            firstChunkTime = Date.now();
+            const latency = (firstChunkTime - startTime) / 1000;
+            setAiMetrics(prev => ({ 
+              ...prev, 
+              total_latency: latency,
+              status: 'thinking',
+              debug_log: 'Applying style rules...'
+            }));
+            thoughtStartTime = Date.now();
+          }
+
+          if (data.type === 'chunk') {
+            if (data.thought) {
+              fullThoughts += data.thought;
+              setThoughtText(fullThoughts);
+              const thinkingTime = (Date.now() - thoughtStartTime) / 1000;
+              setAiMetrics(prev => ({ ...prev, thought_seconds: thinkingTime }));
+            }
+
+            if (data.text) {
+              if (aiMetrics.status !== 'generating') {
+                setAiMetrics(prev => ({ 
+                  ...prev, 
+                  status: 'generating',
+                  debug_log: 'Generating note content...'
+                }));
+              }
+              fullText += data.text;
+              setGeneratedPost(fullText);
+              
+              tokensGenerated += data.text.length * 0.75;
+              const timeFromFirst = (Date.now() - (firstChunkTime || startTime)) / 1000;
+              const tps = timeFromFirst > 0 ? tokensGenerated / timeFromFirst : 0;
+              
+              setAiMetrics(prev => ({ ...prev, current_tps: tps }));
+            }
+          }
+
+          if (data.type === 'done') {
+            setAiMetrics(prev => ({ 
+              ...prev, 
+              status: 'completed',
+              input_tokens: data.usage?.promptTokenCount || 0,
+              debug_log: 'Generation finished'
+            }));
+          }
+
+          if (data.type === 'error') {
+            setAiMetrics(prev => ({ ...prev, status: 'error', debug_log: data.message }));
+            return;
           }
         }
       }
     } catch (error: any) {
       console.error("Streaming Error:", error);
-      setAiMetrics(prev => ({ ...prev, status: 'error', debug_log: error.message }));
-      alert('通信エラーが発生しました。');
+      setAiMetrics(prev => ({ 
+        ...prev, 
+        status: 'error',
+        debug_log: error.message 
+      }));
     } finally {
       setIsGenerating(false);
     }

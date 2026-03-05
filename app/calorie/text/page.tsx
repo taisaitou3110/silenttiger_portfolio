@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useRouter } from 'navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Send, Loader2, Info } from 'lucide-react';
 import LoadingButton from '@/components/LoadingButton';

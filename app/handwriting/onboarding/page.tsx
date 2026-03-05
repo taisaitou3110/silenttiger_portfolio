@@ -4,7 +4,8 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft, Camera, CheckCircle2, AlertCircle, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
-import { getTrainingTemplates, updateProfileTrainingLevel, analyzeHandwriting, saveHandwritingData } from '../actions';
+import { getTrainingTemplates, updateProfileTrainingLevel, saveHandwritingData } from '../actions';
+import { AIProcessOverlay, AIMetrics } from '@/components/AI/AIProcessOverlay';
 
 function OnboardingContent() {
   const router = useRouter();
@@ -19,6 +20,17 @@ function OnboardingContent() {
   const [correction, setCorrection] = useState("");
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
+  const [thoughtText, setThoughtText] = useState('');
+
+  // メトリクス状態
+  const [aiMetrics, setAiMetrics] = useState<AIMetrics>({
+    input_tokens: 0,
+    thought_seconds: 0,
+    current_tps: 0,
+    total_latency: 0,
+    status: 'idle',
+    debug_log: '',
+  });
 
   useEffect(() => {
     if (!profileId) {
@@ -44,15 +56,96 @@ function OnboardingContent() {
       const base64 = reader.result as string;
       setImage(base64);
       
-      // Phase 5: 即時フィードバック
       setAnalyzing(true);
+      setThoughtText('');
+      const startTime = Date.now();
+      let firstChunkTime = 0;
+      let thoughtStartTime = 0;
+      let tokensGenerated = 0;
+      let fullText = "";
+      let fullThoughts = "";
+
+      setAiMetrics({
+        input_tokens: 0,
+        thought_seconds: 0,
+        current_tps: 0,
+        total_latency: 0,
+        status: 'transfer',
+        debug_log: 'Uplinking stroke data...',
+      });
+
       try {
-        const result = await analyzeHandwriting(base64, file.type, 'general', profileId!);
-        setFeedback(`AI解析結果: "${result.rawText.slice(0, 30)}..." 
+        const response = await fetch('/api/ai/handwriting', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: base64,
+            mimeType: file.type,
+            docType: 'general',
+            profileId
+          }),
+        });
+
+        if (!response.ok) throw new Error('AI analysis failed');
+
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error('ReadableStream error');
+        const decoder = new TextDecoder();
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n').filter(l => l.trim());
+
+          for (const line of lines) {
+            try {
+              const data = JSON.parse(line);
+
+              if (data.type === 'event' && data.data === 'first_chunk') {
+                firstChunkTime = Date.now();
+                const latency = (firstChunkTime - startTime) / 1000;
+                setAiMetrics(prev => ({ ...prev, total_latency: latency, status: 'thinking', debug_log: 'Cognitive analysis...' }));
+                thoughtStartTime = Date.now();
+              }
+
+              if (data.type === 'chunk') {
+                if (data.thought) {
+                  fullThoughts += data.thought;
+                  setThoughtText(fullThoughts);
+                  const thinkingTime = (Date.now() - thoughtStartTime) / 1000;
+                  setAiMetrics(prev => ({ ...prev, thought_seconds: thinkingTime }));
+                }
+                if (data.text) {
+                  if (aiMetrics.status !== 'generating') {
+                    setAiMetrics(prev => ({ ...prev, status: 'generating', debug_log: 'Decoding strokes...' }));
+                  }
+                  fullText += data.text;
+                  tokensGenerated += data.text.length * 0.75;
+                  const timeFromFirst = (Date.now() - firstChunkTime) / 1000;
+                  const tps = timeFromFirst > 0 ? tokensGenerated / timeFromFirst : 0;
+                  setAiMetrics(prev => ({ ...prev, current_tps: tps }));
+                }
+              }
+
+              if (data.type === 'done') {
+                setAiMetrics(prev => ({ ...prev, status: 'completed', input_tokens: data.usage?.promptTokenCount || 0, debug_log: 'Analysis complete' }));
+                
+                const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error("JSON parse error");
+                const result = JSON.parse(jsonMatch[0]);
+                
+                setFeedback(`AI解析結果: "${result.rawText.slice(0, 30)}..." 
 あなたの筆跡は「${result.rawText.length > 5 ? '連筆が強い' : '一画一画が明瞭'}」な傾向があります。`);
-        setCorrection(result.rawText);
+                setCorrection(result.rawText);
+              }
+            } catch (e) { console.error(e); }
+          }
+        }
       } catch (err) {
         console.error(err);
+        setAiMetrics(prev => ({ ...prev, status: 'error', debug_log: 'Analysis failed' }));
         setFeedback("解析に失敗しましたが、学習用データとして保存できます。");
       }
       setAnalyzing(false);
@@ -63,7 +156,6 @@ function OnboardingContent() {
   const handleCompleteStep = async () => {
     if (!image || !profileId) return;
     
-    // 学習データの保存
     await saveHandwritingData('general', { rawText: correction }, [{
       correctLabel: correction,
       confidence: 0.9,
@@ -72,8 +164,6 @@ function OnboardingContent() {
 
     const newCompleted = [...completedSteps, currentTemplate.step];
     setCompletedSteps(newCompleted);
-    
-    // プロファイルの進捗更新
     await updateProfileTrainingLevel(profileId, currentTemplate.step);
 
     if (currentStepIdx < templates.length - 1) {
@@ -90,16 +180,23 @@ function OnboardingContent() {
     <div className="min-h-screen bg-black flex items-center justify-center">
       <Loader2 className="w-8 h-8 text-[#0cf] animate-spin" />
     </div>
-  );
-
   return (
     <div className="min-h-screen bg-black text-white font-sans">
+      <AIProcessOverlay 
+        metrics={aiMetrics} 
+        thoughtText={thoughtText} 
+        title="Neural Link Trainer" 
+        modelName="Gemini 2.5 Flash"
+      />
+
       <div className="max-w-2xl mx-auto px-6 py-12">
-        <header className="mb-12">
-          <Link href="/handwriting" className="flex items-center text-gray-500 hover:text-[#0cf] transition-colors mb-6 group">
-            <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-sm font-bold uppercase tracking-widest">Quit Training</span>
-          </Link>
+  ...
+          <header className="mb-12">
+            <Link href="/handwriting" className="flex items-center text-gray-500 hover:text-[#0cf] transition-colors mb-6 group">
+              <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+              <span className="text-sm font-bold uppercase tracking-widest">Quit Training</span>
+            </Link>
+  ...
           <div className="flex items-center gap-3 mb-2">
             <div className="px-3 py-1 bg-[#0cf]/10 border border-[#0cf]/20 rounded-full text-[#0cf] text-[10px] font-black tracking-widest uppercase">
               Step {currentStepIdx + 1} / 5
@@ -121,7 +218,6 @@ function OnboardingContent() {
 
         {/* Main Interface */}
         <div className="space-y-8">
-          {/* お手本表示 */}
           <div className="p-8 bg-gray-900/40 border border-white/10 rounded-3xl text-center relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#0cf]/30 to-transparent" />
             <div className="text-[10px] text-gray-500 font-mono uppercase tracking-[0.3em] mb-4">Target Text to Write</div>

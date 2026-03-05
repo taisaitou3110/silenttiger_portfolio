@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
-  const { userId, topic, styleInstruction } = await req.json();
+  const { image, mimeType, docType, personalContext } = await req.json();
 
   if (!process.env.GEMINI_API_KEY) {
     return new Response(JSON.stringify({ error: "API key not found" }), { status: 500 });
@@ -21,23 +21,24 @@ export async function POST(req: NextRequest) {
         });
 
         const prompt = `
-          以下の「ネタ（議論ログやメモ）」を基に、指定された文体指示に従ってnote記事を作成してください。
+          ${personalContext || ""}
+          この画像は${docType === 'business' ? 'ビジネス電話' : docType === 'order' ? '発注電話' : '一般メモ'}です。
+          内容を解析し、以下の構造を持つJSON形式のみを出力してください。
           
-          【文体指示】
-          ${styleInstruction}
-
-          【制約事項】
-          - 文字数は2,000字程度
-          - note形式（見出し、箇条書き、太字などを適宜使用）
-          - 最後に適切なハッシュタグを3〜5個付与
+          【出力形式（JSONのみ）】
+          ${docType === 'general' 
+            ? '{ "rawText": "解析テキスト", "confidence": 0.9 }' 
+            : '{ "customerName": "名前", "phoneNumber": "番号", "zipCode": "郵便番号", "address": "住所", "content": "内容（ビジネスの場合）", "items": [{"itemName": "品名", "quantity": 1, "price": 100}], "confidence": 0.9 }'
+          }
           
-          【ネタ】
-          ${topic}
+          筆跡プロファイルの傾向を考慮して、崩し字を正確に補正してください。
+          思考プロセス（Thinking）を含めて出力してください。
         `;
 
-        const result = await model.generateContentStream({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-        });
+        const result = await model.generateContentStream([
+          prompt,
+          { inlineData: { data: image.split(",")[1], mimeType } }
+        ]);
 
         let firstChunkReceived = false;
 
@@ -48,7 +49,6 @@ export async function POST(req: NextRequest) {
           }
 
           const text = chunk.text();
-          // SDK/モデルが思考プロセスを返す場合、ここで取得を試みます
           const thought = (chunk as any).thought || "";
           
           controller.enqueue(encoder.encode(JSON.stringify({ 
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         }) + "\n"));
 
       } catch (error: any) {
-        console.error("Streaming Error:", error);
+        console.error("Handwriting AI Error:", error);
         controller.enqueue(encoder.encode(JSON.stringify({ type: "error", message: error.message }) + "\n"));
       } finally {
         controller.close();

@@ -15,17 +15,18 @@ export async function POST(req: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // リストで確認された最新の 2.5-flash を使用
+        const modelName = process.env.GEMINI_ALGO_MODEL || "gemini-2.5-flash";
         const model = genAI.getGenerativeModel({
-          model: "gemini-2.5-flash",
+          model: modelName,
           systemInstruction: "あなたはプロの執筆スタイル・プロファイラーです。渡されたテキストから、著者の「文体の癖」を極めて詳細に抽出し、再現可能な『文体指示書』を作成してください。"
         });
 
         const prompt = `
           以下のテキスト（過去の記事やメモ）を深く分析し、著者の執筆スタイルを抽出してください。
           特に、独特の記号使い、改行のリズム、思考の飛躍、比喩の傾向に注目してください。
-          
-          【出力に含めるべき要素】
+
+...
+
           1. 語彙とトーン: 宗教、哲学、科学、あるいはサブカルチャー（ゲーム等）をどう織り交ぜるか。
           2. 記号と視覚構造: 独自のセパレーター（例：ʕ•̫͡•...）や、強調、引用の使い方。
           3. 構成の癖: 体験談から抽象的な思考へどう繋げるか。メタ視点の（ ）書きの頻度。

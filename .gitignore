@@ -16,3 +16,5 @@ node_modules
 .DS_Store
 dev_output.log
 dev.db
+.vercel
+.env*.local

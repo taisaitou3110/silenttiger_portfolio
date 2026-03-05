@@ -3,37 +3,22 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-interface BookData {
+export interface BookData {
   title: string;
   author: string;
   utilizationDate: string;
 }
 
-interface ImportResult {
+export interface ImportResult {
   success: boolean;
   total: number;
   processed: number;
   errors: string[];
 }
 
-export async function importLibraryHistory(text: string) {
-  const books: BookData[] = [];
-  
-  // 改良版正規表現：項目の間に他の行（出版者、評価等）が挟まってもOKにする
-  // [\s\S]*? は改行を含むあらゆる文字を「次の項目が見つかるまで」最短一致でスキップします
-  const entryRegex = /タイトル\s*[:：]\s*(.+?)\s*\r?\n[\s\S]*?著者\s*[:：]\s*(.+?)\s*\r?\n[\s\S]*?利用日\s*[:：]\s*(\d{4}\/\d{2}\/\d{2,4})/g;
-  
-  let match;
-  while ((match = entryRegex.exec(text)) !== null) {
-    books.push({
-      title: match[1].trim(),
-      author: match[2].trim(),
-      utilizationDate: match[3].trim(),
-    });
-  }
-
-  if (books.length === 0) {
-    throw new Error("有効な貸出履歴が見つかりませんでした。形式を確認してください。");
+export async function saveImportedBooks(books: BookData[]): Promise<ImportResult> {
+  if (!books || books.length === 0) {
+    throw new Error("有効な貸出履歴データがありません。");
   }
 
   // ユーザー設定（userId）の取得
@@ -71,11 +56,6 @@ export async function importLibraryHistory(text: string) {
       const dateParts = book.utilizationDate.split('/');
       const utilizationDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
 
-      // isbn がない場合はタイトルと著者で特定を試みるか、あるいは登録をスキップ/制限するか
-      // 今回は isbn がユニークキーの一部なので、isbn が取れない場合は暫定的にタイトルをキーにするか検討が必要だが
-      // 要件では isbn を取得することになっているため、取得できた場合のみ upsert するか、
-      // あるいは isbn がない場合用のダミーキーを作成する。
-      // ここでは isbn が取得できたものとして進める。
       if (isbn) {
         await prisma.book.upsert({
           where: {
@@ -99,14 +79,11 @@ export async function importLibraryHistory(text: string) {
           },
         });
       } else {
-        // ISBNが見つからない場合はタイトルベースで保存（重複の可能性はあるが履歴としては残す）
-        // 厳密にはスキーマの unique 制約に反するため、isbnがない場合は別の手段が必要
-        // 今回は要件に従い ISBN を取得して保存する流れとする。取得失敗時はエラーログへ。
         errors.push(`ISBN未検出: ${book.title}`);
       }
 
       processed++;
-      // API制限回避のための短い待機 (任意)
+      // API制限回避のための短い待機
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (err: any) {
       console.error(`Error processing ${book.title}:`, err);
@@ -122,4 +99,26 @@ export async function importLibraryHistory(text: string) {
     processed,
     errors,
   };
+}
+
+// 既存の関数（後方互換性のため残す、または削除しても構わないが今回は残す）
+export async function importLibraryHistory(text: string) {
+  const books: BookData[] = [];
+  
+  const entryRegex = /タイトル\s*[:：]\s*(.+?)\s*\r?\n[\s\S]*?著者\s*[:：]\s*(.+?)\s*\r?\n[\s\S]*?利用日\s*[:：]\s*(\d{4}\/\d{2}\/\d{2,4})/g;
+  
+  let match;
+  while ((match = entryRegex.exec(text)) !== null) {
+    books.push({
+      title: match[1].trim(),
+      author: match[2].trim(),
+      utilizationDate: match[3].trim(),
+    });
+  }
+
+  if (books.length === 0) {
+    throw new Error("有効な貸出履歴が見つかりませんでした。形式を確認してください。");
+  }
+
+  return await saveImportedBooks(books);
 }

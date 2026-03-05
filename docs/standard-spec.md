@@ -241,7 +241,26 @@ Rule (EN): Use Server Components as the default. Limit "use client" to the small
 Rule (JP): API通信（Google Books API等）、スクレイピング、複雑なデータ加工ロジックはコンポーネント内に直接書かず、必ず actions.ts または utils/ フォルダへ分離すること。
 Rule (EN): Separate business logic (API calls, data processing) from UI components into actions.ts or utils/.
 
+# 第13章：AI実装標準 (AI Implementation Standards)
+
+AI（Gemini API等）を組み込む際は、システムの透明性と臨場感を維持するため、以下の実装ルールを厳守すること。
+
+### 13.1 モデルの選択と管理
+* **環境変数の利用**: 使用するモデル名はハードコードせず、必ず環境変数（例：`GEMINI_MODEL`）から取得すること。
+* **推奨モデル**: 可能な限り、思考プロセス（Thinking）や詳細な使用量メタデータ（Usage Metadata）を取得できる最新モデル（例：`gemini-2.5-flash` 以上）を採用すること。
+
+### 13.2 ストリーミングレスポンスの必須化
+* **対話・解析UX**: 全文待機によるUXの低下を防ぐため、可能な限りストリーミング（`generateContentStream` 等）を実装すること。
+* **チャンク制御**: サーバー側からフロントエンドへは、解析中のテキストだけでなく「思考プロセス（Thought）」や「イベント通知」を分離して送信すること。
+
+### 13.3 AI Process Monitoring (UI/UX)
+* **共通部品の利用**: AIのレスポンス待機中および生成中は、共通部品 **`AIProcessOverlay`** を必ず使用すること。
+* **表示項目**:
+    * **Model Badge**: 現在使用しているモデル名をヘッダーに明示すること。
+    * **Metrics**: Input Latency（待機時間）、Cognition Time（思考時間）、Sync Speed（生成速度：TPS）、Total Data（トークン数）をリアルタイムにカウントアップ表示すること。
+    * **Thought Stream**: AIの思考過程が取得可能な場合は、それをリアルタイムにログとして表示すること。
+* **演出**: 処理完了後は、結果を確認できるよう数秒間の待機（オートハイド）時間を設けること。
 
 ---
 作成日: 2024-xx-xx
-バージョン: v1.4.0 (Full Standard Integrated)
+バージョン: v1.5.0 (AI Standard Integrated)

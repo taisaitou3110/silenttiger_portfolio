@@ -371,7 +371,11 @@ export default function PostAssistantPage() {
       />
 
       {/* AI Process Overlay (Floating Popup) */}
-      <AIProcessOverlay metrics={aiMetrics} thoughtText={thoughtText} />
+      <AIProcessOverlay 
+        metrics={aiMetrics} 
+        thoughtText={thoughtText} 
+        modelName="Gemini 2.5 Flash"
+      />
 
       <div className="max-w-5xl mx-auto space-y-12">
         {/* Header */}

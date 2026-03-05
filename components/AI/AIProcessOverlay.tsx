@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, Activity, Brain, Zap, Hash, Terminal, Cpu, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { Loader2, Activity, Brain, Zap, Hash, Terminal, Cpu, ChevronDown, ChevronUp, X, Clock } from 'lucide-react';
 
 export type AIProcessStatus = 'transfer' | 'thinking' | 'generating' | 'completed' | 'idle' | 'error';
 
@@ -18,6 +18,7 @@ interface Props {
   metrics: AIMetrics;
   thoughtText?: string;
   title?: string;
+  modelName?: string;
 }
 
 /**
@@ -59,12 +60,14 @@ function useCountUp(end: number, duration: number = 300) {
 export const AIProcessOverlay: React.FC<Props> = ({ 
   metrics, 
   thoughtText, 
-  title = "Neural Link Processor" 
+  title = "Neural Link Processor",
+  modelName
 }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [retrySeconds, setRetrySeconds] = useState<number | null>(null);
   
-  // カウントアップ演出用 (durationを短くして機敏に)
+  // カウントアップ演出用
   const displayTPS = useCountUp(metrics.current_tps, 200);
   const displayTokens = useCountUp(metrics.input_tokens, 400);
   const displayLatency = useCountUp(metrics.total_latency, 400);
@@ -76,14 +79,37 @@ export const AIProcessOverlay: React.FC<Props> = ({
       setIsMinimized(false);
     }
 
-    // 完了またはエラー時、5秒後に自動で隠す
-    if (metrics.status === 'completed' || metrics.status === 'error') {
+    // 429エラー（クォータ制限）の解析
+    // エラーログに含まれる "Please retry in XXs" や "retry after XXs" を抽出
+    if (metrics.status === 'error') {
+      const match = metrics.debug_log.match(/retry (?:in|after) ([\d\.]+)s/i);
+      if (match) {
+        setRetrySeconds(Math.ceil(parseFloat(match[1])));
+      } else {
+        setRetrySeconds(null);
+      }
+    } else if (metrics.status !== 'error') {
+      setRetrySeconds(null);
+    }
+
+    // 完了時のみ自動で隠す（エラー時は確認のため残す）
+    if (metrics.status === 'completed') {
       const timer = setTimeout(() => {
         setIsVisible(false);
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [metrics.status]);
+  }, [metrics.status, metrics.debug_log]);
+
+  // リトライカウントダウン
+  useEffect(() => {
+    if (retrySeconds !== null && retrySeconds > 0) {
+      const timer = setInterval(() => {
+        setRetrySeconds(prev => (prev !== null && prev > 0 ? prev - 1 : null));
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [retrySeconds]);
 
   if (!isVisible && metrics.status === 'idle') return null;
 
@@ -93,7 +119,7 @@ export const AIProcessOverlay: React.FC<Props> = ({
     thinking: { label: 'COGNITION', color: 'text-purple-400', glow: 'shadow-[0_0_15px_rgba(192,132,252,0.5)]', icon: <Brain className="w-4 h-4 animate-bounce" /> },
     generating: { label: 'SYNTHESIZING', color: 'text-emerald-400', glow: 'shadow-[0_0_15px_rgba(52,211,153,0.5)]', icon: <Zap className="w-4 h-4 animate-spin" /> },
     completed: { label: 'SYNCED', color: 'text-white', glow: 'shadow-[0_0_15px_rgba(255,255,255,0.3)]', icon: <Hash className="w-4 h-4" /> },
-    error: { label: 'DISCONNECTED', color: 'text-red-500', glow: 'shadow-[0_0_15px_rgba(239,68,68,0.5)]', icon: <Terminal className="w-4 h-4" /> },
+    error: { label: retrySeconds ? 'QUOTA LIMIT' : 'DISCONNECTED', color: 'text-red-500', glow: 'shadow-[0_0_15px_rgba(239,68,68,0.5)]', icon: <Terminal className="w-4 h-4" /> },
   };
 
   const config = statusConfig[metrics.status];
@@ -104,16 +130,25 @@ export const AIProcessOverlay: React.FC<Props> = ({
         
         {/* Header */}
         <div className={`p-4 flex items-center justify-between border-b border-white/10 ${config.color} bg-white/5`}>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {config.icon}
-            <span className="text-[10px] font-black tracking-[0.2em] uppercase">{title}</span>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black tracking-[0.2em] uppercase leading-none">{title}</span>
+              {modelName && (
+                <div className="flex items-center gap-1 mt-1.5">
+                  <span className="text-[7px] font-bold bg-white/10 px-1.5 py-0.5 rounded tracking-[0.1em] opacity-70 w-fit border border-white/5">
+                    {modelName.toUpperCase()}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[9px] font-mono opacity-50 truncate max-w-[100px]">{metrics.debug_log}</span>
-            <button onClick={() => setIsMinimized(!isMinimized)} className="hover:bg-white/10 p-1 rounded-md transition-colors">
+            <button onClick={() => setIsMinimized(!isMinimized)} className="hover:bg-white/10 p-1 rounded-md transition-colors text-white">
               {isMinimized ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
-            <button onClick={() => setIsVisible(false)} className="hover:bg-white/10 p-1 rounded-md transition-colors">
+            <button onClick={() => setIsVisible(false)} className="hover:bg-white/10 p-1 rounded-md transition-colors text-white">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -136,6 +171,22 @@ export const AIProcessOverlay: React.FC<Props> = ({
                 </div>
               </div>
             </div>
+
+            {/* クォータ制限時のカウントダウン表示 */}
+            {retrySeconds !== null && (
+              <div className="mx-4 mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between animate-pulse">
+                <div className="flex items-center gap-3 text-red-400">
+                  <Clock className="w-5 h-5" />
+                  <div className="flex-1">
+                    <p className="text-[10px] font-bold uppercase tracking-widest leading-none mb-1">Cool down required</p>
+                    <p className="text-[10px] font-medium opacity-80">API制限中。再試行までお待ちください。</p>
+                  </div>
+                </div>
+                <div className="text-2xl font-mono font-black text-red-500 ml-4">
+                  {retrySeconds}s
+                </div>
+              </div>
+            )}
 
             {/* Metrics Grid */}
             <div className="grid grid-cols-2 divide-x divide-y divide-white/5 border-t border-white/5">

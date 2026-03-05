@@ -4,36 +4,43 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
-  const { userId, topic, styleInstruction } = await req.json();
+  const { type, term, text } = await req.json();
 
   if (!process.env.GEMINI_API_KEY) {
     return new Response(JSON.stringify({ error: "API key not found" }), { status: 500 });
   }
 
+  const modelName = process.env.GEMINI_ALGO_MODEL || "gemini-2.5-flash";
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        const modelName = process.env.GEMINI_ALGO_MODEL || "gemini-2.5-flash";
-        const model = genAI.getGenerativeModel({
-          model: modelName,
-        });
+        const model = genAI.getGenerativeModel({ model: modelName });
+        let prompt = "";
 
-        const prompt = `
-          以下の「ネタ（議論ログやメモ）」を基に、指定された文体指示に従ってnote記事を作成してください。
-          
-          【文体指示】
-          ${styleInstruction}
-
-          【制約事項】
-          - 文字数は2,000字程度
-          - note形式（見出し、箇条書き、太字などを適宜使用）
-          - 最後に適切なハッシュタグを3〜5個付与
-          
-          【ネタ】
-          ${topic}
-        `;
+        if (type === 'suggest') {
+          prompt = `
+            単語「${term}」について、以下のJSON形式のみで回答してください。解説文などは一切不要です。
+            {
+              "meaning": "日本語での主な意味",
+              "phonetic": "発音記号",
+              "examples": [
+                { "text": "英語の例文1", "collocation": "その文中の核心となるコロケーション" }
+              ]
+            }
+            ※例文は最大10個生成してください。実用的で、日常会話やビジネスで使いやすいものにしてください。
+            思考プロセス（Thinking）を含めて出力してください。
+          `;
+        } else if (type === 'bulk') {
+          prompt = `
+            以下のテキストから英単語、意味、発音記号、実用的な例文3つを抽出し、JSON形式で出力してください。
+            解説文などは一切不要です。
+            【テキスト】: ${text}
+            【形式】: {"words": [{"term": "...", "meaning": "...", "phonetic": "...", "examples": [{"text": "...", "collocation": "..."}]}]}
+            思考プロセス（Thinking）を含めて出力してください。
+          `;
+        }
 
         const result = await model.generateContentStream({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -47,13 +54,12 @@ export async function POST(req: NextRequest) {
             firstChunkReceived = true;
           }
 
-          const text = chunk.text();
-          // SDK/モデルが思考プロセスを返す場合、ここで取得を試みます
+          const textData = chunk.text();
           const thought = (chunk as any).thought || "";
           
           controller.enqueue(encoder.encode(JSON.stringify({ 
             type: "chunk", 
-            text: text,
+            text: textData,
             thought: thought
           }) + "\n"));
         }
@@ -67,7 +73,7 @@ export async function POST(req: NextRequest) {
         }) + "\n"));
 
       } catch (error: any) {
-        console.error("Streaming Error:", error);
+        console.error("Wordbook AI Error:", error);
         controller.enqueue(encoder.encode(JSON.stringify({ type: "error", message: error.message }) + "\n"));
       } finally {
         controller.close();

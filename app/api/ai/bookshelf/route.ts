@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
-  const { userId, topic, styleInstruction } = await req.json();
+  const { text } = await req.json();
 
   if (!process.env.GEMINI_API_KEY) {
     return new Response(JSON.stringify({ error: "API key not found" }), { status: 500 });
@@ -21,18 +21,23 @@ export async function POST(req: NextRequest) {
         });
 
         const prompt = `
-          以下の「ネタ（議論ログやメモ）」を基に、指定された文体指示に従ってnote記事を作成してください。
-          
-          【文体指示】
-          ${styleInstruction}
+          以下のテキストは図書館や書店の貸出・購入履歴です。
+...
 
-          【制約事項】
-          - 文字数は2,000字程度
-          - note形式（見出し、箇条書き、太字などを適宜使用）
-          - 最後に適切なハッシュタグを3〜5個付与
           
-          【ネタ】
-          ${topic}
+          【出力形式（JSON配列のみ）】
+          [
+            {
+              "title": "本のタイトル",
+              "author": "著者名（余分な空白や「／著」などは削除）",
+              "utilizationDate": "YYYY/MM/DD（利用日や貸出日。不明な場合は現在の日付）"
+            }
+          ]
+          
+          思考プロセス（Thinking）を含めて出力し、様々なフォーマットのテキストから正確に書籍データを抽出してください。
+          
+          【解析対象テキスト】
+          ${text}
         `;
 
         const result = await model.generateContentStream({
@@ -47,13 +52,12 @@ export async function POST(req: NextRequest) {
             firstChunkReceived = true;
           }
 
-          const text = chunk.text();
-          // SDK/モデルが思考プロセスを返す場合、ここで取得を試みます
+          const textData = chunk.text();
           const thought = (chunk as any).thought || "";
           
           controller.enqueue(encoder.encode(JSON.stringify({ 
             type: "chunk", 
-            text: text,
+            text: textData,
             thought: thought
           }) + "\n"));
         }
@@ -67,7 +71,7 @@ export async function POST(req: NextRequest) {
         }) + "\n"));
 
       } catch (error: any) {
-        console.error("Streaming Error:", error);
+        console.error("Bookshelf AI Error:", error);
         controller.enqueue(encoder.encode(JSON.stringify({ type: "error", message: error.message }) + "\n"));
       } finally {
         controller.close();

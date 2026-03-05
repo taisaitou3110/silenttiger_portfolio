@@ -4,14 +4,26 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, BookOpen, CheckCircle2, AlertCircle } from 'lucide-react';
 import { ActionButton } from '@/components/ActionButton';
-import { importLibraryHistory } from './actions';
+import { saveImportedBooks, BookData } from './actions';
 import MessageBox from '@/components/MessageBox';
+import { AIProcessOverlay, AIMetrics } from '@/components/AI/AIProcessOverlay';
 
 export default function LibraryImportPage() {
   const [text, setText] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [thoughtText, setThoughtText] = useState('');
+
+  // メトリクス状態
+  const [aiMetrics, setAiMetrics] = useState<AIMetrics>({
+    input_tokens: 0,
+    thought_seconds: 0,
+    current_tps: 0,
+    total_latency: 0,
+    status: 'idle',
+    debug_log: '',
+  });
 
   const handleImport = async () => {
     if (!text.trim()) {
@@ -22,12 +34,102 @@ export default function LibraryImportPage() {
     setIsImporting(true);
     setResult(null);
     setError(null);
+    setThoughtText('');
+
+    const startTime = Date.now();
+    let firstChunkTime = 0;
+    let thoughtStartTime = 0;
+    let tokensGenerated = 0;
+    let fullText = "";
+    let fullThoughts = "";
+
+    setAiMetrics({
+      input_tokens: 0,
+      thought_seconds: 0,
+      current_tps: 0,
+      total_latency: 0,
+      status: 'transfer',
+      debug_log: 'Uplinking text data...',
+    });
 
     try {
-      const data = await importLibraryHistory(text);
-      setResult(data);
+      // 1. AIストリーミング解析
+      const response = await fetch('/api/ai/bookshelf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) throw new Error('AI analysis failed');
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('ReadableStream error');
+      const decoder = new TextDecoder();
+      
+      let parsedBooks: BookData[] | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n').filter(l => l.trim());
+
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line);
+
+            if (data.type === 'event' && data.data === 'first_chunk') {
+              firstChunkTime = Date.now();
+              const latency = (firstChunkTime - startTime) / 1000;
+              setAiMetrics(prev => ({ ...prev, total_latency: latency, status: 'thinking', debug_log: 'Analyzing text format...' }));
+              thoughtStartTime = Date.now();
+            }
+
+            if (data.type === 'chunk') {
+              if (data.thought) {
+                fullThoughts += data.thought;
+                setThoughtText(fullThoughts);
+                const thinkingTime = (Date.now() - thoughtStartTime) / 1000;
+                setAiMetrics(prev => ({ ...prev, thought_seconds: thinkingTime }));
+              }
+              if (data.text) {
+                if (aiMetrics.status !== 'generating') {
+                  setAiMetrics(prev => ({ ...prev, status: 'generating', debug_log: 'Extracting book data...' }));
+                }
+                fullText += data.text;
+                tokensGenerated += data.text.length * 0.75;
+                const timeFromFirst = (Date.now() - firstChunkTime) / 1000;
+                const tps = timeFromFirst > 0 ? tokensGenerated / timeFromFirst : 0;
+                setAiMetrics(prev => ({ ...prev, current_tps: tps }));
+              }
+            }
+
+            if (data.type === 'done') {
+              setAiMetrics(prev => ({ ...prev, status: 'completed', input_tokens: data.usage?.promptTokenCount || 0, debug_log: 'Extraction complete' }));
+              
+              const jsonMatch = fullText.match(/\[[\s\S]*\]/);
+              if (!jsonMatch) throw new Error("JSON parse error: Could not find valid array.");
+              parsedBooks = JSON.parse(jsonMatch[0]);
+            }
+          } catch (e) {
+            console.error("Parse Error in stream:", e);
+          }
+        }
+      }
+
+      if (!parsedBooks || parsedBooks.length === 0) {
+        throw new Error("書籍データを抽出できませんでした。");
+      }
+
+      // 2. DBへの保存処理 (Server Action)
+      const saveResult = await saveImportedBooks(parsedBooks);
+      setResult(saveResult);
+
     } catch (err: any) {
-      setError(err.message);
+      console.error(err);
+      setAiMetrics(prev => ({ ...prev, status: 'error', debug_log: 'Process failed' }));
+      setError(err.message || "予期せぬエラーが発生しました。");
     } finally {
       setIsImporting(false);
     }
@@ -35,6 +137,13 @@ export default function LibraryImportPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 overflow-x-hidden">
+      <AIProcessOverlay 
+        metrics={aiMetrics} 
+        thoughtText={thoughtText} 
+        title="Library Data Extractor" 
+        modelName="Gemini 2.5 Flash"
+      />
+
       {/* 共通ヘッダー */}
       <header className="p-4 sm:p-6 flex justify-between items-center bg-white border-b border-gray-200 sticky top-0 z-20">
         <Link href="/bookshelf/scan" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors">
@@ -42,7 +151,7 @@ export default function LibraryImportPage() {
           アプリポータルへ戻る
         </Link>
         <div className="text-gray-500 font-mono text-sm hidden sm:block">
-          Library Importer v1.0
+          Library Importer v2.0 (AI Powered)
         </div>
       </header>
 
@@ -50,29 +159,27 @@ export default function LibraryImportPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-2">
             <BookOpen className="w-8 h-8 text-indigo-600" />
-            貸出履歴インポート
+            貸出履歴スマートインポート
           </h1>
           <p className="text-gray-600">
-            図書館サイトの貸出履歴をコピーして、こちらに貼り付けてください。
-            AIがタイトルやISBNを解析し、あなたの蔵書リストに追加します。
+            図書館サイトの貸出履歴やAmazonの購入履歴などをそのまま貼り付けてください。
+            AIがフォーマットの違いを吸収し、自動的にタイトルや著者を抽出して蔵書リストに追加します。
           </p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8">
           <label htmlFor="history-text" className="block text-sm font-bold text-gray-700 mb-2">
-            コピーしたテキスト
+            履歴テキスト（書式自由）
           </label>
           <textarea
             id="history-text"
             rows={12}
             className="w-full p-4 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-mono text-sm mb-4"
-            placeholder={`タイトル ： ブルシット・ジョブの謎
-著者 ： 酒井　隆史／著
-利用日 ： 2026/02/24
-
-タイトル ： ドーパミン中毒
-著者 ： アンナ・レンブケ／著
-利用日 ： 2026/02/04`}
+            placeholder={`例：
+【貸出中】ブルシット・ジョブの謎 (酒井隆史) 2026/02/24返却予定
+または
+タイトル: ドーパミン中毒
+著者: アンナ・レンブケ`}
             value={text}
             onChange={(e) => setText(e.target.value)}
             disabled={isImporting}
@@ -86,10 +193,10 @@ export default function LibraryImportPage() {
             {isImporting ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                解析中...
+                AI解析＆インポート中...
               </>
             ) : (
-              "インポートを実行"
+              "AIインポートを実行"
             )}
           </ActionButton>
         </div>
@@ -118,11 +225,11 @@ export default function LibraryImportPage() {
             <div className="p-6">
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-blue-50 p-4 rounded-xl">
-                  <p className="text-xs text-blue-600 font-bold uppercase mb-1">検出件数</p>
+                  <p className="text-xs text-blue-600 font-bold uppercase mb-1">AI検出件数</p>
                   <p className="text-2xl font-black text-blue-800">{result.total} 件</p>
                 </div>
                 <div className="bg-green-50 p-4 rounded-xl">
-                  <p className="text-xs text-green-600 font-bold uppercase mb-1">成功件数</p>
+                  <p className="text-xs text-green-600 font-bold uppercase mb-1">保存成功</p>
                   <p className="text-2xl font-black text-green-800">{result.processed} 件</p>
                 </div>
               </div>

@@ -36,20 +36,9 @@ export const GUIDE_CONTENTS: Record<string, GuideContent & { group: keyof typeof
   },
 
   // --- LIFE_LOG ---
-  BOOKSHELF_SCAN: {
-    group: "LIFE_LOG",
-    title: "本棚スキャナー",
-    tagline: "背表紙を撮るだけで、あなたの本棚をデジタル化。",
-    overview: "背表紙を撮影するだけで、蔵書を自動的にリスト化します。",
-    howTo: ["カメラで撮影", "AIがタイトルを抽出", "保存して管理"],
-    techStack: ["Next.js", "Gemini 1.5 Flash", "Prisma"],
-    image: "/images/image_background_bookshelf.jpg",
-    path: "/bookshelf/scan",
-    hideFromPortal: true,
-  },
   BOOKSHELF_APP: {
     group: "LIFE_LOG",
-    title: "マイ本棚 Portal",
+    title: "マイ本棚",
     tagline: "あなたの蔵書と地域図書館をシンクロさせる。",
     overview: "登録した蔵書の一覧管理に加え、呉市・東広島市の図書館の蔵書状況をリアルタイムに確認できます。",
     howTo: ["蔵書を一覧で確認", "ステータス（読了・未読など）を管理", "地域図書館の在庫をチェック"],
@@ -69,7 +58,7 @@ export const GUIDE_CONTENTS: Record<string, GuideContent & { group: keyof typeof
   },
   WORDBOOK: {
     group: "LIFE_LOG",
-    title: "知識図鑑 Knowledge Cosmos",
+    title: "復習ゲームつき英単語帳",
     tagline: "忘却を克服し、知識を星のように繋ぐ。",
     overview: "エビングハウスの忘却曲線に基づいたパーソナル・ナレッジ管理システム。",
     howTo: ["知識をノードとして保存", "忘却曲線に基づき復習", "全ネットワークを閲覧"],

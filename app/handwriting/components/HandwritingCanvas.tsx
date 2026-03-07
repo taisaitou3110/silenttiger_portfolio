@@ -40,6 +40,22 @@ const HandwritingCanvas = forwardRef<HandwritingCanvasHandle, HandwritingCanvasP
     ctx.lineJoin = 'round';
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // iPad/Safari対策: 標準のスクロールやズームを完全に無効化するための低レベルイベントリスナー
+    const preventDefault = (e: TouchEvent) => {
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+    };
+
+    // passive: false にすることで e.preventDefault() を有効にする
+    canvas.addEventListener('touchstart', preventDefault, { passive: false });
+    canvas.addEventListener('touchmove', preventDefault, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('touchstart', preventDefault);
+      canvas.removeEventListener('touchmove', preventDefault);
+    };
   }, []);
 
   useImperativeHandle(ref, () => ({
@@ -66,12 +82,13 @@ const HandwritingCanvas = forwardRef<HandwritingCanvasHandle, HandwritingCanvasP
     const rect = canvas.getBoundingClientRect();
     let clientX, clientY;
 
-    if ('touches' in e) {
+    if ('touches' in e && e.touches.length > 0) {
       clientX = e.touches[0].clientX;
       clientY = e.touches[0].clientY;
     } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
+      const mouseEvent = e as React.MouseEvent;
+      clientX = mouseEvent.clientX;
+      clientY = mouseEvent.clientY;
     }
 
     const scaleX = canvas.width / rect.width;
@@ -106,9 +123,7 @@ const HandwritingCanvas = forwardRef<HandwritingCanvasHandle, HandwritingCanvasP
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
-    e.preventDefault();
     const coords = getCoordinates(e);
-
     ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
   };
@@ -116,7 +131,7 @@ const HandwritingCanvas = forwardRef<HandwritingCanvasHandle, HandwritingCanvasP
   return (
     <div className="relative group">
       {placeholder && !hasStroke && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-700 font-bold uppercase tracking-widest text-sm">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-700 font-bold uppercase tracking-widest text-sm select-none">
           {placeholder} {required && <span className="text-red-900 ml-1">*</span>}
         </div>
       )}
@@ -125,7 +140,7 @@ const HandwritingCanvas = forwardRef<HandwritingCanvasHandle, HandwritingCanvasP
         width={width}
         height={height}
         onContextMenu={(e) => e.preventDefault()}
-        className="w-full bg-gray-900/40 border border-white/10 rounded-2xl cursor-crosshair touch-none active:border-[#0cf]/50 transition-colors select-none [-webkit-touch-callout:none]"
+        className="w-full bg-gray-900/40 border border-white/10 rounded-2xl cursor-crosshair active:border-[#0cf]/50 transition-colors select-none touch-none [-webkit-touch-callout:none]"
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}
@@ -145,7 +160,7 @@ const HandwritingCanvas = forwardRef<HandwritingCanvasHandle, HandwritingCanvasP
                 onStrokeChange?.(false);
             }
         }}
-        className="absolute bottom-2 right-2 p-1 text-[8px] font-mono text-gray-500 hover:text-white uppercase tracking-tighter"
+        className="absolute bottom-2 right-2 p-1 text-[8px] font-mono text-gray-500 hover:text-white uppercase tracking-tighter select-none"
       >
         Clear
       </button>

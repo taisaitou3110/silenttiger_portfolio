@@ -47,6 +47,7 @@ export default function HandwritingDashboard() {
   const handleSwitch = (profile: any) => {
     setActiveProfile(profile);
     localStorage.setItem('handwriting_active_profile_id', profile.id);
+    setShowCreate(false); // 💡 ウィンドウを閉じる
   };
 
   const docTypes = [

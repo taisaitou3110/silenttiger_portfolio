@@ -12,7 +12,7 @@ export default function GlobalPortal() {
   // グループごとにアプリを分類
   const appsByGroup = Object.entries(GUIDE_GROUPS).map(([groupId, groupTitle]) => {
     const apps = Object.values(GUIDE_CONTENTS).filter(
-      (app) => app.group === groupId
+      (app) => app.group === groupId && !(app as any).hideFromPortal
     );
     return { groupId, groupTitle, apps };
   });

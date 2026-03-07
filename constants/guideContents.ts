@@ -45,6 +45,17 @@ export const GUIDE_CONTENTS: Record<string, GuideContent & { group: keyof typeof
     techStack: ["Next.js", "Gemini 1.5 Flash", "Prisma"],
     image: "/images/image_background_bookshelf.jpg",
     path: "/bookshelf/scan",
+    hideFromPortal: true,
+  },
+  BOOKSHELF_APP: {
+    group: "LIFE_LOG",
+    title: "マイ本棚 Portal",
+    tagline: "あなたの蔵書と地域図書館をシンクロさせる。",
+    overview: "登録した蔵書の一覧管理に加え、呉市・東広島市の図書館の蔵書状況をリアルタイムに確認できます。",
+    howTo: ["蔵書を一覧で確認", "ステータス（読了・未読など）を管理", "地域図書館の在庫をチェック"],
+    techStack: ["Next.js", "Calil API", "Prisma"],
+    image: "/images/image_background_bookshelf.jpg",
+    path: "/bookshelf",
   },
   CALORIE_APP: {
     group: "LIFE_LOG",

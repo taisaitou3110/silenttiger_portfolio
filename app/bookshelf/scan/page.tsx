@@ -1,25 +1,21 @@
-// app/bookshelf/scan/page.tsx
 "use client";
 
 import { useState, FormEvent, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, HelpCircle } from 'lucide-react';
+import { ChevronLeft, HelpCircle, Camera, Search, Sparkles } from 'lucide-react';
 import CameraView from '@/app/bookshelf/components/CameraView';
 import MessageBox from '@/components/MessageBox';
-import FFMessageBox from '@/components/FFMessageBox';
-import { ActionButton } from '@/components/ActionButton';
+import LoadingButton from '@/components/LoadingButton';
 import { GoldStatus } from '@/components/GoldStatus';
 import { getUserGoldData } from '@/lib/actions';
-// ✅ 追加：共通コンポーネントとガイド内容
 import { WelcomeGuide } from '@/components/Navigation/WelcomeGuide';
 import { GUIDE_CONTENTS } from '@/constants/guideContents';
 import { useSessionFirstTime } from '@/hooks/useSessionFirstTime';
 
 const ScanPage = () => {
   const router = useRouter();
-  // ✅ 追加：ガイドの表示管理ロジック
   const { isOpen, markAsSeen, showAgain } = useSessionFirstTime('bookshelf-scan-guide');
   const [error, setError] = useState<string | null>(null);
   const [cameraAccessError, setCameraAccessError] = useState<string | null>(null);
@@ -38,7 +34,6 @@ const ScanPage = () => {
 
   const handleScanSuccess = useCallback((decodedText: string) => {
     if (isNavigatingRef.current) return;
-    
     isNavigatingRef.current = true;
     setIsScanning(false);
     router.push(`/bookshelf/book/${decodedText}`);
@@ -48,8 +43,6 @@ const ScanPage = () => {
     if (errorMessage.includes("NotAllowedError") || errorMessage.includes("NotFoundError")) {
       setCameraAccessError(`カメラへのアクセスがブロックされました。ブラウザの設定を確認してください。`);
       setIsScanning(false);
-    } else {
-      console.warn("Transient scan error:", errorMessage);
     }
   }, []);
   
@@ -72,119 +65,105 @@ const ScanPage = () => {
     setIsScanning(false);
   }, []);
 
-  const displayMessage = cameraAccessError
-    ? "カメラが利用できません。\nブラウザの設定でカメラへのアクセスを許可してください。"
-    : "カメラに本のバーコードをかざすか、下部のボックスに入力してください。";
-
   return (
-    <div className="relative min-h-screen bg-slate-50 overflow-x-hidden">
-      {/* システム共通背景 */}
-      <Image
-        src="/images/toppage_wheel_labo.png"
-        alt="Background"
-        fill
-        className="object-cover z-0 opacity-10"
-        priority
-      />
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-[#0cf]/30">
+      <div className="fixed inset-0 pointer-events-none opacity-10">
+        <Image src="/images/toppage_wheel_labo.png" alt="" fill className="object-cover" />
+      </div>
 
-      {/* ✅ 11.1：WelcomeGuide の配置 */}
       <WelcomeGuide 
         content={GUIDE_CONTENTS.BOOKSHELF_SCAN} 
         isOpen={isOpen} 
         onClose={markAsSeen} 
       />
 
-      <div className="relative z-10 flex flex-col min-h-screen">
-        {/* ✅ 10.1：第10章ルールに基づきヘッダーを修正 */}
-        <header className="p-4 sm:p-6 flex justify-between items-center bg-white/80 backdrop-blur-md border-b border-gray-200">
-          <div className="flex items-center gap-4">
-            <Link 
-              href="/" 
-              className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              ポータルへ戻る
-            </Link>
-
-            <button 
-              onClick={() => showAgain()}
-              className="text-sm text-gray-500 hover:text-indigo-600 flex items-center gap-1 transition-colors border-l pl-4 border-gray-300"
-            >
-              <HelpCircle className="w-5 h-5" />
-              使い方を確認
-            </button>
+      <div className="relative z-10 max-w-2xl mx-auto px-6 py-12">
+        <header className="mb-12 animate-in fade-in slide-in-from-top duration-700">
+          <div className="flex justify-between items-start mb-8">
+            <div className="flex items-center gap-4">
+                <Link href="/bookshelf" className="text-[#0cf] text-sm font-bold tracking-widest uppercase hover:opacity-80 transition-opacity flex items-center gap-2">
+                    <ChevronLeft className="w-4 h-4" /> Bookshelf
+                </Link>
+                <button onClick={showAgain} className="p-2 bg-white/5 text-gray-500 rounded-full border border-white/10 hover:bg-white/10 transition-colors">
+                    <HelpCircle className="w-4 h-4" />
+                </button>
+            </div>
+            <GoldStatus amount={gold} />
           </div>
-          
-          <GoldStatus amount={gold} />
+
+          <h1 className="text-4xl font-black tracking-tighter mb-4">ISBN <span className="text-[#0cf]">Scanner</span></h1>
+          <p className="text-gray-400">カメラまたはISBN入力で書籍を特定し、マイ本棚へ追加します。</p>
         </header>
 
-        <main className="flex flex-col items-center p-4 sm:p-8 max-w-2xl mx-auto w-full">
-          <h1 className="text-3xl font-bold mb-8 text-gray-800">蔵書マネージャー</h1>
-
-          <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-gray-700">ISBNで書籍を検索</h2>
-            
-            {/* カメラ表示エリア */}
-            <div className="w-full max-w-md mx-auto border-2 border-gray-200 rounded-xl overflow-hidden mb-6 bg-gray-50">
-              {cameraAccessError ? (
-                <div className="flex items-center justify-center h-64 bg-red-50 text-red-700">
-                  <p className="text-center p-4">{cameraAccessError}</p>
+        <main className="space-y-12">
+          {/* Camera Section */}
+          <section className="bg-gray-900/40 border border-white/10 rounded-[32px] overflow-hidden">
+            <div className="p-8 border-b border-white/5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <Camera className="w-5 h-5 text-[#0cf]" />
+                    <h2 className="text-sm font-black uppercase tracking-widest">Vision Scan</h2>
                 </div>
-              ) : (
-                <div className="relative aspect-square sm:aspect-video bg-black">
-                  {!isScanning && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-10">
-                      <ActionButton onClick={() => setIsScanning(true)}>
-                        📸 スキャン開始
-                      </ActionButton>
+                {!isScanning && (
+                    <button 
+                        onClick={() => setIsScanning(true)}
+                        className="px-6 py-2 bg-[#0cf] text-black font-black text-[10px] rounded-lg hover:scale-105 transition-transform"
+                    >
+                        ACTIVATE SENSOR
+                    </button>
+                )}
+            </div>
+
+            <div className="relative aspect-video bg-black/60 flex items-center justify-center">
+                {cameraAccessError ? (
+                    <div className="p-8 text-center text-red-500">
+                        <p className="text-sm font-bold">{cameraAccessError}</p>
                     </div>
-                  )}
-                  <CameraView
-                    isScanning={isScanning}
-                    onScanSuccess={handleScanSuccess}
-                    onScanFailure={handleScanFailure}
-                    onScanStop={handleScanStop}
-                  />
+                ) : !isScanning ? (
+                    <div className="text-center opacity-20">
+                        <Sparkles className="w-12 h-12 mx-auto mb-4" />
+                        <p className="font-mono text-[10px] uppercase tracking-widest">Awaiting Activation...</p>
+                    </div>
+                ) : (
+                    <CameraView
+                        isScanning={isScanning}
+                        onScanSuccess={handleScanSuccess}
+                        onScanFailure={handleScanFailure}
+                        onScanStop={handleScanStop}
+                    />
+                )}
+                {isScanning && <div className="absolute inset-0 pointer-events-none border-2 border-[#0cf]/30 rounded-lg animate-pulse" />}
+            </div>
+          </section>
+
+          {/* Manual Input */}
+          <section className="bg-white/5 border border-white/10 rounded-[32px] p-8">
+            <div className="flex items-center gap-3 mb-8">
+                <Search className="w-5 h-5 text-[#0cf]" />
+                <h2 className="text-sm font-black uppercase tracking-widest">Manual Entry</h2>
+            </div>
+
+            <form onSubmit={handleManualSubmit} className="space-y-6">
+                <div className="space-y-4">
+                    <label className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">ISBN-10 / ISBN-13</label>
+                    <input
+                        type="text"
+                        inputMode="numeric"
+                        value={isbnInput}
+                        onChange={(e) => setIsbnInput(e.target.value.replace(/\D/g, ''))}
+                        placeholder="例: 9784041092000"
+                        className="w-full bg-black border border-white/10 rounded-2xl p-6 text-2xl font-black text-[#0cf] focus:border-[#0cf] outline-none transition-all placeholder:text-gray-800"
+                    />
                 </div>
-              )}
-            </div>
-
-            {/* 手動入力フォーム */}
-            <form onSubmit={handleManualSubmit} className="w-full max-w-md mx-auto">
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={isbnInput}
-                  onChange={(e) => setIsbnInput(e.target.value.replace(/\D/g, ''))}
-                  placeholder="ISBNコード(ハイフンなし)"
-                  className="flex-grow p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                />
-                <ActionButton type="submit">検索</ActionButton>
-              </div>
+                <LoadingButton 
+                    type="submit" 
+                    className="w-full py-4 bg-white/5 hover:bg-white/10 text-white font-black rounded-2xl transition-all border border-white/10"
+                >
+                    SEARCH DATABASE
+                </LoadingButton>
             </form>
-            
-            {error && (
-              <div className="mt-4 w-full max-w-md mx-auto">
-                <MessageBox status="error" title="入力エラー" description={error} onClose={() => setError(null)} />
-              </div>
-            )}
-          </div>
+          </section>
 
-          <div className="w-full max-w-md">
-            <FFMessageBox message={displayMessage} />
-          </div>
-          
-          {cameraAccessError && (
-            <div className="mt-8 p-4 bg-gray-100 rounded-lg text-sm text-gray-600 w-full max-w-md">
-              <p className="font-bold mb-2">【トラブルシューティング】</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>ブラウザの設定でカメラアクセスを「許可」してください。</li>
-                <li>別のアプリがカメラを使用していないか確認してください。</li>
-              </ul>
-            </div>
-          )}
+          {error && <MessageBox status="error" title="Input Error" description={error} onClose={() => setError(null)} />}
         </main>
       </div>
     </div>

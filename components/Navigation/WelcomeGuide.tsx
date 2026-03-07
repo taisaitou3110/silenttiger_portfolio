@@ -22,8 +22,8 @@ interface WelcomeGuideProps {
 }
 
 export const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ content, isOpen, onClose }) => {
-  // 開いていない時は何も表示しない
-  if (!isOpen) return null;
+  // 開いていない時、またはコンテンツがない時は何も表示しない
+  if (!isOpen || !content) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -81,7 +81,7 @@ export const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ content, isOpen, onC
           <section>
             <h3 className="font-bold text-indigo-600 mb-2">使いかた</h3>
             <ul className="space-y-2">
-              {content.howTo.map((item, index) => (
+              {content.howTo && content.howTo.map((item, index) => (
                 <li key={index} className="flex gap-3 text-sm text-gray-600">
                   <span className="flex-shrink-0 w-5 h-5 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold">
                     {index + 1}
@@ -95,7 +95,7 @@ export const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ content, isOpen, onC
           <section>
             <h3 className="font-bold text-indigo-600 mb-2">技術構成</h3>
             <div className="flex flex-wrap gap-2">
-              {content.techStack.map((tech) => (
+              {content.techStack && content.techStack.map((tech) => (
                 <span key={tech} className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-medium">
                   {tech}
                 </span>

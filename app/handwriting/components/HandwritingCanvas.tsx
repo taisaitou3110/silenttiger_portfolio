@@ -17,7 +17,7 @@ export interface HandwritingCanvasHandle {
 }
 
 const HandwritingCanvas = forwardRef<HandwritingCanvasHandle, HandwritingCanvasProps>(({
-  width = 800, // 高解像度化
+  width = 800,
   height = 300,
   placeholder,
   onStrokeChange,
@@ -74,7 +74,6 @@ const HandwritingCanvas = forwardRef<HandwritingCanvasHandle, HandwritingCanvasP
       clientY = e.clientY;
     }
 
-    // CSSスケーリングを考慮した座標計算
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
@@ -125,7 +124,8 @@ const HandwritingCanvas = forwardRef<HandwritingCanvasHandle, HandwritingCanvasP
         ref={canvasRef}
         width={width}
         height={height}
-        className="w-full bg-gray-900/40 border border-white/10 rounded-2xl cursor-crosshair touch-none active:border-[#0cf]/50 transition-colors"
+        onContextMenu={(e) => e.preventDefault()}
+        className="w-full bg-gray-900/40 border border-white/10 rounded-2xl cursor-crosshair touch-none active:border-[#0cf]/50 transition-colors select-none [-webkit-touch-callout:none]"
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}

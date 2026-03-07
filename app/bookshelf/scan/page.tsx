@@ -54,28 +54,32 @@ const ScanPage = () => {
     addLog("System initialized. Awaiting sensor activation.");
   }, [addLog]);
 
+  const performSearch = useCallback((isbn: string) => {
+    if (isNavigatingRef.current) return;
+    
+    const isbnRegex = /^(?:\d{10}|\d{13})$/;
+    if (!isbnRegex.test(isbn)) {
+      setError('有効なISBNコード（10桁または13桁の半角数字）を入力してください。');
+      return;
+    }
+
+    isNavigatingRef.current = true;
+    setIsScanning(false);
+    addLog(`SEARCHING DATABASE: ${isbn}`);
+    router.push(`/bookshelf/book/${isbn}`);
+  }, [router, addLog]);
+
   const handleScanSuccess = useCallback((decodedText: string) => {
-    // 日本のISBNは通常 978 または 979 から始まる
     const isISBN = decodedText.startsWith('978') || decodedText.startsWith('979');
     
     if (isISBN) {
         addLog(`DETECTED: ${decodedText} (Valid ISBN)`);
         playBeep();
-        
-        if (isNavigatingRef.current) return;
-        isNavigatingRef.current = true;
-        setIsScanning(false);
-        addLog("Navigating to database...");
-        
-        // ログを確認できるよう少し待機してから遷移
-        setTimeout(() => {
-            router.push(`/bookshelf/book/${decodedText}`);
-        }, 800);
+        setTimeout(() => performSearch(decodedText), 800);
     } else {
-        // 価格バーコード (19... 等) を無視
         addLog(`SKIPPED: ${decodedText} (Not an ISBN)`);
     }
-  }, [router, addLog]);
+  }, [addLog, performSearch]);
 
   const handleScanFailure = useCallback((errorMessage: string) => {
     if (errorMessage.includes("NotAllowedError") || errorMessage.includes("NotFoundError")) {
@@ -85,22 +89,20 @@ const ScanPage = () => {
     }
   }, [addLog]);
   
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '');
+    setIsbnInput(value);
+    
+    // 13桁入力されたら自動で検索
+    if (value.length === 13) {
+        performSearch(value);
+    }
+  };
+
   const handleManualSubmit = (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    addLog(`Manual Entry Attempt: ${isbnInput}`);
-
-    const isbnRegex = /^(?:\d{10}|\d{13})$/;
-    if (!isbnRegex.test(isbnInput)) {
-      addLog("Validation Failed: Invalid ISBN format.");
-      setError('有効なISBNコード（10桁または13桁の半角数字）を入力してください。');
-      return;
-    }
-    
-    if (isNavigatingRef.current) return;
-    isNavigatingRef.current = true;
-    addLog("Navigating to book details...");
-    router.push(`/bookshelf/book/${isbnInput}`);
+    performSearch(isbnInput);
   };
 
   const handleScanStop = useCallback(() => {
@@ -217,8 +219,11 @@ const ScanPage = () => {
                     <input
                         type="text"
                         inputMode="numeric"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck="false"
                         value={isbnInput}
-                        onChange={(e) => setIsbnInput(e.target.value.replace(/\D/g, ''))}
+                        onChange={handleInputChange}
                         placeholder="例: 9784041092000"
                         className="w-full bg-black border border-white/10 rounded-2xl p-6 text-2xl font-black text-[#0cf] focus:border-[#0cf] outline-none transition-all placeholder:text-gray-800"
                     />

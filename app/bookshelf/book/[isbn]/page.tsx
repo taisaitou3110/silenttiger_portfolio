@@ -97,9 +97,15 @@ export default function BookDetailPage({ params }: { params: { isbn: string } })
 
       <main className="relative z-10 max-w-4xl mx-auto px-6 py-12">
         <header className="mb-12 animate-in fade-in slide-in-from-top duration-700">
-          <Link href="/bookshelf" className="text-[#0cf] text-sm font-bold tracking-widest uppercase hover:opacity-80 transition-opacity flex items-center gap-2 mb-8">
-            <ChevronLeft className="w-4 h-4" /> Back to Bookshelf
-          </Link>
+          <div className="flex justify-between items-start mb-8">
+            <Link href="/bookshelf" className="text-[#0cf] text-sm font-bold tracking-widest uppercase hover:opacity-80 transition-opacity flex items-center gap-2">
+                <ChevronLeft className="w-4 h-4" /> Back to Bookshelf
+            </Link>
+            
+            <Link href="/bookshelf/scan" className="px-4 py-2 bg-[#0cf]/10 border border-[#0cf]/30 text-[#0cf] text-[10px] font-black rounded-lg hover:bg-[#0cf] hover:text-black transition-all flex items-center gap-2 uppercase tracking-widest">
+                <Save className="w-3 h-3" /> Add New Book
+            </Link>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-12 items-start">
             <div className="relative group mx-auto md:mx-0">

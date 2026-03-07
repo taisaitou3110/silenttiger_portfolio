@@ -4,7 +4,7 @@ import { useState, FormEvent, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronLeft, HelpCircle, Camera, Search, Sparkles } from 'lucide-react';
+import { ChevronLeft, HelpCircle, Camera, Search, Sparkles, Terminal } from 'lucide-react';
 import CameraView from '@/app/bookshelf/components/CameraView';
 import MessageBox from '@/components/MessageBox';
 import LoadingButton from '@/components/LoadingButton';
@@ -22,7 +22,13 @@ const ScanPage = () => {
   const [isbnInput, setIsbnInput] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [gold, setGold] = useState(0);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const isNavigatingRef = useRef(false);
+
+  const addLog = useCallback((msg: string) => {
+    console.log(`[VisionDebug] ${msg}`);
+    setDebugLogs(prev => [...prev.slice(-4), `${new Date().toLocaleTimeString()}: ${msg}`]);
+  }, []);
 
   useEffect(() => {
     const fetchGold = async () => {
@@ -30,40 +36,69 @@ const ScanPage = () => {
       setGold(data.gold);
     };
     fetchGold();
-  }, []);
+    addLog("System initialized. Awaiting sensor activation.");
+  }, [addLog]);
 
   const handleScanSuccess = useCallback((decodedText: string) => {
-    if (isNavigatingRef.current) return;
+    addLog(`Scan Success: ISBN ${decodedText}`);
+    if (isNavigatingRef.current) {
+        addLog("Navigation already in progress, skipping.");
+        return;
+    }
+    
     isNavigatingRef.current = true;
     setIsScanning(false);
+    addLog("Navigating to book details...");
     router.push(`/bookshelf/book/${decodedText}`);
-  }, [router]);
+  }, [router, addLog]);
 
   const handleScanFailure = useCallback((errorMessage: string) => {
     if (errorMessage.includes("NotAllowedError") || errorMessage.includes("NotFoundError")) {
+      addLog(`Critical Camera Error: ${errorMessage}`);
       setCameraAccessError(`カメラへのアクセスがブロックされました。ブラウザの設定を確認してください。`);
       setIsScanning(false);
     }
-  }, []);
+  }, [addLog]);
   
   const handleManualSubmit = (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    addLog(`Manual Entry Attempt: ${isbnInput}`);
 
     const isbnRegex = /^(?:\d{10}|\d{13})$/;
     if (!isbnRegex.test(isbnInput)) {
+      addLog("Validation Failed: Invalid ISBN format.");
       setError('有効なISBNコード（10桁または13桁の半角数字）を入力してください。');
       return;
     }
     
     if (isNavigatingRef.current) return;
     isNavigatingRef.current = true;
+    addLog("Navigating to book details...");
     router.push(`/bookshelf/book/${isbnInput}`);
   };
 
   const handleScanStop = useCallback(() => {
+    addLog("Sensor deactivated.");
     setIsScanning(false);
-  }, []);
+  }, [addLog]);
+
+  const toggleScan = () => {
+    const nextState = !isScanning;
+    addLog(nextState ? "Activating Vision Sensor..." : "Deactivating Sensor...");
+    setIsScanning(nextState);
+
+    if (nextState) {
+      setTimeout(() => {
+        if (isNavigatingRef.current) return;
+        setDebugLogs(prev => {
+          if (prev.some(l => l.includes("started") || l.includes("Error"))) return prev;
+          const msg = `${new Date().toLocaleTimeString()}: [Warning] Sensor taking too long. Check permissions or HTTPS.`;
+          return [...prev.slice(-4), msg];
+        });
+      }, 5000);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-[#0cf]/30">
@@ -103,14 +138,12 @@ const ScanPage = () => {
                     <Camera className="w-5 h-5 text-[#0cf]" />
                     <h2 className="text-sm font-black uppercase tracking-widest">Vision Scan</h2>
                 </div>
-                {!isScanning && (
-                    <button 
-                        onClick={() => setIsScanning(true)}
-                        className="px-6 py-2 bg-[#0cf] text-black font-black text-[10px] rounded-lg hover:scale-105 transition-transform"
-                    >
-                        ACTIVATE SENSOR
-                    </button>
-                )}
+                <button 
+                    onClick={toggleScan}
+                    className={`px-6 py-2 font-black text-[10px] rounded-lg transition-all ${isScanning ? 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-[#0cf] text-black hover:scale-105'}`}
+                >
+                    {isScanning ? 'DEACTIVATE SENSOR' : 'ACTIVATE SENSOR'}
+                </button>
             </div>
 
             <div className="relative aspect-video bg-black/60 flex items-center justify-center">
@@ -129,10 +162,21 @@ const ScanPage = () => {
                         onScanSuccess={handleScanSuccess}
                         onScanFailure={handleScanFailure}
                         onScanStop={handleScanStop}
+                        onLog={addLog}
                     />
                 )}
-                {isScanning && <div className="absolute inset-0 pointer-events-none border-2 border-[#0cf]/30 rounded-lg animate-pulse" />}
+                {isScanning && <div className="absolute inset-0 pointer-events-none border-2 border-[#0cf]/30 rounded-lg animate-pulse z-20" />}
             </div>
+
+            {/* Debug Logs */}
+            {debugLogs.length > 0 && (
+                <div className="p-4 bg-black/60 border-t border-white/5 font-mono text-[8px] text-gray-500 space-y-1">
+                    <div className="flex items-center gap-2 mb-1 text-gray-600">
+                        <Terminal className="w-2 h-2" /> SYSTEM DIAGNOSTICS
+                    </div>
+                    {debugLogs.map((log, i) => <div key={i}>{log}</div>)}
+                </div>
+            )}
           </section>
 
           {/* Manual Input */}

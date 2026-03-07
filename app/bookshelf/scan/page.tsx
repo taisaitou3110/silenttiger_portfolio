@@ -27,8 +27,23 @@ const ScanPage = () => {
 
   const addLog = useCallback((msg: string) => {
     console.log(`[VisionDebug] ${msg}`);
-    setDebugLogs(prev => [...prev.slice(-4), `${new Date().toLocaleTimeString()}: ${msg}`]);
+    setDebugLogs(prev => [`${new Date().toLocaleTimeString()}: ${msg}`, ...prev.slice(0, 3)]);
   }, []);
+
+  const playBeep = () => {
+    try {
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.1);
+    } catch (e) {}
+  };
 
   useEffect(() => {
     const fetchGold = async () => {
@@ -40,16 +55,26 @@ const ScanPage = () => {
   }, [addLog]);
 
   const handleScanSuccess = useCallback((decodedText: string) => {
-    addLog(`Scan Success: ISBN ${decodedText}`);
-    if (isNavigatingRef.current) {
-        addLog("Navigation already in progress, skipping.");
-        return;
-    }
+    // 日本のISBNは通常 978 または 979 から始まる
+    const isISBN = decodedText.startsWith('978') || decodedText.startsWith('979');
     
-    isNavigatingRef.current = true;
-    setIsScanning(false);
-    addLog("Navigating to book details...");
-    router.push(`/bookshelf/book/${decodedText}`);
+    if (isISBN) {
+        addLog(`DETECTED: ${decodedText} (Valid ISBN)`);
+        playBeep();
+        
+        if (isNavigatingRef.current) return;
+        isNavigatingRef.current = true;
+        setIsScanning(false);
+        addLog("Navigating to database...");
+        
+        // ログを確認できるよう少し待機してから遷移
+        setTimeout(() => {
+            router.push(`/bookshelf/book/${decodedText}`);
+        }, 800);
+    } else {
+        // 価格バーコード (19... 等) を無視
+        addLog(`SKIPPED: ${decodedText} (Not an ISBN)`);
+    }
   }, [router, addLog]);
 
   const handleScanFailure = useCallback((errorMessage: string) => {
@@ -92,9 +117,9 @@ const ScanPage = () => {
       setTimeout(() => {
         if (isNavigatingRef.current) return;
         setDebugLogs(prev => {
-          if (prev.some(l => l.includes("started") || l.includes("Error"))) return prev;
+          if (prev.some(l => l.includes("Sensor Online") || l.includes("Error"))) return prev;
           const msg = `${new Date().toLocaleTimeString()}: [Warning] Sensor taking too long. Check permissions or HTTPS.`;
-          return [...prev.slice(-4), msg];
+          return [msg, ...prev.slice(0, 3)];
         });
       }, 5000);
     }

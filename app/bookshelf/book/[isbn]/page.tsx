@@ -15,12 +15,15 @@ import {
   Star,
   Zap,
   Loader2,
-  Info
+  Info,
+  Save,
+  Database
 } from 'lucide-react';
 import { getBookDetails, BookDetail } from './actions';
 import { saveBook } from '../../actions';
 import { LibraryStatus } from '@/app/bookshelf/utils/calil';
 import MessageBox from '@/components/MessageBox';
+import LoadingButton from '@/components/LoadingButton';
 
 export default function BookDetailPage({ params }: { params: { isbn: string } }) {
   const unwrappedParams = React.use(params as any) as { isbn: string };
@@ -30,7 +33,10 @@ export default function BookDetailPage({ params }: { params: { isbn: string } })
   const [book, setBook] = useState<BookDetail | null>(null);
   const [libraryStatuses, setLibraryStatuses] = useState<LibraryStatus[]>([]);
   const [error, setError] = useState<string | null>(null);
+  
+  // UI状態
   const [status, setStatus] = useState<"READING" | "COMPLETED" | "UNREAD">("UNREAD");
+  const [isSavedInDB, setIsSavedInDB] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -41,13 +47,18 @@ export default function BookDetailPage({ params }: { params: { isbn: string } })
       } else {
         setBook(result.book);
         setLibraryStatuses(result.libraryStatuses);
+        // 初期状態を反映
+        if (result.book.isSaved) {
+            setIsSavedInDB(true);
+            setStatus(result.book.savedStatus as any);
+        }
       }
       setLoading(false);
     }
     load();
   }, [isbn]);
 
-  const handleStatusChange = async (newStatus: typeof status) => {
+  const handleSaveAction = async () => {
     if (!book) return;
     setIsSaving(true);
     const res = await saveBook({
@@ -55,10 +66,10 @@ export default function BookDetailPage({ params }: { params: { isbn: string } })
       title: book.title,
       authors: book.author,
       thumbnail: book.imageUrl,
-      status: newStatus
+      status: status
     });
     if (res.success) {
-      setStatus(newStatus);
+      setIsSavedInDB(true);
     }
     setIsSaving(false);
   };
@@ -80,7 +91,6 @@ export default function BookDetailPage({ params }: { params: { isbn: string } })
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-[#0cf]/30 pb-24">
-      {/* Background decoration */}
       <div className="fixed inset-0 pointer-events-none opacity-5">
         <Image src="/images/toppage_wheel_labo.png" alt="" fill className="object-cover" />
       </div>
@@ -92,10 +102,9 @@ export default function BookDetailPage({ params }: { params: { isbn: string } })
           </Link>
 
           <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-12 items-start">
-            {/* Book Cover */}
-            <div className="relative group">
+            <div className="relative group mx-auto md:mx-0">
               <div className="absolute -inset-1 bg-gradient-to-br from-[#0cf] to-blue-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-              <div className="relative aspect-[2/3] w-full bg-gray-900 rounded-xl overflow-hidden border border-white/10 shadow-2xl">
+              <div className="relative aspect-[2/3] w-48 md:w-full bg-gray-900 rounded-xl overflow-hidden border border-white/10 shadow-2xl">
                 {book.imageUrl ? (
                   <img src={book.imageUrl} alt={book.title} className="w-full h-full object-cover" />
                 ) : (
@@ -104,11 +113,60 @@ export default function BookDetailPage({ params }: { params: { isbn: string } })
               </div>
             </div>
 
-            {/* Info */}
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div>
                 <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2 leading-tight">{book.title}</h1>
                 <p className="text-xl text-[#0cf] font-medium">{book.author}</p>
+              </div>
+
+              {/* Status & Save Action */}
+              <div className="p-8 bg-white/5 border border-white/10 rounded-[32px] space-y-6">
+                <div className="space-y-3">
+                    <label className="text-[10px] font-mono text-gray-500 uppercase tracking-widest block">1. Select Status</label>
+                    <div className="p-1 bg-black/40 rounded-xl border border-white/5 inline-flex w-full md:w-auto">
+                        {[
+                        { id: 'UNREAD', label: '未読', icon: <Bookmark className="w-3 h-3" /> },
+                        { id: 'READING', label: '読書中', icon: <Clock className="w-3 h-3" /> },
+                        { id: 'COMPLETED', label: '読了', icon: <CheckCircle className="w-3 h-3" /> },
+                        ].map((s) => (
+                        <button
+                            key={s.id}
+                            onClick={() => {
+                                setStatus(s.id as any);
+                                if (isSavedInDB) handleSaveAction(); // 保存済みなら即時更新
+                            }}
+                            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold transition-all ${status === s.id ? 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'text-gray-500 hover:text-white'}`}
+                        >
+                            {s.icon} {s.label}
+                        </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="space-y-3">
+                    <label className="text-[10px] font-mono text-gray-500 uppercase tracking-widest block">2. Execute Database Sync</label>
+                    <LoadingButton
+                        onClick={handleSaveAction}
+                        isLoading={isSaving}
+                        className={`w-full py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 ${
+                            isSavedInDB 
+                            ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 cursor-default' 
+                            : 'bg-[#0cf] text-black hover:scale-[1.02] shadow-[0_0_20px_rgba(0,204,255,0.3)]'
+                        }`}
+                    >
+                        {isSavedInDB ? (
+                            <>
+                                <CheckCircle className="w-6 h-6" />
+                                SYNCED TO MY BOOKSHELF
+                            </>
+                        ) : (
+                            <>
+                                <Database className="w-6 h-6" />
+                                SAVE TO MY BOOKSHELF
+                            </>
+                        )}
+                    </LoadingButton>
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-4 text-[10px] font-mono uppercase tracking-widest text-gray-500">
@@ -116,33 +174,11 @@ export default function BookDetailPage({ params }: { params: { isbn: string } })
                 <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full">ISBN: {book.isbn}</span>
                 <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full">{book.publishedDate}</span>
               </div>
-
-              {/* Status Segmented Control */}
-              <div className="space-y-3">
-                <label className="text-[10px] font-mono text-gray-500 uppercase tracking-widest block">Collection Status</label>
-                <div className="p-1 bg-gray-900/60 rounded-xl border border-white/5 inline-flex">
-                    {[
-                    { id: 'UNREAD', label: '未読', icon: <Bookmark className="w-3 h-3" /> },
-                    { id: 'READING', label: '読書中', icon: <Clock className="w-3 h-3" /> },
-                    { id: 'COMPLETED', label: '読了', icon: <CheckCircle className="w-3 h-3" /> },
-                    ].map((s) => (
-                    <button
-                        key={s.id}
-                        onClick={() => handleStatusChange(s.id as any)}
-                        disabled={isSaving}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${status === s.id ? 'bg-[#0cf] text-black shadow-[0_0_10px_#0cf]' : 'text-gray-500 hover:text-white'}`}
-                    >
-                        {s.icon} {s.label}
-                    </button>
-                    ))}
-                </div>
-              </div>
             </div>
           </div>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-12">
-          {/* Main Content */}
           <div className="space-y-12">
             <section className="animate-in fade-in slide-in-from-bottom duration-700 delay-200">
               <h2 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 mb-6 text-gray-400">
@@ -184,13 +220,10 @@ export default function BookDetailPage({ params }: { params: { isbn: string } })
             </section>
           </div>
 
-          {/* Action Sidebar - 4 Choices List */}
           <aside className="space-y-8 animate-in fade-in slide-in-from-right duration-700 delay-400">
             <div className="p-8 bg-gray-900/40 border border-white/10 rounded-[32px] space-y-6">
               <h3 className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">Strategic Actions</h3>
-              
               <div className="space-y-3">
-                {/* 1. Library Search (Quick Jump) */}
                 <button 
                   onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
                   className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-[#0cf]/10 hover:border-[#0cf]/50 transition-all group"
@@ -202,7 +235,6 @@ export default function BookDetailPage({ params }: { params: { isbn: string } })
                   <ChevronLeft className="w-4 h-4 text-gray-600 group-hover:text-white rotate-[270deg]" />
                 </button>
 
-                {/* 2. Reviews */}
                 <a 
                   href={`https://bookmeter.com/search?keyword=${book.title}`} 
                   target="_blank" 
@@ -216,7 +248,6 @@ export default function BookDetailPage({ params }: { params: { isbn: string } })
                   <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-white" />
                 </a>
 
-                {/* 3. Purchase */}
                 <a 
                   href={`https://www.amazon.co.jp/s?k=${book.isbn}`} 
                   target="_blank" 
@@ -229,17 +260,6 @@ export default function BookDetailPage({ params }: { params: { isbn: string } })
                   </div>
                   <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-white" />
                 </a>
-
-                {/* 4. Status Toggle (already handled by segmented control, but adding another utility or similar) */}
-                <button 
-                  className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-purple-500/10 hover:border-purple-500/50 transition-all group"
-                >
-                  <div className="flex items-center gap-3 text-purple-500">
-                    <Zap className="w-5 h-5" />
-                    <span className="text-sm font-bold text-white">Similar Books</span>
-                  </div>
-                  <ChevronLeft className="w-4 h-4 text-gray-600 group-hover:text-white rotate-180" />
-                </button>
               </div>
             </div>
 
@@ -249,7 +269,7 @@ export default function BookDetailPage({ params }: { params: { isbn: string } })
                     <span className="text-[10px] font-mono uppercase tracking-widest">System Memo</span>
                 </div>
                 <p className="text-[10px] text-gray-500 leading-relaxed font-medium">
-                    書籍データは Google Books API および カーリル API を同期して取得しています。蔵書状況は呉市・東広島市のデータを優先表示しています。
+                    書籍データは Google Books API および カーリル API を同期して取得しています。
                 </p>
             </div>
           </aside>

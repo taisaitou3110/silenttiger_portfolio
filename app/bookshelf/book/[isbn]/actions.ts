@@ -1,6 +1,7 @@
 "use server";
 
 import { checkLibraryStock, LibraryStatus } from '@/app/bookshelf/utils/calil';
+import prisma from "@/lib/prisma";
 
 export interface BookDetail {
   isbn: string;
@@ -10,6 +11,8 @@ export interface BookDetail {
   description: string;
   publisher: string;
   publishedDate: string;
+  isSaved?: boolean;
+  savedStatus?: string;
 }
 
 const getBookInfo = async (isbn: string): Promise<{ bookData: BookDetail | null, error: string | null }> => {
@@ -45,13 +48,36 @@ const getBookInfo = async (isbn: string): Promise<{ bookData: BookDetail | null,
 export const getBookDetails = async (isbn: string) => {
     try {
         const { bookData, error } = await getBookInfo(isbn);
-        if(error) {
+        if(error || !bookData) {
             return { error };
+        }
+
+        // DBに既に存在するかチェック
+        const settings = await prisma.userSettings.findFirst();
+        let isSaved = false;
+        let savedStatus = "UNREAD";
+
+        if (settings) {
+            const existing = await prisma.book.findUnique({
+                where: {
+                    userId_isbn: {
+                        userId: settings.id,
+                        isbn: isbn
+                    }
+                }
+            });
+            if (existing) {
+                isSaved = true;
+                savedStatus = existing.status;
+            }
         }
 
         const libraryStatuses = await checkLibraryStock(isbn);
 
-        return { book: bookData, libraryStatuses };
+        return { 
+            book: { ...bookData, isSaved, savedStatus }, 
+            libraryStatuses 
+        };
 
     } catch (err) {
         return { error: '詳細の取得中に予期せぬエラーが発生しました。' };

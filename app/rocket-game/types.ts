@@ -6,12 +6,14 @@ export interface Point {
 
 export interface LevelConfig {
   name: string;
+  description?: string;
   targetX: number;
   targetY: number;
   drag: number;
   obstacle: boolean;
   hasWind?: boolean;
   startHeight?: number;
+  fixedAngle?: number;
   obstacleX?: number;
   obstacleWidth?: number;
   obstacleHeight?: number;

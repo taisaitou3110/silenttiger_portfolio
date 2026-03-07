@@ -33,6 +33,7 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
   const [failedAttempts, setFailedAttempts] = useState(0); // 失敗回数カウンター
   const [hint, setHint] = useState<string | null>(null); // ヒントメッセージ
   const [canvasSize, setCanvasSize] = useState({ width: CANVAS_WIDTH, height: 400 });
+  const [levelDescription, setLevelDescription] = useState<string | null>(null); // レベル開始時メッセージ
 
   // ガイド表示の管理
   const { isOpen: isGuideOpen, markAsSeen, showAgain } = useSessionFirstTime('has_seen_rocket_guide');
@@ -59,10 +60,12 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
       const newFailedCount = failedAttempts + 1;
       if (newFailedCount >= 3) {
         const config = LEVEL_CONFIGS[level];
-        let relevantHint = HINTS.parabolic;
-        if (config.obstacle) relevantHint = HINTS.obstacle;
-        else if (config.drag > 0) relevantHint = HINTS.drag;
-        setHint(relevantHint);
+        if (config) {
+            let relevantHint = HINTS.parabolic;
+            if (config.obstacle) relevantHint = HINTS.obstacle;
+            else if (config.drag > 0) relevantHint = HINTS.drag;
+            setHint(relevantHint);
+        }
         setFailedAttempts(0);
       } else {
         setFailedAttempts(newFailedCount);
@@ -79,8 +82,8 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
     const ctx = contextRef.current;
     if (!ctx) return;
 
-    if (level === 0 || !LEVEL_CONFIGS[level]) return;
     const currentLevelConfig = LEVEL_CONFIGS[level];
+    if (level === 0 || !currentLevelConfig) return;
 
     if (!rocket.current || !trail.current) return;
 
@@ -106,9 +109,11 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
     let animationFrameId: number;
     const animate = () => {
       const config = LEVEL_CONFIGS[level];
-      updatePhysics(rocket, trail, config, 1.0, wind);
-      draw();
-      animationFrameId = requestAnimationFrame(animate);
+      if (config) {
+          updatePhysics(rocket, trail, config, 1.0, wind);
+          draw();
+          animationFrameId = requestAnimationFrame(animate);
+      }
     };
     animationFrameId = requestAnimationFrame(animate);
 
@@ -140,6 +145,8 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
     reset(); // 💡 物理状態と現在の軌跡をリセット
 
     const config = LEVEL_CONFIGS[level];
+    if (!config) return;
+
     if (config.hasWind) {
       const randomSign = () => (Math.random() < 0.5 ? 1 : -1);
       setWind({ 
@@ -148,6 +155,16 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
       });
     } else {
       setWind({ x: 0, y: 0 });
+    }
+
+    // 💡 レベル開始時のメッセージをセット
+    if (config.description) {
+        setLevelDescription(config.description);
+    }
+
+    // 💡 固定角度の設定があれば適用
+    if (config.fixedAngle !== undefined) {
+        setAngle(config.fixedAngle);
     }
   }, [level, reset]);
 
@@ -186,6 +203,7 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
     if (isFlying) return;
     setResult(null);
     setHint(null);
+    setLevelDescription(null); // 発射したらメッセージを消す
 
     const currentTrail = [...trail.current];
     if (currentTrail.length > 0) {
@@ -254,6 +272,8 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
     );
   }
 
+  const currentConfig = LEVEL_CONFIGS[level];
+
   // --- 表示: ゲーム画面 (Play 画面) ---
   return (
     <div className="text-center font-mono text-white bg-cover bg-fixed w-screen h-screen flex flex-col items-center justify-center relative p-5"
@@ -283,7 +303,7 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
 
       {/* レベルタイトル */}
       <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20 bg-gray-800/70 p-3 px-6 rounded-xl border border-gray-600">
-        <h2 className="text-[#0cf] text-lg sm:text-xl m-0">{LEVEL_CONFIGS[level].name}</h2>
+        <h2 className="text-[#0cf] text-lg sm:text-xl m-0">{currentConfig?.name}</h2>
       </div>
 
       <div className="relative z-10 flex justify-center gap-5 mx-auto flex-wrap w-full">
@@ -311,13 +331,27 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
                 <p className="text-white text-2xl mt-1 mb-0">飛距離: {result.distance}m</p>
                 {result.msg.includes('GOAL') ? (
                   <div className="mt-5">
-                    <p className="text-white text-lg mb-4">次のレベルへ進みますか？</p>
-                    <button 
-                      onClick={() => { setLevel(level + 1); setResult(null); }}
-                      className="bg-[#0cf] text-white border-none py-2 px-5 cursor-pointer rounded-md mr-2 min-h-[44px]"
-                    >
-                      次のレベルへ
-                    </button>
+                    {LEVEL_CONFIGS[level + 1] ? (
+                      <>
+                        <p className="text-white text-lg mb-4">次のレベルへ進みますか？</p>
+                        <button 
+                          onClick={() => { setLevel(level + 1); setResult(null); }}
+                          className="bg-[#0cf] text-white border-none py-2 px-5 cursor-pointer rounded-md mr-2 min-h-[44px]"
+                        >
+                          次のレベルへ
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-[#0cf] text-lg mb-4 font-bold">全レベルクリア！おめでとうございます！</p>
+                        <button 
+                          onClick={() => handleBackToPortal()}
+                          className="bg-[#0cf] text-white border-none py-2 px-5 cursor-pointer rounded-md mr-2 min-h-[44px]"
+                        >
+                          メニューに戻る
+                        </button>
+                      </>
+                    )}
                     <button 
                       onClick={() => setResult(null)}
                       className="bg-gray-700 text-white border-none py-2 px-5 cursor-pointer rounded-md min-h-[44px]"
@@ -363,27 +397,34 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
           title="博士のアドバイス"
           description={hint}
           onClose={() => setHint(null)}
-          actionButton={{
-            label: "おすすめの値をセットする",
-            onClick: () => {
-              setHint(null);
-            }
-          }}
+        />
+      )}
+
+      {/* レベル説明メッセージ (MessageBoxを使用) */}
+      {levelDescription && !isFlying && (
+        <MessageBox 
+          status="info"
+          title={`ミッション: ${currentConfig?.name || ""}`}
+          description={levelDescription}
+          onClose={() => setLevelDescription(null)}
         />
       )}
 
       {/* 操作パネル (外部コンポーネント) */}
       <div className="relative z-10 w-full mt-4">
-        <GameControls 
-          pressure={pressure} 
-          setPressure={setPressure} 
-          angle={angle} 
-          setAngle={setAngle} 
-          onLaunch={handleLaunch} 
-          isFlying={isFlying}
-          hasWind={LEVEL_CONFIGS[level].hasWind}
-          wind={wind}
-        />
+        {currentConfig && (
+            <GameControls 
+                pressure={pressure} 
+                setPressure={setPressure} 
+                angle={angle} 
+                setAngle={setAngle} 
+                onLaunch={handleLaunch} 
+                isFlying={isFlying}
+                hasWind={currentConfig.hasWind}
+                wind={wind}
+                fixedAngle={currentConfig.fixedAngle}
+            />
+        )}
       </div>
 
       <WelcomeGuide 
@@ -394,4 +435,3 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
     </div>
   );
 }
-

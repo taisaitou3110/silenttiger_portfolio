@@ -3,13 +3,13 @@
   "apps": {
     "dashboard": "1.0.0",
     "wordbook": "2.0.0",
-    "calorie": "1.2.0",
+    "calorie": "1.5.0",
     "poker": "1.5.0",
     "feedback": "1.0.0",
     "devlog": "1.0.0",
     "pencil": "1.7.0",
     "bookshelf": "1.0.0",
     "post-assistant":"1.0.0",
-    "handwriting": "1.0.5"
+    "handwriting": "1.2.0"
   }
 }

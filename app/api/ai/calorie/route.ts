@@ -22,34 +22,42 @@ export async function POST(req: NextRequest) {
 
         if (type === 'image') {
           prompt = `あなたはプロの栄養士です。提供された画像を分析し、以下の情報をJSON形式のみで出力してください。
+          画像が食べ物や飲み物、または食事の風景でない場合は、"isFood": false とし、"error": "食べ物の写真ではありません。" と出力してください。
           【出力形式】
           {
+            "isFood": true,
             "foodName": "料理名",
             "calories": 500,
             "breakdown": "ごはん(200kcal), 焼魚(150kcal)等",
-            "advice": "栄養バランスのアドバイス"
+            "advice": "栄養バランスのアドバイス",
+            "error": ""
           }`;
           content = [prompt, { inlineData: { data: data.split(",")[1], mimeType } }];
         } else if (type === 'text') {
-          prompt = `あなたはプロの栄養士です。入力された食事内容を分析し、以下の情報をJSON形式のみで出力してください。
-          食事内容: "${data}"
+          prompt = `あなたはプロの栄養士です。入力された内容を分析し、以下の情報をJSON形式のみで出力してください。
+          入力内容が食事や食品に関する記述でない場合は、"isFood": false とし、"error": "食事に関する内容ではありません。" と出力してください。
+          入力内容: "${data}"
           【出力形式】
           {
+            "isFood": true,
             "foodName": "料理名",
             "calories": 500,
             "breakdown": "ごはん(200kcal), 焼魚(150kcal)等",
-            "advice": "栄養バランスのアドバイス"
+            "advice": "栄養バランスのアドバイス",
+            "error": ""
           }`;
           content = [prompt];
         } else if (type === 'voice') {
-          prompt = `あなたはプロの栄養士です。音声データを文字起こしした情報を元に、以下の情報をJSON形式のみで出力してください。
-          内容が不明確な場合は推定してください。
+          prompt = `あなたはプロの栄養士です。音声データを文字起こしした情報を分析し、以下の情報をJSON形式のみで出力してください。
+          入力内容が食事や食品に関する発言でない場合は、"isFood": false とし、"error": "食事に関する発言ではありません。" と出力してください。
           【出力形式】
           {
+            "isFood": true,
             "foodName": "料理名",
             "calories": 500,
             "breakdown": "解析結果",
-            "advice": "栄養バランスのアドバイス"
+            "advice": "栄養バランスのアドバイス",
+            "error": ""
           }`;
           content = [prompt, { inlineData: { data: data.split(",")[1], mimeType } }];
         }

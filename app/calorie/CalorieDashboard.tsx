@@ -1,12 +1,24 @@
 "use client";
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, HelpCircle } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  HelpCircle, 
+  Camera, 
+  Mic, 
+  History, 
+  ChevronRight, 
+  Target, 
+  Activity, 
+  Flame,
+  Plus,
+  Zap
+} from 'lucide-react';
 import LoadingButton from '@/components/LoadingButton';
-import { addQuickLog, copyPreviousDayLogs } from '@/app/calorie/actions';
+import { addQuickLog } from '@/app/calorie/actions';
 import ErrorHandler from '@/components/ErrorHandler';
 import { WelcomeGuide } from '@/components/Navigation/WelcomeGuide';
 import { GUIDE_CONTENTS } from '@/constants/guideContents';
@@ -26,43 +38,23 @@ function QuickLogForm({ meal }: { meal: { foodName: string; calories: number } }
   const { pending } = useFormStatus();
 
   return (
-    <form action={formAction}>
-      <LoadingButton
+    <form action={formAction} className="w-full">
+      <button
         type="submit"
-        isLoading={pending}
-        loadingText="登録中..."
-        className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-full text-sm"
+        disabled={pending}
+        className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 hover:border-[#0cf]/50 transition-all group"
       >
-        {meal.foodName} ({meal.calories} kcal)
-      </LoadingButton>
-      {state?.error && <ErrorHandler error={state.error} />}
-    </form>
-  );
-}
-
-// Wrapper component for the CopyLogs form
-function CopyLogsForm() {
-  const [state, formAction] = useActionState(async (prevState: any, formData: FormData) => {
-    try {
-      await copyPreviousDayLogs();
-      return { error: null, success: true };
-    } catch (error) {
-      return { error: error, success: false };
-    }
-  }, { error: null, success: false });
-
-  const { pending } = useFormStatus();
-
-  return (
-    <form action={formAction}>
-      <LoadingButton
-        type="submit"
-        isLoading={pending}
-        loadingText="コピー中..."
-        className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-md"
-      >
-        前日の記録を今日にコピー
-      </LoadingButton>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#0cf]/10 flex items-center justify-center text-[#0cf]">
+            <Plus className="w-5 h-5" />
+          </div>
+          <div className="text-left">
+            <div className="text-sm font-bold">{meal.foodName}</div>
+            <div className="text-[10px] text-gray-500 font-mono">{meal.calories} KCAL</div>
+          </div>
+        </div>
+        <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-white transition-colors" />
+      </button>
       {state?.error && <ErrorHandler error={state.error} />}
     </form>
   );
@@ -88,111 +80,185 @@ export default function CalorieDashboard({
   // ガイド表示の管理
   const { isOpen: isGuideOpen, markAsSeen, showAgain } = useSessionFirstTime('has_seen_calorie_guide');
 
+  const actionTypes = [
+    {
+      id: 'scan',
+      title: 'スキャン登録',
+      subtitle: 'Photo Scan',
+      icon: <Camera className="w-8 h-8" />,
+      description: '画像アップロードによるAI解析',
+      href: '/calorie/scan',
+      color: 'from-blue-500 to-cyan-400',
+    },
+    {
+      id: 'smart',
+      title: 'スマート入力',
+      subtitle: 'Voice/Text',
+      icon: <Mic className="w-8 h-8" />,
+      description: '自然言語および音声による解析',
+      href: '/calorie/text',
+      color: 'from-purple-500 to-indigo-400',
+    },
+    {
+      id: 'quick',
+      title: 'クイック再利用',
+      subtitle: 'Favorites/History',
+      icon: <History className="w-8 h-8" />,
+      description: '登録済みリストから選択',
+      href: '#quick-list',
+      color: 'from-emerald-500 to-teal-400',
+    }
+  ];
+
   return (
-    <div className="relative min-h-screen bg-slate-50 overflow-x-hidden">
-      <Image
-        src="/images/toppage_wheel_labo.png"
-        alt="Background"
-        fill
-        className="object-cover z-0 opacity-10"
-        priority
-      />
-      <main className="relative z-10 p-4 sm:p-8 max-w-4xl mx-auto">
-        <div className="mb-6 flex gap-2">
-          <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors bg-white p-2 px-4 rounded-full border border-gray-200 shadow-sm">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            ポータルへ戻る
-          </Link>
-          <button 
-            onClick={showAgain}
-            className="p-2 bg-white text-gray-500 rounded-full border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors"
-            title="使いかたを表示"
-          >
-            <HelpCircle className="w-5 h-5" />
-          </button>
-        </div>
-
-        <h1 className="text-3xl font-bold mb-8">カロリー記録アプリ - ダッシュボード <span className="text-sm font-normal text-gray-500 ml-2">v{version}</span></h1>
-        
-        <div className="flex flex-wrap gap-4 mb-8">
-        <div className="flex-1 bg-white rounded-lg shadow-md p-6 min-w-[300px]">
-          <h2 className="text-2xl font-semibold mb-4">本日のカロリー</h2>
-          <p className="text-xl">登録済みカロリー: <span className="font-bold text-blue-600">{todaysCalories} kcal</span></p>
-          <p className="text-xl">目標カロリー: <span className="font-bold text-indigo-600">{targetCalories} kcal</span></p>
-          <p className="text-xl">残りカロリー: <span className="font-bold text-red-600">{remainingCalories} kcal</span></p>
-          <p className="text-sm text-gray-500 mt-2">※目標カロリー設定は設定画面で行えます。</p>
-        </div>
-
-        <div className="flex-1 bg-white rounded-lg shadow-md p-6 min-w-[300px]">
-          <h2 className="text-2xl font-semibold mb-4">過去7日間の平均カロリー</h2>
-          <p className="text-xl mb-4">平均: <span className="font-bold text-green-600">{sevenDayAverage.toFixed(0)} kcal</span></p>
-          <Link href="/calorie/log" className="text-sm text-blue-600 hover:underline">
-            詳細なログを見る →
-          </Link>
-        </div>
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-[#0cf]/30 overflow-x-hidden">
+      {/* Background decoration */}
+      <div className="fixed inset-0 pointer-events-none">
+        <Image
+          src="/images/toppage_wheel_labo.png"
+          alt=""
+          fill
+          className="object-cover opacity-5"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black" />
       </div>
 
-      <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-semibold mb-4">本日登録した食事</h2>
-        {todaysCaloriesLogs.length === 0 ? (
-          <p className="text-gray-500">まだ登録がありません。</p>
-        ) : (
-          <ul className="space-y-2">
-            {todaysCaloriesLogs.map((log) => (
-              <li key={log.id} className="flex justify-between items-center p-2 rounded-md bg-gray-50">
-                <div>
-                  <span className="font-semibold">{log.foodName}</span>
-                  <span className="text-sm text-gray-500 ml-2">({log.inputSource})</span>
+      <main className="relative z-10 max-w-4xl mx-auto px-6 py-12">
+        <header className="mb-12 animate-in fade-in slide-in-from-top duration-700">
+          <div className="flex justify-between items-start mb-6">
+            <Link href="/" className="text-[#0cf] text-sm font-bold tracking-widest uppercase hover:opacity-80 transition-opacity flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" /> Back to Gateway
+            </Link>
+            <button 
+              onClick={showAgain}
+              className="p-2 bg-white/5 text-gray-500 rounded-full border border-white/10 hover:bg-white/10 transition-colors"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
+          </div>
+
+          <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-4">
+            Calorie <span className="text-[#0cf]">Scan</span>
+          </h1>
+          <p className="text-gray-400 text-lg">
+            AIが食事バランスを最適化。健康なライフスタイルをサポートします。
+          </p>
+        </header>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 animate-in fade-in slide-in-from-top duration-700 delay-100">
+          <div className="p-6 bg-white/5 border border-white/10 rounded-3xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 blur-2xl rounded-full -mr-12 -mt-12" />
+            <Flame className="w-8 h-8 text-blue-500 mb-4" />
+            <div className="text-3xl font-black mb-1">{todaysCalories} <span className="text-xs text-gray-500 font-mono">KCAL</span></div>
+            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">Today's Intake</div>
+          </div>
+          
+          <div className="p-6 bg-white/5 border border-white/10 rounded-3xl relative overflow-hidden">
+            <Target className="w-8 h-8 text-[#0cf] mb-4" />
+            <div className="text-3xl font-black mb-1">{remainingCalories} <span className="text-xs text-gray-500 font-mono">KCAL</span></div>
+            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">Remaining to Target ({targetCalories})</div>
+            <div className="mt-4 w-full h-1 bg-white/5 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-[#0cf] transition-all duration-1000" 
+                style={{ width: `${Math.min(100, (todaysCalories / targetCalories) * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="p-6 bg-white/5 border border-white/10 rounded-3xl relative overflow-hidden">
+            <Activity className="w-8 h-8 text-emerald-500 mb-4" />
+            <div className="text-3xl font-black mb-1">{sevenDayAverage.toFixed(0)} <span className="text-xs text-gray-500 font-mono">KCAL</span></div>
+            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">7-Day Average</div>
+          </div>
+        </div>
+
+        {/* Main Action Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {actionTypes.map((type, idx) => (
+            <Link 
+              key={type.id}
+              href={type.href}
+              className="group relative bg-gray-900/40 border border-white/10 rounded-3xl p-8 hover:border-[#0cf]/50 transition-all duration-500 hover:scale-[1.02] overflow-hidden"
+              style={{ animationDelay: `${idx * 100}ms` }}
+            >
+              <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${type.color} opacity-10 group-hover:opacity-20 transition-opacity blur-2xl`} />
+              <div className="relative z-10">
+                <div className="mb-6 text-[#0cf] group-hover:scale-110 transition-transform duration-500">
+                  {type.icon}
                 </div>
-                <span className="font-bold text-blue-600">{log.calories} kcal</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="bg-white rounded-lg shadow-md p-6 mt-8">
-        <h2 className="text-2xl font-semibold mb-4">食事とカロリーを登録する</h2>
-        <div className="flex flex-wrap gap-4 justify-center">
-          <Link href="/calorie/scan" className="flex-1 min-w-[120px] max-w-[200px] text-center bg-indigo-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-300">
-            <span className="mr-2">📸</span> 写真
-          </Link>
-          <Link href="/calorie/scan?mode=train" className="flex-1 min-w-[120px] max-w-[200px] text-center bg-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-purple-700 transition duration-300">
-            <span className="mr-2">📈</span> 写真 (学習用)
-          </Link>
-          <Link href="/calorie/text" className="flex-1 min-w-[120px] max-w-[200px] text-center bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300">
-            <span className="mr-2">📝</span> テキスト
-          </Link>
-          <Link href="/calorie/voice" className="flex-1 min-w-[120px] max-w-[200px] text-center bg-emerald-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-emerald-700 transition duration-300">
-            <span className="mr-2">🎤</span> 音声
-          </Link>
+                <div className="flex items-baseline gap-2 mb-2">
+                  <h2 className="text-xl font-bold">{type.title}</h2>
+                  <span className="text-[10px] text-gray-500 font-mono uppercase tracking-tighter">{type.subtitle}</span>
+                </div>
+                <p className="text-gray-400 text-sm leading-relaxed">{type.description}</p>
+              </div>
+            </Link>
+          ))}
         </div>
-      </div>
 
-      <div className="bg-white rounded-lg shadow-md p-6 mt-8">
-        <h2 className="text-2xl font-semibold mb-4">クイック登録</h2>
-        <div className="flex flex-wrap gap-2">
-          {frequentMeals.length === 0 ? (
-            <p className="text-gray-500">まだ登録がありません。食事を登録するとここに頻繁なメニューが表示されます。</p>
-          ) : (
-            frequentMeals.map((meal) => (
-              <QuickLogForm key={meal.foodName} meal={meal} />
-            ))
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          {/* Recent Logs */}
+          <section className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                <Zap className="w-4 h-4 text-[#0cf]" /> Recent Intake
+              </h3>
+              <Link href="/calorie/log" className="text-[10px] text-gray-500 hover:text-white transition-colors uppercase tracking-widest">View Full Log →</Link>
+            </div>
+            
+            <div className="space-y-3">
+              {todaysCaloriesLogs.length === 0 ? (
+                <div className="py-12 text-center bg-white/5 border border-dashed border-white/10 rounded-3xl">
+                  <p className="text-gray-500 text-sm italic">No intake recorded today.</p>
+                </div>
+              ) : (
+                todaysCaloriesLogs.slice(0, 5).map((log) => (
+                  <div key={log.id} className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl">
+                    <div>
+                      <div className="font-bold text-sm">{log.foodName}</div>
+                      <div className="text-[10px] text-gray-500 uppercase font-mono">{log.inputSource}</div>
+                    </div>
+                    <div className="text-[#0cf] font-black">{log.calories} <span className="text-[8px]">KCAL</span></div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          {/* Quick Reuse (Frequent Meals) */}
+          <section id="quick-list" className="space-y-6">
+            <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+              <History className="w-4 h-4 text-emerald-500" /> Frequent Meals
+            </h3>
+            
+            <div className="space-y-3">
+              {frequentMeals.length === 0 ? (
+                <div className="py-12 text-center bg-white/5 border border-dashed border-white/10 rounded-3xl">
+                  <p className="text-gray-500 text-sm italic">Frequent meals will appear here.</p>
+                </div>
+              ) : (
+                frequentMeals.map((meal) => (
+                  <QuickLogForm key={meal.foodName} meal={meal} />
+                ))
+              )}
+            </div>
+          </section>
         </div>
-      </div>
 
-      <div className="bg-white rounded-lg shadow-md p-6 mt-8">
-        <h2 className="text-2xl font-semibold mb-4">前日の記録をコピー</h2>
-        <CopyLogsForm />
-      </div>
-    </main>
+        <footer className="mt-24 text-center opacity-20">
+          <p className="text-[10px] font-mono tracking-[0.4em] uppercase">
+            CALORIE OPTIMIZER ENGINE v{version} • SF MINIMALISM ADOPTED
+          </p>
+        </footer>
+      </main>
 
-    <WelcomeGuide 
-      isOpen={isGuideOpen} 
-      onClose={markAsSeen} 
-      content={GUIDE_CONTENTS.CALORIE_APP} 
-    />
+      <WelcomeGuide 
+        isOpen={isGuideOpen} 
+        onClose={markAsSeen} 
+        content={GUIDE_CONTENTS.CALORIE_APP} 
+      />
     </div>
   );
 }

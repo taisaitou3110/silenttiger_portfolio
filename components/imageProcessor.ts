@@ -1,4 +1,46 @@
 /**
+ * 画像を解析用に最適化するユーティリティ（リサイズとJPEG圧縮）
+ */
+export async function processImage(file: File, maxWidth = 1200): Promise<{ base64: string; size: number }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error("Canvas context is not available"));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const base64 = canvas.toDataURL('image/jpeg', 0.8);
+        const head = "data:image/jpeg;base64,";
+        const fileSize = Math.round((base64.length - head.length) * 3 / 4);
+
+        resolve({ base64, size: fileSize });
+      };
+      img.onerror = reject;
+    };
+    reader.onerror = reject;
+  });
+}
+
+/**
  * 手書き文字解析用に画像を最適化するユーティリティ
  * 1. グレースケール化（モノクロ）
  * 2. 指定サイズへのリサイズ

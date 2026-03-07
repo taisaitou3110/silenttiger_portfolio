@@ -13,6 +13,12 @@ export default function EnvBadge() {
     if (pathname.includes("/wordbook")) return `wordbook v${versions.apps.wordbook}`;
     if (pathname.includes("/calorie")) return `calorie v${versions.apps.calorie}`;
     if (pathname.includes("/feedback")) return `feedback v${versions.apps.feedback}`;
+    if (pathname.includes("/handwriting")) return `handwriting v${versions.apps.handwriting}`;
+    if (pathname.includes("/dashboard")) return `dashboard v${versions.apps.dashboard}`;
+    if (pathname.includes("/devlog")) return `devlog v${versions.apps.devlog}`;
+    if (pathname.includes("/pencil")) return `pencil v${versions.apps.pencil}`;
+    if (pathname.includes("/bookshelf")) return `bookshelf v${versions.apps.bookshelf}`;
+    if (pathname.includes("/post-assistant")) return `post-assistant v${versions.apps["post-assistant"]}`;
     return `global v${versions.version}`; // 該当なしは全体バージョン
   };
 

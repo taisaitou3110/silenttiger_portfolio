@@ -80,18 +80,47 @@ export function usePhysics(
       }
     }
 
-    // 2. 地面との衝突
-    if (rocketRef.current.y > GROUND_Y) {
-      setIsFlying(false);
-      const targetDistance = config.targetX;
+    // 2. 高台（ターゲットの柱）との衝突
+    if (config.targetY < GROUND_Y) {
+        const pillarXStart = LAUNCH_X + config.targetX - 5;
+        const pillarXEnd = LAUNCH_X + config.targetX + 45;
+        const { x, y } = rocketRef.current;
+
+        // 柱の側面に当たったか
+        if (x >= pillarXStart && x <= pillarXEnd && y > config.targetY + 10 && y <= GROUND_Y) {
+            setIsFlying(false);
+            onEnd('💥 MISS: 高台の柱に激突！', x, y);
+            return;
+        }
+    }
+
+    // 3. ターゲット面（または地面）との衝突
+    const isOverTargetPlatform = (
+        rocketRef.current.x >= LAUNCH_X + config.targetX && 
+        rocketRef.current.x <= LAUNCH_X + config.targetX + 40
+    );
+
+    // ターゲットの高さに到達したか、または地面に落ちたか
+    const hitY = config.targetY < GROUND_Y ? config.targetY : GROUND_Y;
+
+    if (rocketRef.current.y >= hitY) {
       const landedDistance = rocketRef.current.x - LAUNCH_X;
-      const tolerance = targetDistance * 0.01;
+      const targetDistance = config.targetX;
+      
+      // 高台の場合は、x座標がプラットフォームの幅(40px)に収まっている必要がある
+      const isGoal = config.targetY < GROUND_Y 
+        ? (landedDistance >= targetDistance && landedDistance <= targetDistance + 40)
+        : (Math.abs(landedDistance - targetDistance) <= targetDistance * 0.01);
 
-      let message = (landedDistance >= targetDistance - tolerance && landedDistance <= targetDistance + tolerance)
-        ? `🎉 GOAL!`
-        : (landedDistance > targetDistance + tolerance ? `💥 MISS: 目標オーバー` : `💥 MISS: 届かず`);
-
-      onEnd(message, rocketRef.current.x, rocketRef.current.y);
+      if (isGoal) {
+        setIsFlying(false);
+        onEnd(`🎉 GOAL!`, rocketRef.current.x, rocketRef.current.y);
+      } else if (rocketRef.current.y >= GROUND_Y) {
+        // 地面に落ちた場合
+        setIsFlying(false);
+        const message = landedDistance > targetDistance ? `💥 MISS: 目標オーバー` : `💥 MISS: 届かず`;
+        onEnd(message, rocketRef.current.x, rocketRef.current.y);
+      }
     }
   }, [onEnd, onStatusUpdate]);
 
@@ -110,5 +139,12 @@ export function usePhysics(
     setIsFlying(true);
   };
 
-  return { rocket, trail, isFlying, launch, setIsFlying, updatePhysics };
+  const reset = useCallback(() => {
+    const config = LEVEL_CONFIGS[level] || LEVEL_CONFIGS[1];
+    rocket.current = { x: LAUNCH_X, y: GROUND_Y - (config.startHeight || 0), vx: 0, vy: 0 };
+    trail.current = [];
+    setIsFlying(false);
+  }, [level]);
+
+  return { rocket, trail, isFlying, launch, setIsFlying, updatePhysics, reset };
 }

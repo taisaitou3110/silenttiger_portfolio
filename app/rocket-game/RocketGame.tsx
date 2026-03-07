@@ -43,7 +43,7 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
     // --- 物理エンジン Hook の接続 ---
-  const { rocket, trail, isFlying, launch, updatePhysics } = usePhysics(level, (msg, finalX, finalY) => {
+  const { rocket, trail, isFlying, launch, updatePhysics, reset } = usePhysics(level, (msg, finalX, finalY) => {
     const distance = Math.round(finalX - LAUNCH_X);
     setResult({ msg, distance });
     setPastAttempts(prev => [
@@ -96,7 +96,7 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
       canvasSize.height,
       scale
     );
-  }, [level, pastTrails, canvasSize]);
+  }, [level, pastTrails, canvasSize, rocket, trail]);
 
 
   // --- アニメーションループ ---
@@ -137,6 +137,7 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
     setRealtimeStatus({ altitude: 0, velocity: 0, distance: 0 });
     setFailedAttempts(0);
     setHint(null);
+    reset(); // 💡 物理状態と現在の軌跡をリセット
 
     const config = LEVEL_CONFIGS[level];
     if (config.hasWind) {
@@ -148,9 +149,9 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
     } else {
       setWind({ x: 0, y: 0 });
     }
-  }, [level]);
+  }, [level, reset]);
 
-// --- 副作用: 初期描画 & リサイズ対応 ---
+  // --- 副作用: 初期描画 & リサイズ対応 ---
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -174,6 +175,12 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
     return () => window.removeEventListener('resize', handleResize);
   }, [canvasRef.current]);
 
+  // --- 副作用: 静止状態での描画 (発射前) ---
+  useEffect(() => {
+    if (isFlying) return;
+    draw();
+  }, [level, pressure, angle, canvasSize, isFlying, draw]);
+
   // --- ハンドラ ---
   const handleLaunch = () => {
     if (isFlying) return;
@@ -187,6 +194,11 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
     launch(pressure, angle, wind);
   };
 
+  const handleBackToPortal = () => {
+    reset(); // 💡 状態をクリア
+    setLevel(0);
+  };
+
   // --- 表示: メニュー画面 (AppPortal) ---
   if (level === 0) {
     return (
@@ -194,7 +206,7 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
            style={{backgroundImage: 'url("/images/image_background_rocket_menu.png")', backgroundSize: 'cover', backgroundPosition: 'center'}}>
         {/* 背景の透明度調整用オーバーレイ */}
         <div className="absolute inset-0 bg-black/90 z-0" />
-        
+
         {/* ナビゲーション (ポータルへ戻る) */}
         <div className="absolute top-5 left-5 z-20 flex gap-2">
           <Link href="/" className="inline-flex items-center text-[#0cf] hover:text-[#0ef] font-medium transition-colors bg-black/40 p-2 px-4 rounded-full border border-[#0cf]/30">
@@ -251,7 +263,7 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
 
       {/* ナビゲーション (アプリポータルへ戻る) */}
       <div className="absolute top-5 left-5 z-20 flex gap-2">
-        <button onClick={() => setLevel(0)} className="inline-flex items-center bg-gray-700/70 text-white border border-gray-600 py-2 px-5 cursor-pointer rounded-md hover:bg-gray-600/70 active:bg-gray-800/70 min-h-[44px]">
+        <button onClick={handleBackToPortal} className="inline-flex items-center bg-gray-700/70 text-white border border-gray-600 py-2 px-5 cursor-pointer rounded-md hover:bg-gray-600/70 active:bg-gray-800/70 min-h-[44px]">
           <ArrowLeft className="w-4 h-4 mr-2" />
           アプリポータルへ戻る
         </button>
@@ -282,7 +294,7 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
             height={canvasSize.height}
             className="block opacity-90 w-full"
           />
-          
+
           {isFlying && (
             <div className="absolute top-3 left-3 bg-black/50 text-white p-3 rounded-lg text-sm text-left">
               <p className="m-0">Altitude: {realtimeStatus.altitude}m</p>
@@ -333,7 +345,8 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
                   <p className="text-white text-sm mb-1">
                     <strong>#{pastAttempts.length - 1 - index}:</strong> {attempt.result}
                   </p>
-                  <div className="flex justify-around text-gray-400 text-sm">
+                  <p className="text-[#0cf] text-xs font-bold mb-1">飛距離: {attempt.distance}m</p>
+                  <div className="flex justify-around text-gray-400 text-[10px]">
                     <span>P: {attempt.pressure.toFixed(2)}</span>
                     <span>A: {attempt.angle}°</span>
                   </div>
@@ -381,3 +394,4 @@ export default function RocketGame({ initialGold = 0 }: { initialGold?: number }
     </div>
   );
 }
+

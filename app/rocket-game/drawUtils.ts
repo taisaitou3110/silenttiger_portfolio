@@ -43,11 +43,27 @@ export const drawScene = (
   ctx.fillStyle = config.hasWind ? "#0000FF" : "#228B22";
   ctx.fillRect(0, GROUND_Y + 10, CANVAS_WIDTH, 40);
   
-  // 打ち上げ位置
-  ctx.fillStyle = "blue";
-  ctx.beginPath();
-  ctx.moveTo(LAUNCH_X - 10, GROUND_Y + 20); ctx.lineTo(LAUNCH_X + 10, GROUND_Y + 20); ctx.lineTo(LAUNCH_X, GROUND_Y);
-  ctx.fill();
+  // 打ち上げ位置の高台表示
+  if (config.startHeight && config.startHeight > 0) {
+    const platformY = GROUND_Y - config.startHeight;
+    // 柱
+    ctx.fillStyle = "#455a64";
+    ctx.fillRect(LAUNCH_X - 10, platformY + 10, 20, config.startHeight);
+    // 足場
+    ctx.fillStyle = "#78909c";
+    ctx.fillRect(LAUNCH_X - 15, platformY, 30, 10);
+    // 発射台（青い三角）を高台の上に移動
+    ctx.fillStyle = "blue";
+    ctx.beginPath();
+    ctx.moveTo(LAUNCH_X - 10, platformY); ctx.lineTo(LAUNCH_X + 10, platformY); ctx.lineTo(LAUNCH_X, platformY - 10);
+    ctx.fill();
+  } else {
+    // 通常の打ち上げ位置（地上）
+    ctx.fillStyle = "blue";
+    ctx.beginPath();
+    ctx.moveTo(LAUNCH_X - 10, GROUND_Y + 20); ctx.lineTo(LAUNCH_X + 10, GROUND_Y + 20); ctx.lineTo(LAUNCH_X, GROUND_Y);
+    ctx.fill();
+  }
   
   // 山
   if (config.obstacle && config.obstacleX && config.obstacleWidth && config.obstacleHeight) {
@@ -61,19 +77,25 @@ export const drawScene = (
     ctx.fill();
   }
 
-  // ターゲット
+  // ターゲットと柱
   if (config.targetY < GROUND_Y) {
+    // 柱を描画（障害物）
+    ctx.fillStyle = "#455a64";
+    ctx.fillRect(LAUNCH_X + config.targetX - 2, config.targetY + 10, 44, GROUND_Y - config.targetY);
+    // 足場
     ctx.fillStyle = "#78909c";
-    ctx.fillRect(LAUNCH_X + config.targetX - 5, config.targetY + 10, 50, GROUND_Y - config.targetY);
+    ctx.fillRect(LAUNCH_X + config.targetX - 5, config.targetY + 5, 50, 10);
   }
+  
+  // ターゲット（着地目標）
   ctx.fillStyle = "red";
-  ctx.fillRect(LAUNCH_X + config.targetX, config.targetY, 40, 10);
+  ctx.fillRect(LAUNCH_X + config.targetX, config.targetY, 40, 5);
 
   // ゴール地点の距離表示
   ctx.fillStyle = "white";
   ctx.font = "14px monospace";
   ctx.textAlign = "center";
-  ctx.fillText(`${config.targetX}m`, LAUNCH_X + config.targetX + 20, config.targetY - 5);
+  ctx.fillText(`${config.targetX}m`, LAUNCH_X + config.targetX + 20, config.targetY - 10);
 
 
   // 過去の軌跡を描画
@@ -101,6 +123,6 @@ export const drawScene = (
     ctx.stroke();
   }
   
-  drawRocket(ctx, rocket.x, rocket.y, rocket.vx, rocket.vy, true); // Temporarily hardcode isFlying to true
+  drawRocket(ctx, rocket.x, rocket.y, rocket.vx, rocket.vy, trail.length > 0); 
   ctx.restore();
 };

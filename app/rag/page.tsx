@@ -76,7 +76,11 @@ export default function RagPage() {
       }
 
       const { documentId, chunks, totalChunks } = prepResult;
-      const BATCH_SIZE = 15; // 小さめに設定して確実性を高める
+      
+      // 環境変数から設定を取得 (デフォルト値をフォールバックとして保持)
+      const BATCH_SIZE = parseInt(process.env.NEXT_PUBLIC_AI_BATCH_SIZE || "15");
+      const THROTTLE_MS = parseInt(process.env.NEXT_PUBLIC_AI_THROTTLE_MS || "2000");
+      
       let processedCount = 0;
 
       // Step 2: バッチごとにインジェクション (ループ)
@@ -102,8 +106,8 @@ export default function RagPage() {
             success = true;
             processedCount += batch.length;
             updateMetrics({ debug_log: `SYNCED ${processedCount}/${totalChunks} CHUNKS` });
-            // 正常時も少し待機してレート制限を回避
-            await sleep(2000);
+            // 正常時も待機してレート制限を回避
+            await sleep(THROTTLE_MS);
           } else if (result.status === 429) {
             retries++;
             const waitTime = retries * 5000;

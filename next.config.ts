@@ -5,19 +5,23 @@ const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
 
-  // Prismaの動作を安定させる
-  serverExternalPackages: ["@prisma/client"],
+  // PrismaとPDF解析ライブラリを外部パッケージとして扱う
+  serverExternalPackages: ["@prisma/client", "pdf-parse"],
+
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '20mb',
+    },
+  },
 
   images: {
-    // 許可する外部ドメインの設定
     remotePatterns: [
       {
-        protocol: 'https', // Googleはhttpsが標準
+        protocol: 'https',
         hostname: 'books.google.com',
         port: '',
         pathname: '/books/content/**',
       },
-      // もし他のホスト（Azure等）からも画像を表示するならここに追加
     ],
   },
 };

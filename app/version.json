@@ -11,7 +11,8 @@
     "bookshelf": "1.1.8",
     "post-assistant":"1.0.0",
     "handwriting": "1.0.6",
-    "rocket-game": "1.9.1"
+    "rocket-game": "1.9.1",
+    "rag": "1.0.1"
   }
 }
 

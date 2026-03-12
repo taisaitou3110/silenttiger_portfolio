@@ -11,8 +11,10 @@ import { useSessionFirstTime } from '@/hooks/useSessionFirstTime';
 import { addAchiever, getAchievers } from '@/app/poker/actions';
 import { getUserGoldData, addGold } from '@/lib/actions';
 
+export const dynamic = 'force-dynamic';
+
 interface Achiever {
-  id: string;
+...
   name: string;
   finalGold: number;
   achievedAt: Date | string;

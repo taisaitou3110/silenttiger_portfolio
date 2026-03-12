@@ -12,6 +12,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getWordDetail } from "@/app/wordbook/actions";
 
+export const dynamic = 'force-dynamic';
+
 // サーバーコンポーネントとして定義
 export default async function WordDetailPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
   // paramsの解決（Next.js 15等の最新仕様にも配慮）

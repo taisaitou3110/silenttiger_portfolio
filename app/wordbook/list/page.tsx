@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getWords, getDashboardData } from "@/app/wordbook/actions";
 import { GoldStatus } from "@/components/GoldStatus";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * 知識図鑑 一覧画面 (Encyclopedia List)
  * - データベースに登録されたすべての単語（ノード）をアルファベット順に表示します。

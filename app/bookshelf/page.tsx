@@ -23,8 +23,10 @@ import { WelcomeGuide } from '@/components/Navigation/WelcomeGuide';
 import { GUIDE_CONTENTS } from '@/constants/guideContents';
 import { useSessionFirstTime } from '@/hooks/useSessionFirstTime';
 
+export const dynamic = 'force-dynamic';
+
 export default function BookshelfPortal() {
-  const [books, setBooks] = useState<any[]>([]);
+...
   const [loading, setLoading] = useState(true);
   const [gold, setGold] = useState(0);
   const [filter, setFilter] = useState<string>('ALL');

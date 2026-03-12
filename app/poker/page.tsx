@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import Image from 'next/image'; // Import Image component
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, HelpCircle } from 'lucide-react';
 import { usePoker } from '@/app/poker/usePoker';
@@ -14,22 +14,17 @@ import { getUserGoldData, addGold } from '@/lib/actions';
 export const dynamic = 'force-dynamic';
 
 interface Achiever {
-...
+  id: string;
   name: string;
   finalGold: number;
   achievedAt: Date | string;
 }
 
 interface PokerPageProps {
-  version: string; // Add version prop
+  version: string;
 }
 
-const INITIAL_BET = 100;
-
-
-
 export default function PokerPage({ version }: PokerPageProps) {
-
   const [initialGoldLoaded, setInitialGoldLoaded] = useState(false);
   const [userGold, setUserGold] = useState(0);
   const [goldBonusMessage, setGoldBonusMessage] = useState<string | null>(null);
@@ -40,7 +35,6 @@ export default function PokerPage({ version }: PokerPageProps) {
     initializeGame, currentBetAmount
   } = usePoker();
 
-  // ガイド表示の管理
   const { isOpen: isGuideOpen, markAsSeen, showAgain } = useSessionFirstTime('has_seen_poker_guide');
 
   const [achievers, setAchievers] = useState<Achiever[]>([]);
@@ -94,7 +88,6 @@ export default function PokerPage({ version }: PokerPageProps) {
     }
   };
 
-  // Welcome Screen
   if (gameState === 'UNINITIALIZED') {
     if (!initialGoldLoaded) {
       return (
@@ -113,7 +106,6 @@ export default function PokerPage({ version }: PokerPageProps) {
           className="z-0 opacity-10"
           priority
         />
-        {/* Navigation */}
         <div className="absolute top-5 left-5 z-20 flex gap-2">
           <Link href="/" className="inline-flex items-center text-white/80 hover:text-white font-medium transition-colors bg-blue-900/40 p-2 px-4 rounded-lg border border-white/20">
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -127,7 +119,6 @@ export default function PokerPage({ version }: PokerPageProps) {
             <HelpCircle className="w-6 h-6" />
           </button>
         </div>
-        {/* Gold Status */}
         <div className="absolute top-5 right-5 z-20">
           <GoldStatus amount={userGold} />
         </div>
@@ -175,7 +166,6 @@ export default function PokerPage({ version }: PokerPageProps) {
     );
   }
 
-  // Main Game Screen
   return (
     <div className="relative min-h-screen w-screen overflow-hidden text-white font-mono select-none flex flex-col justify-center items-center p-4">
        <Image
@@ -186,7 +176,6 @@ export default function PokerPage({ version }: PokerPageProps) {
           className="z-0 opacity-10"
           priority
         />
-        {/* Navigation */}
         <div className="absolute top-5 left-5 z-20 flex gap-2">
           <Link href="/" className="inline-flex items-center text-white/80 hover:text-white font-medium transition-colors bg-blue-900/40 p-2 px-4 rounded-lg border border-white/20">
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -200,7 +189,6 @@ export default function PokerPage({ version }: PokerPageProps) {
             <HelpCircle className="w-6 h-6" />
           </button>
         </div>
-        {/* Gold Status */}
         <div className="absolute top-5 right-5 z-20">
           <GoldStatus amount={gold} />
         </div>
@@ -209,9 +197,6 @@ export default function PokerPage({ version }: PokerPageProps) {
         <div className="w-full lg:w-2/3">
           <div className="border-4 border-white p-4 mb-4 bg-blue-900/70 shadow-[4px_4px_0_0_rgba(255,255,255,1)] rounded-lg">
             <h1 className="text-2xl font-bold text-yellow-400 font-serif tracking-tighter mb-2">ハイ＆ロー ポーカー <span className="text-sm font-normal text-gray-400 ml-2">v{version}</span></h1>
-            <div className="flex justify-between items-center">
-
-            </div>
             {bet > 0 && (
               <div className="text-red-400 mt-2 animate-pulse text-lg font-bold text-center border-t border-white/20 pt-2">
                 現在の配当: {bet}G
@@ -370,13 +355,13 @@ function getCardImagePath(value: string): string {
     case 'J': return '/images/card/card_club_11.png';
     case 'Q': return '/images/card/card_club_12.png';
     case 'K': return '/images/card/card_club_13.png';
-    case 'JK': return '/images/card/card_club_joker.png'; // Assuming this exists for Joker
-    default: return '/images/card/card_back.png'; // Fallback for '?' or any unexpected value
+    case 'JK': return '/images/card/card_club_joker.png';
+    default: return '/images/card/card_back.png';
   }
 }
 
 function CardDisplay({ value, label }: { value: string, label: string }) {
-  const isBack = value === '?'; // Simplified from value === '?' || value === ''
+  const isBack = value === '?';
   const imageUrl = getCardImagePath(value);
   const altText = isBack ? 'Card back' : `${value} card`;
 
@@ -390,9 +375,9 @@ function CardDisplay({ value, label }: { value: string, label: string }) {
         <Image
           src={imageUrl}
           alt={altText}
-          layout="fill" // Use fill to make image fill the parent div
-          objectFit="contain" // Or 'cover' depending on desired crop
-          className="rounded-lg" // Apply rounded corners to the image
+          fill
+          style={{ objectFit: 'contain' }}
+          className="rounded-lg"
         />
       </div>
     </div>

@@ -14,7 +14,7 @@ import { AIProcessOverlay, AIMetrics } from '@/components/AI/AIProcessOverlay';
 export const dynamic = 'force-dynamic';
 
 // Prismaの型が更新されない場合のための拡張定義
-...
+interface ExtendedUserProfile extends PrismaUserProfile {
   styleInstruction?: string | null;
   learningLevel?: number;
   lastAnalyzedAt?: Date | null;

@@ -8,11 +8,11 @@ import { AIProcessOverlay, AIMetrics } from '@/components/AI/AIProcessOverlay';
 import { WelcomeGuide } from '@/components/Navigation/WelcomeGuide';
 import { useSessionFirstTime } from '@/hooks/useSessionFirstTime';
 import { GUIDE_CONTENTS } from '@/constants/guideContents';
+import versionData from '@/app/version.json';
 
 export const dynamic = 'force-dynamic';
 
-export default function RagPage() {
-...
+const APP_VERSION = versionData.apps.rag;
 
 export default function RagPage() {
   const [messages, setMessages] = useState<{ role: 'user' | 'ai', content: string, sources?: string[] }[]>([]);

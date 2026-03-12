@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Camera, FileText, ShoppingCart, Database, GraduationCap, ChevronRight, UserCircle2, Plus, Users, Settings2, Sparkles } from 'lucide-react';
 import { getUserProfiles, createUserProfile } from './actions';
 
+export const dynamic = 'force-dynamic';
+
 export default function HandwritingDashboard() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [activeProfile, setActiveProfile] = useState<any>(null);

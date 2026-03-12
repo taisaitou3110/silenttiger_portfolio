@@ -3,9 +3,7 @@
 import { extractTextFromPDF, extractTextFromURL } from './utils/extractor';
 import { splitDocument, createDocumentRecord, ingestChunkBatch, generateAnswer } from './utils/rag-core';
 import { revalidatePath } from 'next/cache';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/prisma";
 
 /**
  * 学習済みのドキュメント一覧を取得する

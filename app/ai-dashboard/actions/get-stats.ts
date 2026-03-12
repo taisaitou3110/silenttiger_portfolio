@@ -1,19 +1,11 @@
 "use server";
 
-import { PrismaClient } from "@prisma/client";
-
-/**
- * Prismaインスタンスの多重生成を防ぐためのグローバル管理
- * (Next.jsの開発モードでのコネクションオーバーフロー対策)
- */
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
-const prisma = globalForPrisma.prisma || new PrismaClient();
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+import prisma from "@/lib/prisma";
 
 export async function getAiStats() {
   try {
-    // 1. モデルが存在するかチェック (型エラーが出る場合は npx prisma generate を確認)
-    // @ts-ignore - generate前でも実行時エラーを防ぐためのガード
+    // 1. モデルが存在するかチェック
+    // @ts-ignore
     if (!prisma.aiUsageLog) {
       console.error("❌ PrismaClientに AiUsageLog モデルが見つかりません。");
       return [];

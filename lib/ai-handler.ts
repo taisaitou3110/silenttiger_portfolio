@@ -32,7 +32,7 @@ export async function withAIRetry<T>(
 
   // タスクの種類に応じてモデルリストを切り替える
   const envKey = isEmbedding ? "AI_EMBEDDING_MODEL_FALLBACK_LIST" : "AI_MODEL_FALLBACK_LIST";
-  const defaultModels = isEmbedding ? "gemini-embedding-001" : "gemini-2.0-flash,gemini-flash-latest,gemini-pro-latest";
+  const defaultModels = isEmbedding ? "gemini-embedding-001" : "gemini-2.0-flash,gemini-flash-latest,gemini-1.5-flash-latest,gemini-pro-latest";
   
   const modelList = (process.env[envKey] || defaultModels).split(",");
 

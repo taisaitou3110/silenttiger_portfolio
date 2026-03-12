@@ -1,7 +1,6 @@
 import { getAiStats } from "./actions/get-stats";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/prisma";
+import { TestButton } from "./actions/_components/test-button";
 
 // 直近の生ログを取得する関数（画面下部に表示）
 async function getRecentLogs() {
@@ -25,7 +24,8 @@ export default async function AiDashboardPage() {
           <h1 className="text-3xl font-bold text-gray-900">AI Fleet Command</h1>
           <p className="text-gray-500">12個のAIエージェントの稼働状況を監視中</p>
         </div>
-        <div className="text-right">
+        <div className="flex gap-4 items-center">
+          <TestButton />
           <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
             ● System Live
           </span>

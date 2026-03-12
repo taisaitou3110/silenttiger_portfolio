@@ -1,10 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from "@/lib/prisma";
 import { TaskType } from '@google/generative-ai';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { withAIRetry } from '@/lib/ai-handler';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const prisma = new PrismaClient();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 /**
@@ -25,14 +24,14 @@ export async function splitDocument(content: string) {
 export async function ingestChunkBatch(
   documentId: string,
   batchContents: string[],
-  title: string
+  title?: string
 ) {
   return await withAIRetry(async (model) => {
     const result = await model.batchEmbedContents({
       requests: batchContents.map(text => ({
         content: { role: 'user', parts: [{ text }] },
         taskType: TaskType.RETRIEVAL_DOCUMENT,
-        title: title
+        title: title || 'RAG Document'
       }))
     });
 
@@ -62,7 +61,7 @@ export async function createDocumentRecord(title: string, url?: string, filePath
 /**
  * 質問に対して類似度の高いチャンクを検索する
  */
-export async function searchSimilarChunks(query: string, limit: number = 4) {
+export async function searchSimilarChunks(query: string, limit: number = 8) {
   const result = await withAIRetry(async (model) => {
     return await model.embedContent({
       content: { role: 'user', parts: [{ text: query }] },
@@ -93,8 +92,8 @@ export async function searchSimilarChunks(query: string, limit: number = 4) {
  * RAGによる回答生成 (精度・ソース識別強化型)
  */
 export async function generateAnswer(query: string) {
-  // 1. 関連情報の検索 (精度確保のため4件取得)
-  const chunks = await searchSimilarChunks(query, 4);
+  // 1. 関連情報の検索 (精度確保のため10件取得)
+  const chunks = await searchSimilarChunks(query, 10);
   
   if (chunks.length === 0) {
     return {

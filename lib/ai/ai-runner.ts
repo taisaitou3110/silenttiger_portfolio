@@ -1,24 +1,59 @@
 // lib/ai/ai-runner.ts
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getSystemInstruction } from "./ai-loader";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+import { saveAiLog } from "./ai-logger";
+import { withAIRetry } from "../ai-handler";
 
 export async function runAiTask(appId: string, userPrompt: string) {
-  // 1. アプリIDに基づいた指示を自動取得
-  const systemInstruction = getSystemInstruction(appId);
+  const startTime = Date.now();
 
-  // 2. モデルの初期化 (ここで指示が注入される)
-  const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash", // 必要に応じて切り替え
-    systemInstruction: systemInstruction,
-  });
+  try {
+    // 1. 設定ファイル（base + app専用）を自動ロード
+    const systemInstruction = getSystemInstruction(appId);
 
-  // 3. 実行（ここにリトライ処理やログ保存を追加していく）
-  const result = await model.generateContent(userPrompt);
-  
-  // 今後のステップでここに「消費トークンの保存」などを追加
-  console.log(`[${appId}] AI実行完了`); 
-  
-  return result.response.text();
+    // 2. AI実行（withAIRetryを使用してモデルの切り替えやリトライを自動化）
+    const responseText = await withAIRetry(async (model) => {
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+        systemInstruction: systemInstruction,
+      });
+      const response = await result.response;
+      
+      // トークン使用量の抽出
+      const usage = response.usageMetadata;
+      const promptTokens = usage?.promptTokenCount || 0;
+      const resultTokens = usage?.candidatesTokenCount || 0;
+
+      // 成功ログの保存
+      await saveAiLog({
+        appId,
+        modelName: model.model.replace("models/", ""), 
+        promptTokens,
+        resultTokens,
+        status: 'SUCCESS',
+        durationMs: Date.now() - startTime,
+      });
+
+      return response.text();
+    }, {
+      title: `AI Task: ${appId}`
+    });
+
+    return responseText;
+
+  } catch (error: any) {
+    // 3. 失敗ログの保存
+    console.error(`[${appId}] AI最終エラー:`, error.message);
+    
+    await saveAiLog({
+      appId,
+      modelName: "unknown",
+      promptTokens: 0,
+      resultTokens: 0,
+      status: 'ERROR',
+      errorMessage: error.message,
+      durationMs: Date.now() - startTime,
+    });
+
+    throw error;
+  }
 }

@@ -5,6 +5,8 @@ import prisma from "@/lib/prisma";
  * AIの利用ログをDBに保存する共通関数
  */
 export async function saveAiLog(data: {
+
+    
   appId: string;
   modelName: string;
   promptTokens: number;

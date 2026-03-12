@@ -7,13 +7,21 @@ import { ensureUserSettings } from '@/app/calorie/actions'; // Re-use ensureUser
 export const dynamic = "force-dynamic";
 
 export default async function CalorieSettingsPage() {
-  const userId = await ensureUserSettings(); // Ensure user settings exist
-  const userSettings = await prisma.userSettings.findUnique({
-    where: { id: userId },
-  });
-  const customFoods = await prisma.customFood.findMany({
-    where: { userId: userId },
-  });
+  let userSettings: any = null;
+  let customFoods: any[] = [];
+  let userId: string = "";
+
+  try {
+    userId = await ensureUserSettings(); // Ensure user settings exist
+    userSettings = await prisma.userSettings.findUnique({
+      where: { id: userId },
+    });
+    customFoods = await prisma.customFood.findMany({
+      where: { userId: userId },
+    });
+  } catch (error) {
+    console.error("❌ カロリー設定の取得に失敗しました:", error);
+  }
 
   return (
     <main className="p-8 max-w-4xl mx-auto">

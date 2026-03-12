@@ -9,16 +9,21 @@ export default async function CalorieLogPage() {
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   sevenDaysAgo.setHours(0, 0, 0, 0);
 
-  const logs = await prisma.calorieLog.findMany({
-    where: {
-      date: {
-        gte: sevenDaysAgo,
+  let logs: any[] = [];
+  try {
+    logs = await prisma.calorieLog.findMany({
+      where: {
+        date: {
+          gte: sevenDaysAgo,
+        },
       },
-    },
-    orderBy: {
-      date: 'desc',
-    },
-  });
+      orderBy: {
+        date: 'desc',
+      },
+    });
+  } catch (error) {
+    console.error("❌ カロリーログの取得に失敗しました:", error);
+  }
 
   // Group logs by date
   const groupedLogs = logs.reduce((acc, log) => {
@@ -28,7 +33,7 @@ export default async function CalorieLogPage() {
     }
     acc[date].push(log);
     return acc;
-  }, {} as Record<string, typeof logs>);
+  }, {} as Record<string, any[]>);
 
   return (
     <main className="p-8 max-w-4xl mx-auto">

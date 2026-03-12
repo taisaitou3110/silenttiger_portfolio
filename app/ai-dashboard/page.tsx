@@ -2,12 +2,19 @@ import { getAiStats } from "./actions/get-stats";
 import prisma from "@/lib/prisma";
 import { TestButton } from "./actions/_components/test-button";
 
+export const dynamic = 'force-dynamic';
+
 // 直近の生ログを取得する関数（画面下部に表示）
 async function getRecentLogs() {
-  return await prisma.aiUsageLog.findMany({
-    take: 10,
-    orderBy: { createdAt: 'desc' },
-  });
+  try {
+    return await prisma.aiUsageLog.findMany({
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+    });
+  } catch (error) {
+    console.error("❌ 直近のログ取得に失敗しました:", error);
+    return [];
+  }
 }
 
 export default async function AiDashboardPage() {

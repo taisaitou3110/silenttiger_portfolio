@@ -3,10 +3,17 @@ import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import versionData from '@/app/version.json'; // Import version data
 
+export const dynamic = 'force-dynamic';
+
 export default async function FeedbackPage() {
-  const feedbacks = await prisma.feedback.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  let feedbacks = [];
+  try {
+    feedbacks = await prisma.feedback.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (error) {
+    console.error("❌ フィードバックの取得に失敗しました:", error);
+  }
 
   // 投稿アクション
   async function createFeedback(formData: FormData) {

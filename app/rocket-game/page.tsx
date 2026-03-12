@@ -2,6 +2,8 @@
 import RocketGameContainer from "@/app/rocket-game/RocketGame";
 import { getUserGoldData } from "@/lib/actions";
 
+export const dynamic = 'force-dynamic';
+
 export default async function Page() {
   const { gold } = await getUserGoldData();
   return (

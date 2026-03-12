@@ -4,12 +4,17 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export async function getUserGoldData() {
-  // ユーザー設定の取得（存在しなければ作成）
-  let userSettings = await prisma.userSettings.findFirst();
-  if (!userSettings) {
-    userSettings = await prisma.userSettings.create({ data: { gold: 0 } });
+  try {
+    // ユーザー設定の取得（存在しなければ作成）
+    let userSettings = await prisma.userSettings.findFirst();
+    if (!userSettings) {
+      userSettings = await prisma.userSettings.create({ data: { gold: 0 } });
+    }
+    return { gold: userSettings.gold };
+  } catch (error) {
+    console.error("❌ ゴールドデータの取得に失敗しました:", error);
+    return { gold: 0 }; // デフォルト値を返す
   }
-  return { gold: userSettings.gold };
 }
 
 export async function addGold(amount: number) {

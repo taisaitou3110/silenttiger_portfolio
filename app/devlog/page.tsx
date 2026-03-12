@@ -3,6 +3,8 @@ import { format } from "date-fns";
 import { getDevelopmentLogs, createDevelopmentLog } from "@/app/devlog/actions"; // createDevelopmentLog を追加
 import { DevlogForm } from "@/app/devlog/DevlogForm";
 
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
   searchParams: {
     page?: string;
@@ -13,7 +15,17 @@ export default async function DevlogPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
   const page = Number(resolvedSearchParams.page) || 1;
   const pageSize = 5;
-  const { logs, totalLogs } = await getDevelopmentLogs(page, pageSize);
+  
+  let logs: any[] = [];
+  let totalLogs = 0;
+
+  try {
+    const data = await getDevelopmentLogs(page, pageSize);
+    logs = data.logs;
+    totalLogs = data.totalLogs;
+  } catch (error) {
+    console.error("❌ 開発日記の取得に失敗しました:", error);
+  }
 
   const totalPages = Math.ceil(totalLogs / pageSize);
 

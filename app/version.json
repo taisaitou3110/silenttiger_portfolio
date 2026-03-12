@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "apps": {
-    "dashboard": "1.0.0",
+    "dashboard": "1.0.1",
     "wordbook": "2.0.0",
     "calorie": "1.2.8",
     "poker": "1.5.0",
@@ -12,7 +12,8 @@
     "post-assistant":"1.0.0",
     "handwriting": "1.0.6",
     "rocket-game": "1.9.1",
-    "rag": "1.0.1"
+    "rag": "1.0.2",
+    "ai-dashboard": "1.0.1"
   }
 }
 

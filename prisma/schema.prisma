@@ -6,10 +6,8 @@ generator client {
 datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
-  extensions = [vector]
+  extensions = [uuid_ossp(map: "uuid-ossp", schema: "extensions"), vector]
 }
-
-// ... existing models (Word, Example, UserSettings, etc.) ...
 
 model Device {
   id           String     @id @default(cuid())
@@ -30,30 +28,30 @@ model Document {
   version     String?
   lastUpdated DateTime        @default(now())
   deviceId    String?
-  device      Device?         @relation(fields: [deviceId], references: [id])
-  chunks      DocumentChunk[]
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+  device      Device?         @relation(fields: [deviceId], references: [id])
+  chunks      DocumentChunk[]
 }
 
 model DocumentChunk {
   id         String                 @id @default(cuid())
   documentId String
-  document   Document               @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  content    String                 @db.Text
-  embedding  Unsupported("vector(3072)")? // Updated to 3072 to match the model's output
+  content    String
+  embedding  Unsupported("vector")?
   pageNumber Int?
   createdAt  DateTime               @default(now())
+  document   Document               @relation(fields: [documentId], references: [id], onDelete: Cascade)
 }
 
 model FAQ {
-  id            String   @id @default(cuid())
-  question      String
-  answer        String
-  helpfulCount  Int      @default(0)
-  userId        String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  question     String
+  answer       String
+  helpfulCount Int      @default(0)
+  userId       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model AuditLog {
@@ -181,12 +179,9 @@ model UserProfile {
   lastTrainedAt    DateTime       @updatedAt
   settingsId       String?
   createdAt        DateTime       @default(now())
-  
-  // --- 文体学習用フィールド (再定義) ---
-  styleInstruction String?        @db.Text
+  styleInstruction String?
   learningLevel    Int            @default(0)
   lastAnalyzedAt   DateTime?
-
   trainingPool     TrainingPool[]
   settings         UserSettings?  @relation(fields: [settingsId], references: [id])
 }
@@ -249,4 +244,19 @@ model GeneralNote {
   id        String   @id @default(cuid())
   rawText   String
   createdAt DateTime @default(now())
+}
+
+model AiUsageLog {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  appId        String
+  environment  String
+  modelName    String
+  promptTokens Int
+  resultTokens Int
+  totalTokens  Int
+  status       String
+  retryCount   Int      @default(0)
+  errorMessage String?
+  durationMs   Int?
 }

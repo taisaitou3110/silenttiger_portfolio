@@ -2,8 +2,10 @@ import { PrismaClient } from '@prisma/client';
 import { TaskType } from '@google/generative-ai';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { withAIRetry } from '@/lib/ai-handler';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const prisma = new PrismaClient();
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 /**
  * ドキュメントをチャンクに分割する
@@ -19,7 +21,6 @@ export async function splitDocument(content: string) {
 
 /**
  * 1バッチ分のチャンクをベクトル化して保存する
- * 共通部品 withAIRetry を使用して安定性を確保
  */
 export async function ingestChunkBatch(
   documentId: string,
@@ -46,28 +47,28 @@ export async function ingestChunkBatch(
         `[${embeddings[i].values.join(',')}]`
       );
     }
-  }, { level: 'intensive', isEmbedding: true }); // isEmbeddingを追加
+  }, { level: 'intensive', isEmbedding: true });
 }
 
 /**
  * ドキュメントの親レコードを作成する
  */
-export async function createDocumentRecord(title: string, url?: string) {
+export async function createDocumentRecord(title: string, url?: string, filePath?: string) {
   return await prisma.document.create({
-    data: { title, url },
+    data: { title, url, filePath },
   });
 }
 
 /**
  * 質問に対して類似度の高いチャンクを検索する
  */
-export async function searchSimilarChunks(query: string, limit: number = 3) {
+export async function searchSimilarChunks(query: string, limit: number = 4) {
   const result = await withAIRetry(async (model) => {
     return await model.embedContent({
       content: { role: 'user', parts: [{ text: query }] },
       taskType: TaskType.RETRIEVAL_QUERY,
     });
-  }, { level: 'standard', isEmbedding: true }); // isEmbeddingを追加
+  }, { level: 'standard', isEmbedding: true });
   
   const embedding = result.embedding.values;
 
@@ -89,35 +90,60 @@ export async function searchSimilarChunks(query: string, limit: number = 3) {
 }
 
 /**
- * RAGによる回答生成
- * モデルフォールバックとリトライを withAIRetry で完結
+ * RAGによる回答生成 (精度・ソース識別強化型)
  */
 export async function generateAnswer(query: string) {
-  const chunks = await searchSimilarChunks(query);
+  // 1. 関連情報の検索 (精度確保のため4件取得)
+  const chunks = await searchSimilarChunks(query, 4);
   
   if (chunks.length === 0) {
     return {
-      answer: "学習済みの資料の中に該当する情報が見つかりませんでした。資料をアップロードしてください。",
+      answer: "学習済みの資料の中に該当する情報が見つかりませんでした。",
       sources: []
     };
   }
 
-  const context = chunks.map(c => `[出典: ${c.documentTitle}] ${c.content}`).join('\n\n');
-  const prompt = `あなたはオフィスのIT機器コンシェルジュです。
-資料に基づき回答し、不明な点は「不明」と答えてください。
+  // 2. AIに渡す文脈の構築 (ソースを明確に区別させる)
+  const context = chunks
+    .map((c, i) => `--- 資料ブロック ${i+1} [ソース: ${c.documentTitle}] ---\n${c.content}`)
+    .join('\n\n');
 
-【資料抜粋】
+  const prompt = `あなたはオフィスのIT機器に精通したコンシェルジュです。
+提供された「複数の資料ソース」に基づき、ユーザーの質問に正確に回答してください。
+
+【重要な回答ルール】
+1. 情報の出所（どの資料からの情報か）を回答内で必ず言及してください。
+2. 複数のソースに情報がある場合は、それらを比較・統合して回答してください。
+3. 資料 A と 資料 B で情報が矛盾している場合は、両方の内容を併記してください。
+4. 提供された資料に情報がない場合は「不明」と答え、自分の知識で補完しないでください。
+
+【提供資料ソース】
 ${context}
 
-【質問】
+【ユーザーからの質問】
 ${query}`;
 
-  return await withAIRetry(async (model) => {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return {
-      answer: response.text(),
-      sources: chunks.map(c => c.documentTitle)
-    };
-  }, { level: 'intensive' });
+  // 3. モデルの優先順位を「分散」させてリトライ待ちを回避
+  const models = ["gemini-2.0-flash", "gemini-flash-latest", "gemini-pro-latest"];
+
+  for (const modelName of models) {
+    try {
+      console.log(`Trying model: ${modelName}`);
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return {
+        answer: response.text(),
+        sources: chunks.map(c => c.documentTitle)
+      };
+    } catch (error: any) {
+      if (error.status === 429) {
+        console.warn(`[Quota Limit] ${modelName} is busy, trying next available model...`);
+        continue; 
+      }
+      console.error(`Model ${modelName} error:`, error);
+    }
+  }
+
+  throw new Error("現在、すべてのAIモデルが制限に達しています。数分待ってから再度お試しください。");
 }

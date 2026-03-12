@@ -88,6 +88,16 @@ export const GUIDE_CONTENTS: Record<string, GuideContent & { group: keyof typeof
     image: "/images/image_background_handwriting.png",
     path: "/handwriting",
   },
+  IT_CONCIERGE: {
+    group: "BUSINESS_UTILITY",
+    title: "ITコンシェルジュ",
+    tagline: "オフィスの知識を、AIの記憶に。",
+    overview: "マニュアル(PDF/URL)を学習し、IT機器の困りごとに即座に回答するRAGシステムです。",
+    howTo: ["マニュアルを注入", "AIに質問を送信", "ソース（出典）を確認"],
+    techStack: ["Next.js", "Gemini API (Embedding)", "pgvector"],
+    image: "/images/toppage_wheel_labo.png",
+    path: "/rag",
+  },
 
   // --- COMMUNITY ---
   DEVELOP_DIARY: {

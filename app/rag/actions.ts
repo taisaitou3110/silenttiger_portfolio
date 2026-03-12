@@ -49,20 +49,29 @@ export async function deleteDocumentAction(id: string) {
 export async function prepareDocumentAction(formData: FormData) {
   const url = formData.get('url') as string;
   const file = formData.get('file') as File;
-  const title = formData.get('title') as string || '無題のドキュメント';
+  const userTitle = formData.get('title') as string;
 
   try {
     let content = '';
+    let autoTitle = '';
+
     if (file && file.size > 0) {
       const buffer = Buffer.from(await file.arrayBuffer());
-      content = await extractTextFromPDF(buffer);
+      const result = await extractTextFromPDF(buffer);
+      content = result.content;
+      autoTitle = result.suggestedTitle || file.name;
     } else if (url) {
-      content = await extractTextFromURL(url);
+      const result = await extractTextFromURL(url);
+      content = result.content;
+      autoTitle = result.suggestedTitle || url;
     } else {
       throw new Error('URLまたはPDFファイルが必要です。');
     }
 
-    const document = await createDocumentRecord(title, url || undefined);
+    // ユーザー入力優先、なければ自動抽出タイトル
+    const finalTitle = userTitle || autoTitle || '無題のドキュメント';
+
+    const document = await createDocumentRecord(finalTitle, url || undefined, file?.name || undefined);
     const chunks = await splitDocument(content);
 
     return { 

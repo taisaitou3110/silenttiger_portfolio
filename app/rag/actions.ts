@@ -67,9 +67,18 @@ export async function prepareDocumentAction(formData: FormData) {
     }
 
     // ユーザー入力優先、なければ自動抽出タイトル
-    const finalTitle = userTitle || autoTitle || '無題のドキュメント';
+    let finalTitle = userTitle || autoTitle || '無題のドキュメント';
 
-    const document = await createDocumentRecord(finalTitle, url || undefined, file?.name || undefined);
+    // もし抽出されたタイトルが「PDF Document」などの汎用的なものなら、ファイル名を優先する
+    if (!userTitle && file && (finalTitle === 'PDF Document' || finalTitle === 'pdf-document')) {
+      finalTitle = file.name;
+    }
+
+    const document = await createDocumentRecord(
+      finalTitle, 
+      url || undefined, 
+      (file && file.size > 0) ? file.name : undefined
+    );
     const chunks = await splitDocument(content);
 
     return { 

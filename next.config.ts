@@ -5,12 +5,12 @@ const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
 
-  // PrismaとPDF解析ライブラリを外部パッケージとして扱う
-  serverExternalPackages: ["@prisma/client", "pdf-parse"],
+  // PrismaとPDF解析ライブラリ、ブラウザ操作ライブラリを外部パッケージとして扱う
+  serverExternalPackages: ["@prisma/client", "pdf-parse", "playwright", "playwright-core"],
 
   experimental: {
     serverActions: {
-      bodySizeLimit: '20mb',
+      bodySizeLimit: '50mb',
     },
   },
 

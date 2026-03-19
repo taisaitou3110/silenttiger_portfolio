@@ -14,6 +14,76 @@ export const dynamic = 'force-dynamic';
 
 const APP_VERSION = versionData.apps.rag;
 
+// メッセージ内のURLをリンクにし、基本的なマークダウン（太字など）を処理するコンポーネント
+const MarkdownMessage = ({ content }: { content: string }) => {
+  // トークン分割用の正規表現:
+  // 1. マークダウンリンク: [テキスト](url)
+  // 2. 太字: **テキスト**
+  // 3. 裸のURL: http(s)://... (末尾の括弧や記号を含まない)
+  const tokenRegex = /(\[.+?\]\(https?:\/\/[^\s)]+\))|(\*\*.*?\*\*)|(https?:\/\/[^\s()<>\[\]]+)/g;
+  
+  // 改行で分割
+  const lines = content.split('\n');
+  
+  return (
+    <div className="space-y-1.5">
+      {lines.map((line, i) => {
+        if (!line.trim()) return <div key={i} className="h-2" />;
+
+        // line.split(regex) にキャプチャグループが含まれる場合、マッチした部分も配列に含まれる
+        const parts = line.split(tokenRegex);
+        
+        return (
+          <p key={i} className="leading-relaxed whitespace-pre-wrap">
+            {parts.map((part, j) => {
+              if (!part) return null;
+
+              // 1. マークダウンリンク [text](url) の判定
+              const mdLinkMatch = part.match(/^\[(.+?)\]\((https?:\/\/[^\s)]+)\)$/);
+              if (mdLinkMatch) {
+                return (
+                  <a
+                    key={j}
+                    href={mdLinkMatch[2]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#0cf] underline hover:text-[#0cf]/80 break-all font-mono text-[0.95em]"
+                  >
+                    {mdLinkMatch[1]}
+                  </a>
+                );
+              }
+
+              // 2. 太字 **text** の判定
+              if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={j} className="text-white font-black">{part.slice(2, -2)}</strong>;
+              }
+
+              // 3. 裸のURL の判定
+              if (part.match(/^https?:\/\/[^\s()<>\[\]]+$/)) {
+                return (
+                  <a
+                    key={j}
+                    href={part}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#0cf] underline hover:text-[#0cf]/80 break-all font-mono text-[0.95em]"
+                  >
+                    {part}
+                  </a>
+                );
+              }
+
+              // 4. それ以外のプレーンテキスト
+              return part;
+            })}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
+
 export default function RagPage() {
   const [messages, setMessages] = useState<{ role: 'user' | 'ai', content: string, sources?: string[] }[]>([]);
   const [input, setInput] = useState('');
@@ -211,7 +281,7 @@ export default function RagPage() {
             
             <div className={`px-6 pb-6 space-y-5 transition-all duration-300 ${isInjectionOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <form onSubmit={handleUpload} className="space-y-4">
-                <input name="title" required placeholder="Document Title" className="w-full p-3 bg-black/50 border border-gray-700 rounded-xl text-sm text-white focus:border-[#0cf] outline-none font-mono" />
+                <input name="title" placeholder="Document Title (Auto-fill if empty)" className="w-full p-3 bg-black/50 border border-gray-700 rounded-xl text-sm text-white focus:border-[#0cf] outline-none font-mono" />
                 <div className="relative">
                   <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <input name="url" placeholder="Web Source URL" className="w-full pl-10 p-3 bg-black/50 border border-gray-700 rounded-xl text-sm text-white focus:border-[#0cf] outline-none font-mono" />
@@ -227,11 +297,11 @@ export default function RagPage() {
                 </div>
               )}
             </div>
-          </section>
+            </section>
 
-          {/* 学習済みリスト (折りたたみ & 拡張) */}
-          <section className={`bg-gray-900/20 border border-gray-800 rounded-2xl transition-all duration-300 flex flex-col overflow-hidden ${isInventoryOpen ? 'flex-1' : 'h-[60px]'}`}>
-            <button 
+            {/* 学習済みリスト (折りたたみ & 拡張) */}
+            <section className={`bg-gray-900/20 border border-gray-800 rounded-2xl transition-all duration-300 flex flex-col overflow-hidden ${isInventoryOpen ? 'flex-1' : 'h-[60px]'}`}>
+            <button
               onClick={() => setIsInventoryOpen(!isInventoryOpen)}
               className="w-full p-5 flex items-center justify-between hover:bg-white/5 transition-colors"
             >
@@ -244,7 +314,7 @@ export default function RagPage() {
                 {isInventoryOpen ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
               </div>
             </button>
-            
+
             <div className={`flex-1 overflow-hidden flex flex-col transition-all duration-300 ${isInventoryOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <div className="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar space-y-3">
                 {documents.length === 0 ? (
@@ -252,7 +322,7 @@ export default function RagPage() {
                 ) : (
                   documents.map((doc) => {
                     const hostname = doc.url ? new URL(doc.url).hostname : null;
-                    const fileName = doc.filePath || 'PDF DOCUMENT';
+                    const fileName = doc.filePath || 'PDF';
                     return (
                       <div key={doc.id} className="group p-3 bg-black/60 border border-gray-800 rounded-xl hover:border-[#0cf]/50 transition-all">
                         <div className="flex flex-col gap-2">
@@ -261,9 +331,9 @@ export default function RagPage() {
                               {doc.title}
                             </h3>
                             {doc.url ? (
-                              <a 
-                                href={doc.url} 
-                                target="_blank" 
+                              <a
+                                href={doc.url}
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 className="shrink-0 text-[10px] font-mono px-2 py-0.5 rounded bg-[#0cf]/10 text-[#0cf] border border-[#0cf]/20 font-bold max-w-[120px] truncate hover:bg-[#0cf]/20 flex items-center gap-1 transition-colors"
                               >
@@ -275,8 +345,7 @@ export default function RagPage() {
                                 {fileName}
                               </span>
                             )}
-                          </div>
-                          <div className="flex justify-between items-center opacity-60">
+                          </div>                          <div className="flex justify-between items-center opacity-60">
                             <div className="flex items-center gap-3 text-[9px] font-mono uppercase tracking-tighter">
                               <span className="text-[#0cf]/80">{doc._count?.chunks || 0} CHUNKS</span>
                               <span className="text-gray-600">{new Date(doc.createdAt).toLocaleDateString()}</span>
@@ -310,7 +379,7 @@ export default function RagPage() {
             {messages.map((msg, i) => (
               <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                 <div className={`max-w-[85%] md:max-w-[80%] p-5 rounded-2xl ${msg.role === 'user' ? 'bg-[#0cf]/10 border border-[#0cf]/20 text-[#0cf] rounded-tr-none' : 'bg-black/60 border border-gray-800 text-gray-200 rounded-tl-none shadow-xl'}`}>
-                  <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{msg.content}</p>
+                  <MarkdownMessage content={msg.content} />
                   {msg.sources && msg.sources.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-gray-800/50 text-[10px] text-gray-500 font-mono tracking-widest uppercase">
                       SOURCES: {Array.from(new Set(msg.sources)).join(', ')}

@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { saveAiLog } from "@/lib/ai/ai-logger";
+import { getSystemInstruction } from "@/lib/ai/ai-loader";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -11,35 +13,19 @@ export async function POST(req: NextRequest) {
   }
 
   const encoder = new TextEncoder();
+  const startTime = Date.now();
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        const modelName = process.env.GEMINI_ALGO_MODEL || "gemini-2.5-flash";
+        const modelName = process.env.GEMINI_ALGO_MODEL || "gemini-2.0-flash";
         const model = genAI.getGenerativeModel({
           model: modelName,
           systemInstruction: "あなたはプロの執筆スタイル・プロファイラーです。渡されたテキストから、著者の「文体の癖」を極めて詳細に抽出し、再現可能な『文体指示書』を作成してください。"
         });
 
-        const prompt = `
-          以下のテキスト（過去の記事やメモ）を深く分析し、著者の執筆スタイルを抽出してください。
-          特に、独特の記号使い、改行のリズム、思考の飛躍、比喩の傾向に注目してください。
-
-...
-
-          1. 語彙とトーン: 宗教、哲学、科学、あるいはサブカルチャー（ゲーム等）をどう織り交ぜるか。
-          2. 記号と視覚構造: 独自のセパレーター（例：ʕ•̫͡•...）や、強調、引用の使い方。
-          3. 構成の癖: 体験談から抽象的な思考へどう繋げるか。メタ視点の（ ）書きの頻度。
-          4. 結論の出し方: 結論を急ぐか、余韻を残すか。
-
-        【出力形式】
-        AI（Gemini）への「システム指示文（System Instruction）」として、そのままコピペして使える形式で出力してください。
-        「あなたは〜というスタイルで書く作家です。特徴は...」という形式で、具体的かつ詳細に記述してください。
-        解説は不要です。指示文のみを出力してください。
-        
-        分析対象テキスト：
-        ${pastArticles}
-        `;
+        const rawPrompt = getSystemInstruction("post-assistant-analyzer");
+        const prompt = rawPrompt.replace("{{pastArticles}}", pastArticles || "");
 
         const result = await model.generateContentStream({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -66,6 +52,18 @@ export async function POST(req: NextRequest) {
         const response = await result.response;
         const usage = response.usageMetadata;
 
+        // 利用ログの保存
+        if (usage) {
+          await saveAiLog({
+            appId: 'handwriting',
+            modelName: modelName,
+            promptTokens: usage.promptTokenCount || 0,
+            resultTokens: usage.candidatesTokenCount || 0,
+            status: 'SUCCESS',
+            durationMs: Date.now() - startTime,
+          });
+        }
+
         controller.enqueue(encoder.encode(JSON.stringify({ 
           type: "done", 
           usage: usage 
@@ -73,6 +71,17 @@ export async function POST(req: NextRequest) {
 
       } catch (error: any) {
         console.error("Analysis Streaming Error:", error);
+        
+        await saveAiLog({
+          appId: 'handwriting',
+          modelName: "unknown",
+          promptTokens: 0,
+          resultTokens: 0,
+          status: 'ERROR',
+          errorMessage: error.message,
+          durationMs: Date.now() - startTime,
+        });
+
         controller.enqueue(encoder.encode(JSON.stringify({ type: "error", message: error.message }) + "\n"));
       } finally {
         controller.close();

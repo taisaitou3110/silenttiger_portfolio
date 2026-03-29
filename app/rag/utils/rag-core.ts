@@ -46,7 +46,10 @@ export async function ingestChunkBatch(
         `[${embeddings[i].values.join(',')}]`
       );
     }
-  }, { level: 'intensive', isEmbedding: true });
+    
+    // 型チェックのために response を模倣したオブジェクトを返す（自動ログ用）
+    return { response: { usageMetadata: { promptTokenCount: batchContents.join("").length / 4, candidatesTokenCount: 0 } } };
+  }, { level: 'intensive', isEmbedding: true, appId: 'rag' });
 }
 
 /**
@@ -67,9 +70,9 @@ export async function searchSimilarChunks(query: string, limit: number = 8) {
       content: { role: 'user', parts: [{ text: query }] },
       taskType: TaskType.RETRIEVAL_QUERY,
     });
-  }, { level: 'standard', isEmbedding: true });
+  }, { level: 'standard', isEmbedding: true, appId: 'rag' });
   
-  const embedding = result.embedding.values;
+  const embedding = (result as any).embedding.values;
 
   const chunks = await prisma.$queryRawUnsafe<any[]>(
     `SELECT 
@@ -137,27 +140,13 @@ ${context}
 【ユーザーからの質問】
 ${query}`;
 
-  // 4. モデルの優先順位を「分散」させてリトライ待ちを回避
-  const models = ["gemini-2.0-flash", "gemini-flash-latest", "gemini-pro-latest"];
+  // 4. withAIRetry を使用して実行（自動的にログ保存される）
+  const result = await withAIRetry(async (model) => {
+    return await model.generateContent(prompt);
+  }, { appId: 'rag' });
 
-  for (const modelName of models) {
-    try {
-      console.log(`Trying model: ${modelName}`);
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      return {
-        answer: response.text(),
-        sources: chunks.map(c => c.documentTitle)
-      };
-    } catch (error: any) {
-      if (error.status === 429) {
-        console.warn(`[Quota Limit] ${modelName} is busy, trying next available model...`);
-        continue; 
-      }
-      console.error(`Model ${modelName} error:`, error);
-    }
-  }
-
-  throw new Error("現在、すべてのAIモデルが制限に達しています。数分待ってから再度お試しください。");
+  return {
+    answer: result.response.text(),
+    sources: chunks.map(c => c.documentTitle)
+  };
 }
